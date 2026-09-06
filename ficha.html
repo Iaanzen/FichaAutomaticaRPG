@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ficha do Personagem - D&D 5e</title>
+    <link rel="stylesheet" href="cadastro.css" />
+  </head>
+  <body>
+    <a href="index.html" class="link-voltar">← Voltar ao menu</a>
+
+    <p id="mensagem-erro" style="display: none">
+      Personagem não encontrado. <a href="index.html">Voltar ao menu</a>
+    </p>
+
+    <form id="form-ficha" class="ficha">
+      <header class="ficha-cabecalho">
+        <div class="bloco-nome">
+          <input
+            type="text"
+            id="nome"
+            name="nome"
+            placeholder="Nome do Personagem"
+            required
+          />
+          <span class="rotulo">Nome do Personagem</span>
+        </div>
+        <div class="campo">
+          <input
+            type="number"
+            id="nivel"
+            name="nivel"
+            min="1"
+            max="20"
+            required
+          />
+          <span class="rotulo">Nível</span>
+        </div>
+        <div class="cabecalho-grade">
+          <div class="campo">
+            <select id="classe" name="classe" required>
+              <option value="">Selecione...</option>
+              <option value="barbaro">Bárbaro</option>
+              <option value="bardo">Bardo</option>
+              <option value="bruxo">Bruxo</option>
+              <option value="clerigo">Clérigo</option>
+              <option value="druida">Druida</option>
+              <option value="feiticeiro">Feiticeiro</option>
+              <option value="guerreiro">Guerreiro</option>
+              <option value="ladino">Ladino</option>
+              <option value="mago">Mago</option>
+              <option value="monge">Monge</option>
+              <option value="paladino">Paladino</option>
+              <option value="patrulheiro">Patrulheiro</option>
+            </select>
+            <span class="rotulo">Classe</span>
+          </div>
+
+          <div class="campo">
+            <select id="subclasse" name="subclasse">
+              <option value="">Selecione...</option>
+            </select>
+            <span class="rotulo">Subclasse</span>
+          </div>
+
+          <div class="campo">
+            <select id="raca" name="raca" required>
+              <option value="">Selecione...</option>
+              <option value="humano">Humano</option>
+              <option value="anao">Anão</option>
+              <option value="elfo">Elfo</option>
+              <option value="halfling">Halfling</option>
+              <option value="draconato">Draconato</option>
+              <option value="gnomo">Gnomo</option>
+              <option value="meio-elfo">Meio-Elfo</option>
+              <option value="meio-orc">Meio-Orc</option>
+              <option value="tiefling">Tiefling</option>
+            </select>
+            <span class="rotulo">Raça</span>
+          </div>
+
+          <div class="campo" id="bloco-subraca">
+            <select id="subraca" name="subraca">
+              <option value="">Selecione...</option>
+            </select>
+            <span class="rotulo">Sub-raça</span>
+          </div>
+
+          <div class="campo">
+            <input
+              type="text"
+              id="antecedente"
+              name="antecedente"
+              placeholder="Ex: Guarda da cidade"
+              required
+            />
+            <span class="rotulo">Antecedente</span>
+          </div>
+
+          <div class="campo">
+            <select id="alinhamento" name="alinhamento" required>
+              <option value="">Selecione...</option>
+              <option value="leal-e-bom">Leal e Bom</option>
+              <option value="neutro-e-bom">Neutro e Bom</option>
+              <option value="caotico-e-bom">Caótico e Bom</option>
+              <option value="leal-e-neutro">Leal e Neutro</option>
+              <option value="neutro">Neutro</option>
+              <option value="caotico-e-neutro">Caótico e Neutro</option>
+              <option value="leal-e-mau">Leal e Mau</option>
+              <option value="neutro-e-mau">Neutro e Mau</option>
+              <option value="caotico-e-mau">Caótico e Mau</option>
+            </select>
+            <span class="rotulo">Alinhamento</span>
+          </div>
+        </div>
+      </header>
+
+      <div class="ficha-corpo">
+        <aside class="coluna-atributos">
+          <div class="atributo">
+            <span class="atributo-nome">Força</span>
+            <input type="number" id="forca" min="1" max="20" value="10" />
+          </div>
+          <div class="atributo">
+            <span class="atributo-nome">Destreza</span>
+            <input type="number" id="destreza" min="1" max="20" value="10" />
+          </div>
+          <div class="atributo">
+            <span class="atributo-nome">Constituição</span>
+            <input
+              type="number"
+              id="constituicao"
+              min="1"
+              max="20"
+              value="10"
+            />
+          </div>
+          <div class="atributo">
+            <span class="atributo-nome">Inteligência</span>
+            <input
+              type="number"
+              id="inteligencia"
+              min="1"
+              max="20"
+              value="10"
+            />
+          </div>
+          <div class="atributo">
+            <span class="atributo-nome">Sabedoria</span>
+            <input type="number" id="sabedoria" min="1" max="20" value="10" />
+          </div>
+          <div class="atributo">
+            <span class="atributo-nome">Carisma</span>
+            <input type="number" id="carisma" min="1" max="20" value="10" />
+          </div>
+        </aside>
+
+        <main class="coluna-central">
+          <div class="area-reservada">
+            <p>
+              Perícias, pontos de vida, combate e magias entram aqui nos
+              próximos sprints.
+            </p>
+          </div>
+        </main>
+      </div>
+
+      <button type="submit" id="btn-salvar">Salvar Alterações</button>
+    </form>
+
+    <script src="ficha.js"></script>
+  </body>
+</html>

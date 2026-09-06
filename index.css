@@ -1,0 +1,132 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Lora:ital,wght@0,400;0,700;1,400&display=swap');
+
+:root {
+    --bg-taverna: #1a120e;
+    --pergaminho: #f1e5d1;
+    --pergaminho-sombra: #d7c4a3;
+    --tinta: #2b1d14;
+    --sangue-dragao: #8e231c;
+    --ouro: #d4af37;
+    --borda-fina: rgba(43, 29, 20, 0.35);
+}
+
+* { box-sizing: border-box; }
+
+body {
+    background-color: var(--bg-taverna);
+    background-image: radial-gradient(circle at 50% 0%, #3a261d 0%, var(--bg-taverna) 80%);
+    font-family: 'Lora', serif;
+    color: var(--tinta);
+    margin: 0;
+    padding: 40px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+}
+
+h1 {
+    font-family: 'Cinzel', serif;
+    font-size: 2.8rem;
+    color: var(--ouro);
+    text-shadow: 2px 2px 5px rgba(0,0,0,0.9);
+    margin: 0 0 20px;
+    text-align: center;
+    letter-spacing: 2px;
+}
+
+/* Botão Criar Novo Personagem */
+a[href="cadastro.html"] {
+    display: inline-block;
+    background-color: var(--sangue-dragao);
+    color: var(--pergaminho);
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
+    font-size: 1.2rem;
+    text-decoration: none;
+    padding: 15px 30px;
+    border: 2px solid var(--tinta);
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    box-shadow: 2px 4px 6px rgba(0,0,0,0.4);
+    transition: all 0.2s ease;
+    margin-bottom: 40px;
+}
+
+a[href="cadastro.html"]:hover {
+    background-color: #6a1a15;
+    color: var(--ouro);
+    transform: translateY(-2px);
+    box-shadow: 2px 6px 8px rgba(0,0,0,0.5);
+}
+
+a[href="cadastro.html"]:active {
+    transform: translateY(1px);
+    box-shadow: 1px 2px 3px rgba(0,0,0,0.5);
+}
+
+/* Lista de personagens */
+#lista-personagens {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+    max-width: 600px;
+}
+
+#lista-personagens li {
+    background-color: var(--pergaminho);
+    background-image: linear-gradient(120deg, rgba(255,255,255,0.4) 0%, rgba(0,0,0,0.03) 100%);
+    border: 2px solid var(--pergaminho-sombra);
+    border-left: 6px solid var(--sangue-dragao);
+    border-radius: 4px;
+    margin-bottom: 20px;
+    padding: 20px;
+    box-shadow: 0 8px 15px rgba(0,0,0,0.6);
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 1.2rem;
+    font-family: 'Cinzel', serif;
+}
+
+#lista-personagens li:hover {
+    transform: translateX(5px) scale(1.01);
+    border-color: var(--tinta);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.8);
+}
+
+/* Botão excluir dentro do card */
+#lista-personagens button {
+    background-color: transparent;
+    color: var(--sangue-dragao);
+    font-family: 'Lora', serif;
+    font-weight: 700;
+    font-size: 0.95rem;
+    border: 1px solid var(--sangue-dragao);
+    border-radius: 4px;
+    padding: 8px 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+#lista-personagens button:hover {
+    background-color: var(--sangue-dragao);
+    color: var(--pergaminho);
+}
+
+/* Mensagem de lista vazia */
+#mensagem-vazio {
+    background-color: rgba(241,229,209,0.05);
+    border: 1px dashed var(--pergaminho-sombra);
+    color: var(--pergaminho-sombra);
+    font-size: 1.2rem;
+    font-style: italic;
+    padding: 20px 40px;
+    border-radius: 4px;
+    text-align: center;
+    max-width: 600px;
+    width: 100%;
+}

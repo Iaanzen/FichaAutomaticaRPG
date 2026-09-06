@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nova Ficha - D&D 5e</title>
+    <link rel="stylesheet" href="cadastro.css" />
+  </head>
+  <body>
+    <a href="index.html" class="link-voltar">← Voltar ao menu</a>
+
+    <form id="form-personagem" class="ficha">
+      <h1 class="ficha-titulo">Criação de Personagem</h1>
+
+      <fieldset class="etapa" id="etapa-1">
+        <legend>1. Nome</legend>
+        <p class="explicacao">
+          Comece pelo conceito: quem é esse personagem? O nome pode ser mudado
+          depois.
+        </p>
+        <div class="campo">
+          <input
+            type="text"
+            id="nome"
+            name="nome"
+            placeholder="Nome do Personagem"
+            required
+          />
+          <span class="rotulo">Nome do Personagem</span>
+        </div>
+      </fieldset>
+
+      <fieldset class="etapa" id="etapa-2" disabled>
+        <legend>2. Classe</legend>
+        <p class="explicacao">
+          A classe define o papel do personagem em combate, os dados de vida e
+          as perícias que ele poderá escolher.
+        </p>
+        <div class="linha-campos">
+          <div class="campo">
+            <select id="classe" name="classe" required>
+              <option value="">Selecione...</option>
+              <option value="barbaro">Bárbaro</option>
+              <option value="bardo">Bardo</option>
+              <option value="bruxo">Bruxo</option>
+              <option value="clerigo">Clérigo</option>
+              <option value="druida">Druida</option>
+              <option value="feiticeiro">Feiticeiro</option>
+              <option value="guerreiro">Guerreiro</option>
+              <option value="ladino">Ladino</option>
+              <option value="mago">Mago</option>
+              <option value="monge">Monge</option>
+              <option value="paladino">Paladino</option>
+              <option value="patrulheiro">Patrulheiro</option>
+            </select>
+            <span class="rotulo">Classe</span>
+          </div>
+
+          <div class="campo">
+            <select id="subclasse" name="subclasse">
+              <option value="">Selecione...</option>
+            </select>
+            <span class="rotulo">Subclasse</span>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset class="etapa" id="etapa-3" disabled>
+        <legend>3. Antecedente</legend>
+        <p class="explicacao">
+          O que seu personagem fazia antes de virar aventureiro? Escreva
+          livremente (ex: "Guarda da cidade", "Ferreiro exilado"). É aqui que os
+          bônus de atributo vão nascer, nas regras de 2024.
+        </p>
+        <div class="campo">
+          <input
+            type="text"
+            id="antecedente"
+            name="antecedente"
+            placeholder="Ex: Guarda da cidade"
+            required
+          />
+          <span class="rotulo">Antecedente</span>
+        </div>
+      </fieldset>
+
+      <fieldset class="etapa" id="etapa-4" disabled>
+        <legend>4. Raça</legend>
+        <p class="explicacao">
+          Nas regras de 2024 a raça não dá bônus de atributo — ela dá traços,
+          deslocamento e perícias. A sub-raça só aparece para as raças que têm.
+        </p>
+        <div class="linha-campos">
+          <div class="campo">
+            <select id="raca" name="raca" required>
+              <option value="">Selecione...</option>
+              <option value="humano">Humano</option>
+              <option value="anao">Anão</option>
+              <option value="elfo">Elfo</option>
+              <option value="halfling">Halfling</option>
+              <option value="draconato">Draconato</option>
+              <option value="gnomo">Gnomo</option>
+              <option value="meio-elfo">Meio-Elfo</option>
+              <option value="meio-orc">Meio-Orc</option>
+              <option value="tiefling">Tiefling</option>
+            </select>
+            <span class="rotulo">Raça</span>
+          </div>
+
+          <div class="campo" id="bloco-subraca">
+            <select id="subraca" name="subraca">
+              <option value="">Selecione...</option>
+            </select>
+            <span class="rotulo">Sub-raça</span>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset class="etapa" id="etapa-5" disabled>
+        <legend>5. Atributos</legend>
+        <p class="explicacao">
+          Distribua os valores base dos seis atributos. Os bônus do antecedente
+          e o cálculo dos modificadores entram em seguida.
+        </p>
+        <div class="coluna-atributos">
+          <div class="atributo">
+            <span class="atributo-nome">Força</span>
+            <input type="number" id="forca" min="1" max="20" value="10" />
+          </div>
+          <div class="atributo">
+            <span class="atributo-nome">Destreza</span>
+            <input type="number" id="destreza" min="1" max="20" value="10" />
+          </div>
+          <div class="atributo">
+            <span class="atributo-nome">Constituição</span>
+            <input
+              type="number"
+              id="constituicao"
+              min="1"
+              max="20"
+              value="10"
+            />
+          </div>
+          <div class="atributo">
+            <span class="atributo-nome">Inteligência</span>
+            <input
+              type="number"
+              id="inteligencia"
+              min="1"
+              max="20"
+              value="10"
+            />
+          </div>
+          <div class="atributo">
+            <span class="atributo-nome">Sabedoria</span>
+            <input type="number" id="sabedoria" min="1" max="20" value="10" />
+          </div>
+          <div class="atributo">
+            <span class="atributo-nome">Carisma</span>
+            <input type="number" id="carisma" min="1" max="20" value="10" />
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset class="etapa" id="etapa-6" disabled>
+        <legend>6. Detalhes</legend>
+        <p class="explicacao">
+          Últimos ajustes antes de fechar a ficha.
+        </p>
+        <div class="linha-campos">
+          <div class="campo">
+            <input
+              type="number"
+              id="nivel"
+              name="nivel"
+              min="1"
+              max="20"
+              value="1"
+              required
+            />
+            <span class="rotulo">Nível</span>
+          </div>
+
+          <div class="campo">
+            <select id="alinhamento" name="alinhamento" required>
+              <option value="">Selecione...</option>
+              <option value="leal-e-bom">Leal e Bom</option>
+              <option value="neutro-e-bom">Neutro e Bom</option>
+              <option value="caotico-e-bom">Caótico e Bom</option>
+              <option value="leal-e-neutro">Leal e Neutro</option>
+              <option value="neutro">Neutro</option>
+              <option value="caotico-e-neutro">Caótico e Neutro</option>
+              <option value="leal-e-mau">Leal e Mau</option>
+              <option value="neutro-e-mau">Neutro e Mau</option>
+              <option value="caotico-e-mau">Caótico e Mau</option>
+            </select>
+            <span class="rotulo">Alinhamento</span>
+          </div>
+        </div>
+      </fieldset>
+
+      <div class="navegacao">
+        <button type="button" id="btn-voltar">← Voltar</button>
+        <button type="button" id="btn-proximo">Próximo →</button>
+      </div>
+
+      <button type="submit" id="btn-salvar">Salvar Personagem</button>
+    </form>
+
+    <script src="cadastro.js"></script>
+  </body>
+</html>
