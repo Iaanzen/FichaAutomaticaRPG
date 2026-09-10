@@ -23,6 +23,11 @@ body {
     justify-content: center;
 }
 
+/* só a página com barra fixa precisa reservar espaço pra ela no rodapé */
+.tem-barra-fixa {
+    padding-bottom: 120px;
+}
+
 /* A folha inteira */
 .ficha {
     background-color: var(--pergaminho);
@@ -68,6 +73,9 @@ body {
 }
 
 .campo { display: flex; flex-direction: column; }
+
+/* o display: flex acima venceria o hidden nativo do HTML, entao reforçamos */
+[hidden] { display: none !important; }
 
 /* Rótulos pequenos embaixo do campo, como na folha oficial */
 .rotulo {
@@ -143,6 +151,29 @@ input:focus, select:focus {
     border: 2px solid var(--tinta);
 }
 
+/* Total (base + bônus) e modificador calculado */
+.atributo-total {
+    display: block;
+    margin-top: 6px;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #6a4f3a;
+}
+
+.atributo-mod {
+    display: block;
+    width: 42px;
+    margin: 4px auto 0;
+    padding: 2px 0;
+    font-family: 'Cinzel', serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--pergaminho);
+    background-color: var(--tinta);
+    border-radius: 12px;
+}
+
 /* Coluna central (reservada pra evolução) */
 .coluna-central { flex: 1; }
 
@@ -161,6 +192,7 @@ input:focus, select:focus {
 }
 
 /* ---------- Botão salvar ---------- */
+/* na ficha ele fica solto no fim do form; no cadastro entra na barra fixa */
 #btn-salvar {
     width: 100%;
     margin-top: 20px;
@@ -263,6 +295,39 @@ body {
 
 .linha-campos .campo { flex: 1; }
 
+/* ---------- Wizard: distribuição de bônus do antecedente ---------- */
+.grade-bonus {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+}
+
+.grade-bonus select {
+    text-align: center;
+    font-weight: 700;
+}
+
+/* atributo travado porque a distribuição já fechou */
+.grade-bonus select:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.status-bonus {
+    margin: 15px 0 0;
+    font-family: 'Cinzel', serif;
+    font-size: 0.9rem;
+    text-align: center;
+    min-height: 1.2em;
+}
+
+.status-ok { color: #2f6b32; }
+.status-erro { color: var(--sangue-dragao); }
+
+@media (max-width: 700px) {
+    .grade-bonus { grid-template-columns: repeat(2, 1fr); }
+}
+
 /* Os 6 atributos lado a lado dentro da etapa */
 .etapa .coluna-atributos {
     flex-direction: row;
@@ -271,30 +336,60 @@ body {
     width: 100%;
 }
 
-/* ---------- Wizard: navegação ---------- */
-.navegacao {
+/* ---------- Wizard: barra de navegação fixa ---------- */
+.barra-navegacao {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10;
+
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     gap: 15px;
+
+    padding: 12px 15px;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
+
+    background-color: var(--bg-taverna);
+    border-top: 2px solid var(--tinta);
+    box-shadow: 0 -6px 20px rgba(0,0,0,0.6);
 }
 
-.navegacao button {
+.barra-navegacao button {
+    max-width: 320px;
+}
+
+/* dentro da barra o salvar divide espaço com o próximo, sem margem de topo */
+.barra-navegacao #btn-salvar {
     flex: 1;
-    padding: 12px;
+    width: auto;
+    margin-top: 0;
+}
+
+#btn-proximo {
+    flex: 1;
+    padding: 15px;
     font-family: 'Cinzel', serif;
     font-weight: 700;
+    font-size: 1.2rem;
     color: var(--tinta);
-    background-color: rgba(255,255,255,0.5);
+    background-color: var(--ouro);
     border: 2px solid var(--tinta);
     border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
     cursor: pointer;
+    transition: all 0.2s ease;
 }
 
-.navegacao button:hover:not(:disabled) {
-    background-color: var(--ouro);
+#btn-proximo:hover:not(:disabled) {
+    filter: brightness(1.1);
+    transform: translateY(-2px);
 }
 
-.navegacao button:disabled {
+.barra-navegacao button:disabled {
     opacity: 0.4;
     cursor: not-allowed;
+    transform: none;
 }

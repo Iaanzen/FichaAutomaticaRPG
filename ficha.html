@@ -56,7 +56,7 @@
             <span class="rotulo">Classe</span>
           </div>
 
-          <div class="campo">
+          <div class="campo" id="bloco-subclasse" hidden>
             <select id="subclasse" name="subclasse">
               <option value="">Selecione...</option>
             </select>
@@ -120,10 +120,14 @@
           <div class="atributo">
             <span class="atributo-nome">Força</span>
             <input type="number" id="forca" min="1" max="20" value="10" />
+            <span class="atributo-total" id="total-forca"></span>
+            <span class="atributo-mod" id="mod-forca"></span>
           </div>
           <div class="atributo">
             <span class="atributo-nome">Destreza</span>
             <input type="number" id="destreza" min="1" max="20" value="10" />
+            <span class="atributo-total" id="total-destreza"></span>
+            <span class="atributo-mod" id="mod-destreza"></span>
           </div>
           <div class="atributo">
             <span class="atributo-nome">Constituição</span>
@@ -134,6 +138,8 @@
               max="20"
               value="10"
             />
+            <span class="atributo-total" id="total-constituicao"></span>
+            <span class="atributo-mod" id="mod-constituicao"></span>
           </div>
           <div class="atributo">
             <span class="atributo-nome">Inteligência</span>
@@ -144,18 +150,88 @@
               max="20"
               value="10"
             />
+            <span class="atributo-total" id="total-inteligencia"></span>
+            <span class="atributo-mod" id="mod-inteligencia"></span>
           </div>
           <div class="atributo">
             <span class="atributo-nome">Sabedoria</span>
             <input type="number" id="sabedoria" min="1" max="20" value="10" />
+            <span class="atributo-total" id="total-sabedoria"></span>
+            <span class="atributo-mod" id="mod-sabedoria"></span>
           </div>
           <div class="atributo">
             <span class="atributo-nome">Carisma</span>
             <input type="number" id="carisma" min="1" max="20" value="10" />
+            <span class="atributo-total" id="total-carisma"></span>
+            <span class="atributo-mod" id="mod-carisma"></span>
           </div>
         </aside>
 
         <main class="coluna-central">
+          <fieldset class="etapa">
+            <legend>Bônus do Antecedente</legend>
+            <p class="explicacao">
+              +2 num atributo e +1 em outro, ou +1 em três atributos diferentes.
+            </p>
+            <div class="grade-bonus">
+              <div class="campo">
+                <select id="bonus-forca" class="select-bonus">
+                  <option value="0">—</option>
+                  <option value="1">+1</option>
+                  <option value="2">+2</option>
+                </select>
+                <span class="rotulo">Força</span>
+              </div>
+
+              <div class="campo">
+                <select id="bonus-destreza" class="select-bonus">
+                  <option value="0">—</option>
+                  <option value="1">+1</option>
+                  <option value="2">+2</option>
+                </select>
+                <span class="rotulo">Destreza</span>
+              </div>
+
+              <div class="campo">
+                <select id="bonus-constituicao" class="select-bonus">
+                  <option value="0">—</option>
+                  <option value="1">+1</option>
+                  <option value="2">+2</option>
+                </select>
+                <span class="rotulo">Constituição</span>
+              </div>
+
+              <div class="campo">
+                <select id="bonus-inteligencia" class="select-bonus">
+                  <option value="0">—</option>
+                  <option value="1">+1</option>
+                  <option value="2">+2</option>
+                </select>
+                <span class="rotulo">Inteligência</span>
+              </div>
+
+              <div class="campo">
+                <select id="bonus-sabedoria" class="select-bonus">
+                  <option value="0">—</option>
+                  <option value="1">+1</option>
+                  <option value="2">+2</option>
+                </select>
+                <span class="rotulo">Sabedoria</span>
+              </div>
+
+              <div class="campo">
+                <select id="bonus-carisma" class="select-bonus">
+                  <option value="0">—</option>
+                  <option value="1">+1</option>
+                  <option value="2">+2</option>
+                </select>
+                <span class="rotulo">Carisma</span>
+              </div>
+            </div>
+
+            <p id="status-bonus" class="status-bonus"></p>
+          </fieldset>
+
           <div class="area-reservada">
             <p>
               Perícias, pontos de vida, combate e magias entram aqui nos
@@ -168,6 +244,7 @@
       <button type="submit" id="btn-salvar">Salvar Alterações</button>
     </form>
 
+    <script src="regras.js"></script>
     <script src="ficha.js"></script>
   </body>
 </html>

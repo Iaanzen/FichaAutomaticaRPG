@@ -6,7 +6,7 @@
     <title>Nova Ficha - D&D 5e</title>
     <link rel="stylesheet" href="cadastro.css" />
   </head>
-  <body>
+  <body class="tem-barra-fixa">
     <a href="index.html" class="link-voltar">← Voltar ao menu</a>
 
     <form id="form-personagem" class="ficha">
@@ -31,7 +31,28 @@
       </fieldset>
 
       <fieldset class="etapa" id="etapa-2" disabled>
-        <legend>2. Classe</legend>
+        <legend>2. Nível</legend>
+        <p class="explicacao">
+          Em que nível esse personagem começa? O nível define o que já está
+          disponível para ele — a subclasse, por exemplo, só é escolhida a
+          partir do nível 3.
+        </p>
+        <div class="campo">
+          <input
+            type="number"
+            id="nivel"
+            name="nivel"
+            min="1"
+            max="20"
+            value="1"
+            required
+          />
+          <span class="rotulo">Nível</span>
+        </div>
+      </fieldset>
+
+      <fieldset class="etapa" id="etapa-3" disabled>
+        <legend>3. Classe</legend>
         <p class="explicacao">
           A classe define o papel do personagem em combate, os dados de vida e
           as perícias que ele poderá escolher.
@@ -56,7 +77,7 @@
             <span class="rotulo">Classe</span>
           </div>
 
-          <div class="campo">
+          <div class="campo" id="bloco-subclasse" hidden>
             <select id="subclasse" name="subclasse">
               <option value="">Selecione...</option>
             </select>
@@ -65,8 +86,8 @@
         </div>
       </fieldset>
 
-      <fieldset class="etapa" id="etapa-3" disabled>
-        <legend>3. Antecedente</legend>
+      <fieldset class="etapa" id="etapa-4" disabled>
+        <legend>4. Antecedente</legend>
         <p class="explicacao">
           O que seu personagem fazia antes de virar aventureiro? Escreva
           livremente (ex: "Guarda da cidade", "Ferreiro exilado"). É aqui que os
@@ -84,8 +105,75 @@
         </div>
       </fieldset>
 
-      <fieldset class="etapa" id="etapa-4" disabled>
-        <legend>4. Raça</legend>
+      <fieldset class="etapa" id="etapa-5" disabled>
+        <legend>5. Bônus do Antecedente</legend>
+        <p class="explicacao">
+          Nas regras de 2024 os bônus de atributo vêm do antecedente, e é você
+          quem escolhe onde colocá-los. Só existem duas formas válidas:
+          <strong>+2 num atributo e +1 em outro</strong>, ou
+          <strong>+1 em três atributos diferentes</strong>.
+        </p>
+        <div class="grade-bonus">
+          <div class="campo">
+            <select id="bonus-forca" class="select-bonus">
+              <option value="0">—</option>
+              <option value="1">+1</option>
+              <option value="2">+2</option>
+            </select>
+            <span class="rotulo">Força</span>
+          </div>
+
+          <div class="campo">
+            <select id="bonus-destreza" class="select-bonus">
+              <option value="0">—</option>
+              <option value="1">+1</option>
+              <option value="2">+2</option>
+            </select>
+            <span class="rotulo">Destreza</span>
+          </div>
+
+          <div class="campo">
+            <select id="bonus-constituicao" class="select-bonus">
+              <option value="0">—</option>
+              <option value="1">+1</option>
+              <option value="2">+2</option>
+            </select>
+            <span class="rotulo">Constituição</span>
+          </div>
+
+          <div class="campo">
+            <select id="bonus-inteligencia" class="select-bonus">
+              <option value="0">—</option>
+              <option value="1">+1</option>
+              <option value="2">+2</option>
+            </select>
+            <span class="rotulo">Inteligência</span>
+          </div>
+
+          <div class="campo">
+            <select id="bonus-sabedoria" class="select-bonus">
+              <option value="0">—</option>
+              <option value="1">+1</option>
+              <option value="2">+2</option>
+            </select>
+            <span class="rotulo">Sabedoria</span>
+          </div>
+
+          <div class="campo">
+            <select id="bonus-carisma" class="select-bonus">
+              <option value="0">—</option>
+              <option value="1">+1</option>
+              <option value="2">+2</option>
+            </select>
+            <span class="rotulo">Carisma</span>
+          </div>
+        </div>
+
+        <p id="status-bonus" class="status-bonus"></p>
+      </fieldset>
+
+      <fieldset class="etapa" id="etapa-6" disabled>
+        <legend>6. Raça</legend>
         <p class="explicacao">
           Nas regras de 2024 a raça não dá bônus de atributo — ela dá traços,
           deslocamento e perícias. A sub-raça só aparece para as raças que têm.
@@ -116,20 +204,24 @@
         </div>
       </fieldset>
 
-      <fieldset class="etapa" id="etapa-5" disabled>
-        <legend>5. Atributos</legend>
+      <fieldset class="etapa" id="etapa-7" disabled>
+        <legend>7. Atributos</legend>
         <p class="explicacao">
-          Distribua os valores base dos seis atributos. Os bônus do antecedente
-          e o cálculo dos modificadores entram em seguida.
+          Digite os valores base dos seis atributos. O total já soma o bônus que
+          você escolheu na etapa 5, e o modificador é calculado sozinho.
         </p>
         <div class="coluna-atributos">
           <div class="atributo">
             <span class="atributo-nome">Força</span>
             <input type="number" id="forca" min="1" max="20" value="10" />
+            <span class="atributo-total" id="total-forca"></span>
+            <span class="atributo-mod" id="mod-forca"></span>
           </div>
           <div class="atributo">
             <span class="atributo-nome">Destreza</span>
             <input type="number" id="destreza" min="1" max="20" value="10" />
+            <span class="atributo-total" id="total-destreza"></span>
+            <span class="atributo-mod" id="mod-destreza"></span>
           </div>
           <div class="atributo">
             <span class="atributo-nome">Constituição</span>
@@ -140,6 +232,8 @@
               max="20"
               value="10"
             />
+            <span class="atributo-total" id="total-constituicao"></span>
+            <span class="atributo-mod" id="mod-constituicao"></span>
           </div>
           <div class="atributo">
             <span class="atributo-nome">Inteligência</span>
@@ -150,37 +244,30 @@
               max="20"
               value="10"
             />
+            <span class="atributo-total" id="total-inteligencia"></span>
+            <span class="atributo-mod" id="mod-inteligencia"></span>
           </div>
           <div class="atributo">
             <span class="atributo-nome">Sabedoria</span>
             <input type="number" id="sabedoria" min="1" max="20" value="10" />
+            <span class="atributo-total" id="total-sabedoria"></span>
+            <span class="atributo-mod" id="mod-sabedoria"></span>
           </div>
           <div class="atributo">
             <span class="atributo-nome">Carisma</span>
             <input type="number" id="carisma" min="1" max="20" value="10" />
+            <span class="atributo-total" id="total-carisma"></span>
+            <span class="atributo-mod" id="mod-carisma"></span>
           </div>
         </div>
       </fieldset>
 
-      <fieldset class="etapa" id="etapa-6" disabled>
-        <legend>6. Detalhes</legend>
+      <fieldset class="etapa" id="etapa-8" disabled>
+        <legend>8. Detalhes</legend>
         <p class="explicacao">
           Últimos ajustes antes de fechar a ficha.
         </p>
         <div class="linha-campos">
-          <div class="campo">
-            <input
-              type="number"
-              id="nivel"
-              name="nivel"
-              min="1"
-              max="20"
-              value="1"
-              required
-            />
-            <span class="rotulo">Nível</span>
-          </div>
-
           <div class="campo">
             <select id="alinhamento" name="alinhamento" required>
               <option value="">Selecione...</option>
@@ -199,14 +286,13 @@
         </div>
       </fieldset>
 
-      <div class="navegacao">
-        <button type="button" id="btn-voltar">← Voltar</button>
+      <footer class="barra-navegacao">
         <button type="button" id="btn-proximo">Próximo →</button>
-      </div>
-
-      <button type="submit" id="btn-salvar">Salvar Personagem</button>
+        <button type="submit" id="btn-salvar" disabled>Salvar Personagem</button>
+      </footer>
     </form>
 
+    <script src="regras.js"></script>
     <script src="cadastro.js"></script>
   </body>
 </html>
