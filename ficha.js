@@ -8,8 +8,7 @@ const mensagemErroEl = document.getElementById("mensagem-erro")
 // nivelEL e classeEL vem de ficha-comum.js
 const subclasseEL = document.getElementById("subclasse")
 const blocoSubclasseEL = document.getElementById("bloco-subclasse")
-const racaEL = document.getElementById("raca")
-const subracaEL = document.getElementById("subraca")
+// racaEL e subracaEL vem de ficha-comum.js
 
 // Descobre qual personagem abrir pelo "?id=" da URL
 const parametros = new URLSearchParams(window.location.search)
@@ -26,6 +25,9 @@ const personagem = personagens.find(function (item) {
 function atualizarSubracas(valorSelecionado) {
     const subracasLista = subracasPorRaca[racaEL.value] || []
     preencherSelect(subracaEL, subracasLista, valorSelecionado)
+
+    // a sub-raca acabou de mudar de valor; deslocamento e traços dependem dela
+    atualizarRaca()
 }
 
 racaEL.addEventListener("change", function () {
@@ -62,6 +64,259 @@ classeEL.addEventListener("change", function () {
     atualizarSubclasse("")
 })
 
+/* ---------- RF23, RF42 a RF44: descanso ---------- */
+
+const pvAtualEL = document.getElementById("pv-atual")
+const pvTemporarioEL = document.getElementById("pv-temporario")
+const painelDescansoEL = document.getElementById("painel-descanso")
+const tituloDescansoEL = document.getElementById("titulo-descanso")
+const resultadoDescansoEL = document.getElementById("resultado-descanso")
+const pendenciasDescansoEL = document.getElementById("pendencias-descanso")
+const acaoDadosVidaEL = document.getElementById("acao-dados-vida")
+const acaoDescansoLongoEL = document.getElementById("acao-descanso-longo")
+const dadosDisponiveisEL = document.getElementById("dados-disponiveis")
+const btnGastarDadoEL = document.getElementById("btn-gastar-dado")
+
+// quantos dados de vida ja foram gastos desde o ultimo descanso longo
+let dadosVidaGastos = 0
+
+function dadosVidaTotais() {
+    return Number(nivelEL.value)
+}
+
+function dadosVidaDisponiveis() {
+    return dadosVidaTotais() - dadosVidaGastos
+}
+
+function definirPvAtual(valor) {
+    const maximo = calcularPvMaximo()
+    // nunca passa do maximo nem fica negativo
+    pvAtualEL.value = Math.min(maximo, Math.max(0, valor))
+
+    // mexer nos PV liga ou desliga os testes de morte
+    atualizarTestesDeMorte()
+}
+
+function atualizarDadosDeVida() {
+    dadosDisponiveisEL.textContent =
+        `${dadosVidaDisponiveis()} de ${dadosVidaTotais()} disponíveis`
+
+    btnGastarDadoEL.disabled = dadosVidaDisponiveis() <= 0
+}
+
+// RF23: gastar um dado de vida recupera 1 dado + modificador de Constituição
+function gastarDadoDeVida() {
+    if (dadosVidaDisponiveis() <= 0) {
+        return
+    }
+
+    const dado = dadoDeVidaPorClasse[classeEL.value]
+    const modificador = calcularAtributos().modificadores.constituicao
+    const rolagem = rolarDado(dado)
+
+    // uma Constituição negativa nunca tira PV de quem está descansando
+    const recuperado = Math.max(0, rolagem + modificador)
+
+    dadosVidaGastos++
+    definirPvAtual(Number(pvAtualEL.value) + recuperado)
+    atualizarDadosDeVida()
+
+    resultadoDescansoEL.textContent =
+        `Rolou ${rolagem} no d${dado} ${formatarModificador(modificador)} = ${recuperado} PV recuperados.`
+}
+
+// RF23: descanso longo devolve tudo e metade dos dados de vida
+function concluirDescansoLongo() {
+    const devolvidos = dadosRecuperadosEmDescansoLongo(dadosVidaTotais())
+
+    definirPvAtual(calcularPvMaximo())
+    pvTemporarioEL.value = 0
+    dadosVidaGastos = Math.max(0, dadosVidaGastos - devolvidos)
+
+    atualizarDadosDeVida()
+
+    resultadoDescansoEL.textContent =
+        `PV no máximo, temporários zerados e ${devolvidos} dado(s) de vida recuperado(s).`
+}
+
+// RF42, RF43: o modo destaca o que dá pra fazer naquele descanso
+function entrarNoDescanso(tipo) {
+    painelDescansoEL.hidden = false
+    resultadoDescansoEL.textContent = ""
+
+    const curto = tipo === "curto"
+
+    tituloDescansoEL.textContent = curto
+        ? "Modo Descanso Curto — 1 hora"
+        : "Modo Descanso Longo — 8 horas"
+
+    acaoDadosVidaEL.hidden = !curto
+    acaoDescansoLongoEL.hidden = curto
+
+    // o que ainda não existe no app, mas o jogador precisa lembrar na mesa
+    const pendencias = []
+
+    if (curto) {
+        if (recuperaMagiaEmDescansoCurto(classeEL.value)) {
+            pendencias.push("Bruxo recupera os espaços de magia (entra no Sprint 5).")
+        }
+        pendencias.push("Recursos de classe que voltam em descanso curto (Sprint 6).")
+    } else {
+        pendencias.push("Espaços de magia voltam ao total (Sprint 5).")
+        pendencias.push("Troca de magias preparadas (Sprint 5).")
+        pendencias.push("Recursos de classe são zerados (Sprint 6).")
+    }
+
+    preencherLista(pendenciasDescansoEL, pendencias, "")
+    atualizarDadosDeVida()
+}
+
+// RF44: fora do modo, a ficha funciona normalmente
+function sairDoDescanso() {
+    painelDescansoEL.hidden = true
+    resultadoDescansoEL.textContent = ""
+}
+
+document
+    .getElementById("btn-descanso-curto")
+    .addEventListener("click", function () {
+        entrarNoDescanso("curto")
+    })
+
+document
+    .getElementById("btn-descanso-longo")
+    .addEventListener("click", function () {
+        entrarNoDescanso("longo")
+    })
+
+btnGastarDadoEL.addEventListener("click", gastarDadoDeVida)
+
+document
+    .getElementById("btn-concluir-longo")
+    .addEventListener("click", concluirDescansoLongo)
+
+document
+    .getElementById("btn-sair-descanso")
+    .addEventListener("click", sairDoDescanso)
+
+// subir de nível muda o total de dados de vida
+nivelEL.addEventListener("input", atualizarDadosDeVida)
+
+/* ---------- RF24: testes de morte ---------- */
+
+const blocoMortesEL = document.getElementById("bloco-mortes")
+const sucessosMorteEL = document.getElementById("sucessos-morte")
+const falhasMorteEL = document.getElementById("falhas-morte")
+const statusMorteEL = document.getElementById("status-morte")
+const btnRolarMorteEL = document.getElementById("btn-rolar-morte")
+
+let sucessosMorte = 0
+let falhasMorte = 0
+
+function estaCaido() {
+    return Number(pvAtualEL.value) === 0
+}
+
+// monta os tres circulos de uma linha; clicar marca ou desmarca
+function montarCirculos(containerEL, marcados, aoClicar) {
+    containerEL.innerHTML = ""
+
+    for (let posicao = 1; posicao <= TESTES_DE_MORTE; posicao++) {
+        const circulo = document.createElement("button")
+        circulo.type = "button"
+        circulo.className = "morte-circulo"
+        circulo.disabled = !estaCaido()
+
+        if (posicao <= marcados) {
+            circulo.classList.add("morte-circulo-cheio")
+        }
+
+        // clicar no que ja esta marcado desmarca ate ali
+        circulo.addEventListener("click", function () {
+            aoClicar(posicao === marcados ? posicao - 1 : posicao)
+        })
+
+        containerEL.appendChild(circulo)
+    }
+}
+
+function atualizarTestesDeMorte() {
+    const caido = estaCaido()
+
+    // fora do estado de 0 PV os testes nem existem
+    if (!caido) {
+        sucessosMorte = 0
+        falhasMorte = 0
+    }
+
+    blocoMortesEL.classList.toggle("bloco-vazio", !caido)
+    btnRolarMorteEL.disabled = !caido
+
+    montarCirculos(sucessosMorteEL, sucessosMorte, function (novo) {
+        sucessosMorte = novo
+        atualizarTestesDeMorte()
+    })
+
+    montarCirculos(falhasMorteEL, falhasMorte, function (novo) {
+        falhasMorte = novo
+        atualizarTestesDeMorte()
+    })
+
+    if (!caido) {
+        statusMorteEL.textContent = "Só entra em jogo com 0 PV."
+        statusMorteEL.className = "morte-status"
+        return
+    }
+
+    if (sucessosMorte >= TESTES_DE_MORTE) {
+        statusMorteEL.textContent = "Estabilizado."
+        statusMorteEL.className = "morte-status status-ok"
+        return
+    }
+
+    if (falhasMorte >= TESTES_DE_MORTE) {
+        statusMorteEL.textContent = "Morreu."
+        statusMorteEL.className = "morte-status status-erro"
+        return
+    }
+
+    statusMorteEL.textContent = "Role no início de cada turno."
+    statusMorteEL.className = "morte-status"
+}
+
+function rolarTesteDeMorte() {
+    if (!estaCaido()) {
+        return
+    }
+
+    const rolagem = rolarDado(20)
+    const resultado = resultadoTesteDeMorte(rolagem)
+
+    if (resultado.tipo === "revive") {
+        // 20 natural: volta com 1 PV e os testes somem junto
+        definirPvAtual(1)
+        atualizarTestesDeMorte()
+        statusMorteEL.textContent = "20 natural: voltou com 1 PV."
+        statusMorteEL.className = "morte-status status-ok"
+        return
+    }
+
+    sucessosMorte = Math.min(TESTES_DE_MORTE, sucessosMorte + resultado.sucessos)
+    falhasMorte = Math.min(TESTES_DE_MORTE, falhasMorte + resultado.falhas)
+
+    atualizarTestesDeMorte()
+
+    const descricao = resultado.tipo === "sucesso" ? "sucesso" : "falha"
+    const dobrada = rolagem === 1 ? " (1 natural conta duas)" : ""
+
+    statusMorteEL.textContent = `Rolou ${rolagem}: ${descricao}${dobrada}.`
+}
+
+btnRolarMorteEL.addEventListener("click", rolarTesteDeMorte)
+
+// o bloco só vale a 0 PV, então acompanha qualquer mudança nos PV atuais
+pvAtualEL.addEventListener("input", atualizarTestesDeMorte)
+
 /* ---------- Carregar e salvar ---------- */
 
 if (!personagem) {
@@ -94,8 +349,22 @@ if (!personagem) {
     // renderizarPericias roda dentro de escreverPericias
     escreverPericias(personagem.pericias)
 
-    // ficha-comum.js montou as salvaguardas antes da classe ser preenchida aqui
-    atualizarSalvaguardas()
+    // ficha-comum.js montou tudo antes da classe e da raça serem preenchidas aqui
+    recalcularDerivados()
+
+    // o PV atual é do jogador, então vem do que foi salvo em vez de recalculado
+    if (personagem.pvAtual !== undefined) {
+        document.getElementById("pv-atual").value = personagem.pvAtual
+    }
+
+    document.getElementById("pv-temporario").value = personagem.pvTemporario || 0
+
+    dadosVidaGastos = personagem.dadosVidaGastos || 0
+    atualizarDadosDeVida()
+
+    sucessosMorte = personagem.sucessosMorte || 0
+    falhasMorte = personagem.falhasMorte || 0
+    atualizarTestesDeMorte()
 
     formFicha.addEventListener("submit", function (evento) {
         evento.preventDefault()
@@ -133,6 +402,20 @@ if (!personagem) {
         personagem.bonusProficiencia = bonusDeProficiencia(personagem.nivel)
         // derivado da classe, mas salvo pra ficha poder ser lida sem recalcular
         personagem.salvaguardas = salvaguardasDaClasse(personagem.classe)
+
+        const dadosRaca = dadosDaRaca(personagem.raca, personagem.subraca)
+        personagem.deslocamento = dadosRaca ? dadosRaca.deslocamento : null
+        personagem.tracos = dadosRaca ? dadosRaca.tracos : []
+        personagem.idiomas = dadosRaca ? dadosRaca.idiomas : []
+
+        personagem.pvMaximo = calcularPvMaximo()
+        personagem.pvAtual = Number(document.getElementById("pv-atual").value)
+        personagem.pvTemporario = Number(
+            document.getElementById("pv-temporario").value
+        )
+        personagem.dadosVidaGastos = dadosVidaGastos
+        personagem.sucessosMorte = sucessosMorte
+        personagem.falhasMorte = falhasMorte
 
         localStorage.setItem("fichas", JSON.stringify(personagens))
 

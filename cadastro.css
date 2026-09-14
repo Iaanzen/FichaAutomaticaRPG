@@ -37,7 +37,9 @@ body {
     padding: 25px;
     border: 2px solid var(--tinta);
     border-radius: 6px;
-    box-shadow: 0 15px 40px rgba(0,0,0,0.8), inset 0 0 60px rgba(139,69,19,0.15);
+    /* a sombra interna de 60px de desfoque era repintada a cada mudança, e a
+       ficha ficou alta demais pra isso sair barato */
+    box-shadow: 0 10px 30px rgba(0,0,0,0.7);
 }
 
 /* ---------- Cabeçalho ---------- */
@@ -98,7 +100,9 @@ input, select {
     border: 1px solid var(--borda-fina);
     border-bottom: 2px solid var(--tinta);
     border-radius: 4px 4px 0 0;
-    transition: all 0.2s ease;
+    /* só as duas cores que mudam no foco; "all" faria o navegador vigiar
+       todas as propriedades de cada um dos ~40 campos da ficha */
+    transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
 input:focus, select:focus {
@@ -397,6 +401,244 @@ body {
 
 .status-ok { color: #2f6b32; }
 .status-erro { color: var(--sangue-dragao); }
+
+/* ---------- Pontos de vida ---------- */
+.linha-pv {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 10px;
+}
+
+.campo-pv {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.campo-pv input {
+    text-align: center;
+    font-family: 'Cinzel', serif;
+    font-size: 1.4rem;
+    font-weight: 700;
+}
+
+.pv-separador {
+    font-family: 'Cinzel', serif;
+    font-size: 1.6rem;
+    font-weight: 700;
+    padding-top: 4px;
+}
+
+.bloco-dado-vida {
+    flex: 1;
+    padding: 6px;
+    border: 2px solid var(--tinta);
+    border-radius: 8px;
+    background: rgba(255,255,255,0.3);
+}
+
+.bloco-mortes {
+    flex: 1;
+    padding: 8px;
+    border: 2px solid var(--tinta);
+    border-radius: 8px;
+    background: rgba(255,255,255,0.3);
+}
+
+/* sem estar a 0 PV o bloco fica apagado, mas continua legível */
+.bloco-mortes.bloco-vazio {
+    border-style: dashed;
+    border-color: var(--pergaminho-sombra);
+    background: rgba(255,255,255,0.12);
+}
+
+.linha-morte {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 5px;
+}
+
+.morte-rotulo {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #6a4f3a;
+}
+
+.morte-circulos {
+    display: flex;
+    gap: 5px;
+}
+
+.morte-circulo {
+    width: 14px;
+    height: 14px;
+    padding: 0;
+    background: none;
+    border: 2px solid var(--tinta);
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.morte-circulo-cheio { background-color: var(--tinta); }
+
+.morte-circulo:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+#btn-rolar-morte {
+    width: 100%;
+    margin-top: 6px;
+    padding: 5px;
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
+    font-size: 0.78rem;
+    color: var(--tinta);
+    background-color: rgba(255,255,255,0.5);
+    border: 2px solid var(--tinta);
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+#btn-rolar-morte:hover:not(:disabled) { background-color: var(--ouro); }
+
+#btn-rolar-morte:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.morte-status {
+    margin: 6px 0 0;
+    min-height: 1.1em;
+    font-size: 0.75rem;
+    font-style: italic;
+    text-align: center;
+}
+
+/* ---------- Descanso ---------- */
+.dados-restantes {
+    display: block;
+    margin-top: 4px;
+    font-size: 0.72rem;
+    color: #6a4f3a;
+}
+
+.linha-descanso {
+    display: flex;
+    gap: 10px;
+}
+
+.linha-descanso button,
+.acao-descanso button,
+#btn-sair-descanso {
+    flex: 1;
+    padding: 8px;
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--tinta);
+    background-color: rgba(255,255,255,0.5);
+    border: 2px solid var(--tinta);
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.linha-descanso button:hover,
+.acao-descanso button:hover:not(:disabled) {
+    background-color: var(--ouro);
+}
+
+.acao-descanso button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* painel do modo descanso: destaca que a ficha está num estado diferente */
+#painel-descanso {
+    margin-top: 12px;
+    padding: 12px;
+    border: 2px solid var(--tinta);
+    border-radius: 8px;
+    background: rgba(212, 175, 55, 0.18);
+}
+
+.descanso-titulo {
+    margin: 0 0 10px;
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
+.acao-descanso { margin-bottom: 10px; }
+
+.acao-descanso button { width: 100%; }
+
+.descanso-ajuda {
+    margin: 5px 0 0;
+    font-size: 0.78rem;
+    font-style: italic;
+    color: #6a4f3a;
+}
+
+.descanso-resultado {
+    margin: 10px 0;
+    min-height: 1.2em;
+    font-weight: 700;
+    font-size: 0.85rem;
+}
+
+#btn-sair-descanso {
+    width: 100%;
+    margin-top: 4px;
+}
+
+/* ---------- Traços e idiomas (texto fixo da raça) ---------- */
+.lista-texto {
+    margin: 0;
+    padding-left: 18px;
+    text-align: left;
+    font-size: 0.82rem;
+    line-height: 1.45;
+}
+
+.lista-texto li { margin-bottom: 5px; }
+
+.lista-texto .item-vazio {
+    list-style: none;
+    margin-left: -18px;
+    font-style: italic;
+    color: #8a6f57;
+}
+
+/* Prévia da raça dentro do wizard */
+.previa-raca {
+    margin-top: 15px;
+    padding-top: 12px;
+    border-top: 1px solid var(--borda-fina);
+}
+
+.previa-rotulo {
+    display: block;
+    font-family: 'Cinzel', serif;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 10px 0 4px;
+}
+
+.previa-linha {
+    margin: 0;
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+}
+
+.previa-linha .previa-rotulo { margin: 0; }
 
 /* ---------- Salvaguardas ---------- */
 .lista-salvaguardas {

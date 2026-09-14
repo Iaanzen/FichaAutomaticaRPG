@@ -207,8 +207,7 @@ nivelEL.addEventListener("input", atualizarSubclasse)
 classeEL.addEventListener("change", atualizarSubclasse)
 atualizarSubclasse()
 
-const racaEL = document.getElementById("raca")
-const subracaEL = document.getElementById("subraca")
+// racaEL e subracaEL vem de ficha-comum.js
 
 racaEL.addEventListener("change", function() {
     const racaEscolha = racaEL.value
@@ -223,6 +222,8 @@ racaEL.addEventListener("change", function() {
         subracaEL.appendChild(opcao)
     })
 
+    // a sub-raca acabou de mudar de valor; a previa precisa ser refeita depois disso
+    atualizarRaca()
 })
 
 formFicha.addEventListener('submit', function (evento) {
@@ -244,6 +245,8 @@ formFicha.addEventListener('submit', function (evento) {
     const carisma = Number(document.getElementById("carisma").value)
 
     const calculo = calcularAtributos()
+    const dadosRaca = dadosDaRaca(raca, subraca)
+    const pvMaximo = pontosDeVida(classe, nivel, calculo.modificadores.constituicao)
 
     const listaFichas = {
         nome: nome,
@@ -266,8 +269,18 @@ formFicha.addEventListener('submit', function (evento) {
         modificadores: calculo.modificadores,
         pericias: lerPericias(),
         bonusProficiencia: bonusDeProficiencia(nivel),
-        // derivado da classe, mas salvo pra ficha poder ser lida sem recalcular
+        // derivados de classe e raça, mas salvos pra ficha ser lida sem recalcular
         salvaguardas: salvaguardasDaClasse(classe),
+        deslocamento: dadosRaca ? dadosRaca.deslocamento : null,
+        tracos: dadosRaca ? dadosRaca.tracos : [],
+        idiomas: dadosRaca ? dadosRaca.idiomas : [],
+        pvMaximo: pvMaximo,
+        // personagem novo comeca com a vida cheia
+        pvAtual: pvMaximo,
+        pvTemporario: 0,
+        dadosVidaGastos: 0,
+        sucessosMorte: 0,
+        falhasMorte: 0,
         id: Date.now()
     }
 

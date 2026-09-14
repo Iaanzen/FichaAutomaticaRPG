@@ -37,6 +37,154 @@ const subracasPorRaca = {
     ]
 };
 
+/* ---------- RF04, RF11, RF12: deslocamento, traços e idiomas da raça ---------- */
+
+// Deslocamento em metros. Tracos e idiomas sao texto fixo do livro.
+const dadosPorRaca = {
+    humano: {
+        deslocamento: 9,
+        idiomas: ["Comum", "Um idioma à sua escolha"],
+        tracos: [
+            "Versátil: aprende um idioma adicional além do Comum."
+        ]
+    },
+    anao: {
+        deslocamento: 7.5,
+        idiomas: ["Comum", "Anão"],
+        tracos: [
+            "Visão no Escuro: enxerga a até 18 metros na penumbra como se fosse luz plena.",
+            "Resiliência Anã: vantagem em salvaguardas contra veneno e resistência a dano de veneno.",
+            "Treinamento Anão em Combate: proficiência com machado de batalha, machadinha, martelo leve e martelo de guerra.",
+            "Especialização em Pedra: dobra a proficiência em testes de História sobre trabalhos em pedra."
+        ]
+    },
+    elfo: {
+        deslocamento: 9,
+        idiomas: ["Comum", "Élfico"],
+        tracos: [
+            "Visão no Escuro: enxerga a até 18 metros na penumbra como se fosse luz plena.",
+            "Sentidos Aguçados: proficiência em Percepção.",
+            "Ancestral Feérico: vantagem contra ser enfeitiçado e imunidade a sono mágico.",
+            "Transe: medita 4 horas em vez de dormir 8."
+        ]
+    },
+    halfling: {
+        deslocamento: 7.5,
+        idiomas: ["Comum", "Halfling"],
+        tracos: [
+            "Sortudo: pode rolar de novo um 1 natural no d20 de ataque, teste ou salvaguarda.",
+            "Bravura: vantagem em salvaguardas contra ficar amedrontado.",
+            "Agilidade Halfling: move-se pelo espaço de criaturas de tamanho maior que o seu."
+        ]
+    },
+    draconato: {
+        deslocamento: 9,
+        idiomas: ["Comum", "Dracônico"],
+        tracos: [
+            "Ancestralidade Dracônica: escolha um tipo de dragão, que define seu sopro e sua resistência.",
+            "Arma de Sopro: ataque em área com o tipo de dano do seu ancestral.",
+            "Resistência a Dano: resistência ao tipo de dano do seu ancestral."
+        ]
+    },
+    gnomo: {
+        deslocamento: 7.5,
+        idiomas: ["Comum", "Gnômico"],
+        tracos: [
+            "Visão no Escuro: enxerga a até 18 metros na penumbra como se fosse luz plena.",
+            "Astúcia Gnômica: vantagem em salvaguardas de Inteligência, Sabedoria e Carisma contra magia."
+        ]
+    },
+    "meio-elfo": {
+        deslocamento: 9,
+        idiomas: ["Comum", "Élfico", "Um idioma à sua escolha"],
+        tracos: [
+            "Visão no Escuro: enxerga a até 18 metros na penumbra como se fosse luz plena.",
+            "Ancestral Feérico: vantagem contra ser enfeitiçado e imunidade a sono mágico.",
+            "Versatilidade em Perícias: proficiência em duas perícias à sua escolha."
+        ]
+    },
+    "meio-orc": {
+        deslocamento: 9,
+        idiomas: ["Comum", "Orc"],
+        tracos: [
+            "Visão no Escuro: enxerga a até 18 metros na penumbra como se fosse luz plena.",
+            "Ameaçador: proficiência em Intimidação.",
+            "Aguentar Firme: ao cair a 0 pontos de vida, fica com 1 em vez disso (uma vez por descanso longo).",
+            "Ataques Selvagens: rola um dado de dano extra em acertos críticos com arma corpo a corpo."
+        ]
+    },
+    tiefling: {
+        deslocamento: 9,
+        idiomas: ["Comum", "Infernal"],
+        tracos: [
+            "Visão no Escuro: enxerga a até 18 metros na penumbra como se fosse luz plena.",
+            "Resistência Infernal: resistência a dano de fogo.",
+            "Legado Infernal: conhece o truque Taumaturgia e ganha magias conforme sobe de nível."
+        ]
+    }
+}
+
+// O que a sub-raca acrescenta. Deslocamento aqui substitui o da raca.
+const dadosPorSubRaca = {
+    anaoColina: {
+        tracos: ["Tenacidade Anã: +1 ponto de vida por nível."]
+    },
+    anaoMontanha: {
+        tracos: ["Treinamento com Armaduras Anãs: proficiência com armaduras leves e médias."]
+    },
+    elfoAlto: {
+        idiomas: ["Um idioma à sua escolha"],
+        tracos: ["Truque Adicional: conhece um truque da lista do Mago, usando Inteligência."]
+    },
+    elfoFloresta: {
+        deslocamento: 10.5,
+        tracos: ["Máscara da Natureza: pode se esconder mesmo levemente encoberto por folhagem ou chuva."]
+    },
+    elfoNegro: {
+        tracos: [
+            "Visão no Escuro Superior: enxerga a até 36 metros na penumbra.",
+            "Sensibilidade à Luz Solar: desvantagem sob luz solar direta.",
+            "Magia Drow: conhece o truque Luzes Dançantes e ganha magias conforme sobe de nível."
+        ]
+    },
+    halflingPesLeves: {
+        tracos: ["Furtividade Natural: pode se esconder atrás de criaturas de tamanho maior que o seu."]
+    },
+    halflingRobusto: {
+        tracos: ["Resiliência Robusta: vantagem em salvaguardas contra veneno e resistência a dano de veneno."]
+    },
+    gnomoFloresta: {
+        tracos: [
+            "Ilusionista Nato: conhece o truque Ilusão Menor, usando Inteligência.",
+            "Falar com Pequenos Animais: comunica ideias simples a animais Pequenos ou menores."
+        ]
+    },
+    gnomoRocha: {
+        tracos: [
+            "Conhecimento de Artífice: bônus dobrado em testes de História sobre itens mágicos e tecnológicos.",
+            "Brinquedista: proficiência com ferramentas de funileiro."
+        ]
+    }
+}
+
+// junta o que vem da raca com o que a sub-raca acrescenta
+function dadosDaRaca(raca, subraca) {
+    const base = dadosPorRaca[raca]
+
+    if (!base) {
+        return null
+    }
+
+    const extra = dadosPorSubRaca[subraca] || {}
+
+    return {
+        // a sub-raca so muda o deslocamento quando ela traz um proprio
+        deslocamento: extra.deslocamento || base.deslocamento,
+        tracos: base.tracos.concat(extra.tracos || []),
+        idiomas: base.idiomas.concat(extra.idiomas || [])
+    }
+}
+
 // mesma estrutura de subracasPorRaca: chave = valor do select de classe
 const subclassesPorClasse = {
     barbaro: [
@@ -193,6 +341,83 @@ const NOME_ATRIBUTO = {
     inteligencia: "Inteligência",
     sabedoria: "Sabedoria",
     carisma: "Carisma"
+}
+
+/* ---------- RF21, RF22: pontos de vida ---------- */
+
+// dado de vida de cada classe
+const dadoDeVidaPorClasse = {
+    barbaro: 12,
+    bardo: 8,
+    bruxo: 8,
+    clerigo: 8,
+    druida: 8,
+    feiticeiro: 6,
+    guerreiro: 10,
+    ladino: 8,
+    mago: 6,
+    monge: 8,
+    paladino: 10,
+    patrulheiro: 10
+}
+
+// media do dado arredondada para cima: d6 = 4, d8 = 5, d10 = 6, d12 = 7
+function mediaDoDado(dado) {
+    return Math.floor(dado / 2) + 1
+}
+
+// Nivel 1 leva o dado cheio; os seguintes levam a media.
+// O modificador de Constituicao entra em todos os niveis.
+function pontosDeVida(classe, nivel, modificadorConstituicao) {
+    const dado = dadoDeVidaPorClasse[classe]
+
+    if (!dado || nivel < 1) {
+        return null
+    }
+
+    const primeiroNivel = dado + modificadorConstituicao
+    const demaisNiveis = (nivel - 1) * (mediaDoDado(dado) + modificadorConstituicao)
+
+    // um personagem nunca fica abaixo de 1 PV por causa de Constituicao baixa
+    return Math.max(1, primeiroNivel + demaisNiveis)
+}
+
+/* ---------- RF23: descanso ---------- */
+
+function rolarDado(lados) {
+    return Math.floor(Math.random() * lados) + 1
+}
+
+// no descanso longo volta metade dos dados de vida totais, no minimo 1
+function dadosRecuperadosEmDescansoLongo(nivel) {
+    return Math.max(1, Math.floor(nivel / 2))
+}
+
+// Bruxo e a excecao: recupera espacos de magia em descanso curto (RF27).
+// Ainda nao ha magias no app, mas o modo de descanso ja avisa o jogador.
+function recuperaMagiaEmDescansoCurto(classe) {
+    return classe === "bruxo"
+}
+
+/* ---------- RF24: testes de morte ---------- */
+
+const TESTES_DE_MORTE = 3
+
+// 10 ou mais e sucesso; 20 natural volta com 1 PV; 1 natural conta duas falhas
+function resultadoTesteDeMorte(rolagem) {
+    if (rolagem === 20) {
+        return { tipo: "revive", sucessos: 0, falhas: 0 }
+    }
+
+    if (rolagem === 1) {
+        return { tipo: "falha", sucessos: 0, falhas: 2 }
+    }
+
+    if (rolagem >= 10) {
+        return { tipo: "sucesso", sucessos: 1, falhas: 0 }
+    }
+
+    return { tipo: "falha", sucessos: 0, falhas: 1 }
 }
 
 /* ---------- RF19: salvaguardas ---------- */

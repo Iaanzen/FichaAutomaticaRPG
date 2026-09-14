@@ -251,9 +251,9 @@
             <span class="rotulo">Sabedoria Passiva (Percepção)</span>
           </div>
 
-          <div class="bloco-ficha bloco-vazio">
+          <div class="bloco-ficha">
             <span class="rotulo-bloco">Outras Proficiências e Idiomas</span>
-            <p class="vazio-texto">Entra com raça e antecedente (RF04).</p>
+            <ul class="lista-texto" id="lista-idiomas"></ul>
           </div>
         </div>
 
@@ -268,20 +268,100 @@
               <span class="valor-destaque">—</span>
               <span class="rotulo">Iniciativa</span>
             </div>
-            <div class="bloco-ficha bloco-vazio bloco-combate">
-              <span class="valor-destaque">—</span>
+            <div class="bloco-ficha bloco-combate">
+              <span class="valor-destaque" id="valor-deslocamento"></span>
               <span class="rotulo">Deslocamento</span>
             </div>
           </div>
 
-          <div class="bloco-ficha bloco-vazio">
+          <div class="bloco-ficha">
             <span class="rotulo-bloco">Pontos de Vida</span>
-            <p class="vazio-texto">Entra no Sprint 3 (RF21 a RF24).</p>
+            <div class="linha-pv">
+              <div class="campo-pv">
+                <input type="number" id="pv-atual" min="0" />
+                <span class="rotulo">Atuais</span>
+              </div>
+              <span class="pv-separador">/</span>
+              <div class="campo-pv">
+                <span class="valor-destaque" id="valor-pv-maximo"></span>
+                <span class="rotulo">Máximo</span>
+              </div>
+              <div class="campo-pv">
+                <input type="number" id="pv-temporario" min="0" value="0" />
+                <span class="rotulo">Temporários</span>
+              </div>
+            </div>
           </div>
 
-          <div class="bloco-ficha bloco-vazio">
-            <span class="rotulo-bloco">Dados de Vida e Testes de Morte</span>
-            <p class="vazio-texto">Entra no Sprint 3.</p>
+          <div class="bloco-ficha">
+            <div class="linha-combate">
+              <div class="bloco-dado-vida">
+                <span class="valor-destaque" id="valor-dado-vida"></span>
+                <span class="rotulo">Dados de Vida</span>
+                <span class="dados-restantes" id="dados-disponiveis"></span>
+              </div>
+              <div class="bloco-mortes" id="bloco-mortes">
+                <span class="rotulo-bloco">Testes de Morte</span>
+
+                <div class="linha-morte">
+                  <span class="morte-rotulo">Sucessos</span>
+                  <div class="morte-circulos" id="sucessos-morte"></div>
+                </div>
+
+                <div class="linha-morte">
+                  <span class="morte-rotulo">Falhas</span>
+                  <div class="morte-circulos" id="falhas-morte"></div>
+                </div>
+
+                <button type="button" id="btn-rolar-morte">Rolar teste</button>
+                <p class="morte-status" id="status-morte"></p>
+              </div>
+            </div>
+          </div>
+
+          <div class="bloco-ficha" id="bloco-descanso">
+            <span class="rotulo-bloco">Descanso</span>
+
+            <div class="linha-descanso" id="botoes-descanso">
+              <button type="button" id="btn-descanso-curto">
+                Descanso Curto
+              </button>
+              <button type="button" id="btn-descanso-longo">
+                Descanso Longo
+              </button>
+            </div>
+
+            <div id="painel-descanso" hidden>
+              <p class="descanso-titulo" id="titulo-descanso"></p>
+
+              <div class="acao-descanso" id="acao-dados-vida">
+                <button type="button" id="btn-gastar-dado">
+                  Gastar dado de vida
+                </button>
+                <p class="descanso-ajuda">
+                  Rola o dado de vida e soma o modificador de Constituição aos
+                  PV atuais.
+                </p>
+              </div>
+
+              <div class="acao-descanso" id="acao-descanso-longo">
+                <button type="button" id="btn-concluir-longo">
+                  Concluir descanso longo
+                </button>
+                <p class="descanso-ajuda">
+                  Recupera todos os PV, zera os temporários e devolve metade dos
+                  dados de vida.
+                </p>
+              </div>
+
+              <ul class="lista-texto" id="pendencias-descanso"></ul>
+
+              <p class="descanso-resultado" id="resultado-descanso"></p>
+
+              <button type="button" id="btn-sair-descanso">
+                Sair do modo descanso
+              </button>
+            </div>
           </div>
 
           <div class="bloco-ficha bloco-vazio bloco-alto">
@@ -317,9 +397,12 @@
             <p class="vazio-texto">Entra com o RF03.</p>
           </div>
 
-          <div class="bloco-ficha bloco-vazio bloco-alto">
+          <div class="bloco-ficha bloco-alto">
             <span class="rotulo-bloco">Características e Traços</span>
-            <p class="vazio-texto">Entra com raça e classe (RF11, RF13).</p>
+            <ul class="lista-texto" id="lista-tracos"></ul>
+            <p class="vazio-texto">
+              As habilidades de classe por nível entram no RF13.
+            </p>
           </div>
         </div>
       </div>

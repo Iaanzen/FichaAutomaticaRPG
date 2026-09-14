@@ -8,6 +8,8 @@ const statusBonusEL = document.getElementById("status-bonus")
 const listaPericiasEL = document.getElementById("lista-pericias")
 const statusPericiasEL = document.getElementById("status-pericias")
 const listaSalvaguardasEL = document.getElementById("lista-salvaguardas")
+const racaEL = document.getElementById("raca")
+const subracaEL = document.getElementById("subraca")
 
 /* ---------- Bonus do antecedente ---------- */
 
@@ -104,6 +106,98 @@ function atualizarProficiencia() {
 
     proficienciaEL.textContent =
         formatarModificador(bonusDeProficiencia(Number(nivelEL.value)))
+}
+
+/* ---------- RF04, RF11, RF12: o que a raça concede ---------- */
+
+// preenche um <ul> com uma lista de textos fixos
+function preencherLista(listaEL, itens, textoVazio) {
+    listaEL.innerHTML = ""
+
+    if (itens.length === 0) {
+        const vazio = document.createElement("li")
+        vazio.className = "item-vazio"
+        vazio.textContent = textoVazio
+        listaEL.appendChild(vazio)
+        return
+    }
+
+    itens.forEach(function(texto) {
+        const item = document.createElement("li")
+        item.textContent = texto
+        listaEL.appendChild(item)
+    })
+}
+
+// deslocamento, tracos e idiomas saem da tabela; nada aqui e escolhido
+function atualizarRaca() {
+    const dados = dadosDaRaca(racaEL.value, subracaEL.value)
+
+    const deslocamentoEL = document.getElementById("valor-deslocamento")
+    const tracosEL = document.getElementById("lista-tracos")
+    const idiomasEL = document.getElementById("lista-idiomas")
+
+    if (deslocamentoEL !== null) {
+        deslocamentoEL.textContent = dados ? `${dados.deslocamento} m` : "—"
+    }
+
+    if (tracosEL !== null) {
+        preencherLista(
+            tracosEL,
+            dados ? dados.tracos : [],
+            "Escolha uma raça para ver os traços."
+        )
+    }
+
+    if (idiomasEL !== null) {
+        preencherLista(
+            idiomasEL,
+            dados ? dados.idiomas : [],
+            "Escolha uma raça para ver os idiomas."
+        )
+    }
+}
+
+/* ---------- RF21, RF22: pontos de vida ---------- */
+
+// o maximo e calculado; o PV atual e do jogador e so ele mexe
+function calcularPvMaximo() {
+    const calculo = calcularAtributos()
+
+    return pontosDeVida(
+        classeEL.value,
+        Number(nivelEL.value),
+        calculo.modificadores.constituicao
+    )
+}
+
+function atualizarPontosDeVida() {
+    const pvMaximoEL = document.getElementById("valor-pv-maximo")
+
+    if (pvMaximoEL === null) {
+        return
+    }
+
+    const maximo = calcularPvMaximo()
+    pvMaximoEL.textContent = maximo === null ? "—" : maximo
+
+    const dadoEL = document.getElementById("valor-dado-vida")
+
+    if (dadoEL !== null) {
+        const dado = dadoDeVidaPorClasse[classeEL.value]
+        dadoEL.textContent = dado ? `${nivelEL.value}d${dado}` : "—"
+    }
+
+    const pvAtualEL = document.getElementById("pv-atual")
+
+    // PV atual nunca passa do maximo nem fica negativo
+    if (pvAtualEL !== null && maximo !== null) {
+        pvAtualEL.max = maximo
+
+        if (pvAtualEL.value === "" || Number(pvAtualEL.value) > maximo) {
+            pvAtualEL.value = maximo
+        }
+    }
 }
 
 /* ---------- RF19: salvaguardas ---------- */
@@ -304,40 +398,45 @@ function atualizarPericias() {
 
 /* ---------- Ligacoes ---------- */
 
+// Tudo que e derivado sai daqui. Bloco novo entra nesta funcao e passa a
+// reagir a qualquer mudanca, sem precisar ser ligado em cada evento.
+function recalcularDerivados() {
+    atualizarModificadores()
+    atualizarProficiencia()
+    atualizarPericias()
+    atualizarSalvaguardas()
+    atualizarPontosDeVida()
+}
+
+// atualizarRaca fica de fora: traços e idiomas só dependem de raça e sub-raça,
+// que têm listener próprio. Remontar essas listas a cada tecla era desperdício.
+
 ATRIBUTOS.forEach(function(atributo) {
     document
         .getElementById(`bonus-${atributo}`)
         .addEventListener("change", function() {
             mostrarStatusBonus()
             atualizarTravaBonus()
-            atualizarModificadores()
-            // o modificador entra no bonus da pericia e da salvaguarda
-            atualizarPericias()
-            atualizarSalvaguardas()
+            recalcularDerivados()
         })
 
-    document.getElementById(atributo).addEventListener("input", function() {
-        atualizarModificadores()
-        atualizarPericias()
-        atualizarSalvaguardas()
-    })
+    document
+        .getElementById(atributo)
+        .addEventListener("input", recalcularDerivados)
 })
 
-// o nivel muda o bonus de proficiencia
-nivelEL.addEventListener("input", function() {
-    atualizarProficiencia()
-    atualizarPericias()
-    atualizarSalvaguardas()
-})
+nivelEL.addEventListener("input", recalcularDerivados)
 
-// a classe muda a lista de pericias e as duas salvaguardas proficientes
+// a classe muda a lista inteira de pericias, entao remonta em vez de so recalcular
 classeEL.addEventListener("change", function() {
     renderizarPericias()
-    atualizarSalvaguardas()
+    recalcularDerivados()
 })
 
+racaEL.addEventListener("change", atualizarRaca)
+subracaEL.addEventListener("change", atualizarRaca)
+
 // estado inicial da tela; a ficha de edicao sobrescreve depois de carregar o personagem
-atualizarModificadores()
-atualizarProficiencia()
 renderizarPericias()
-atualizarSalvaguardas()
+recalcularDerivados()
+atualizarRaca()
