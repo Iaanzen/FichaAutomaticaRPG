@@ -1,11 +1,11 @@
-// As tabelas de regras e os calculos vivem em regras.js, compartilhado com o cadastro.
+// As tabelas de regras vivem em regras.js.
+// Bonus, modificadores e pericias vivem em ficha-comum.js.
+// Este arquivo cuida so de carregar e salvar um personagem existente.
 
 const formFicha = document.getElementById("form-ficha")
 const mensagemErroEl = document.getElementById("mensagem-erro")
-const statusBonusEL = document.getElementById("status-bonus")
 
-const nivelEL = document.getElementById("nivel")
-const classeEL = document.getElementById("classe")
+// nivelEL e classeEL vem de ficha-comum.js
 const subclasseEL = document.getElementById("subclasse")
 const blocoSubclasseEL = document.getElementById("bloco-subclasse")
 const racaEL = document.getElementById("raca")
@@ -62,97 +62,6 @@ classeEL.addEventListener("change", function () {
     atualizarSubclasse("")
 })
 
-/* ---------- Bônus do antecedente ---------- */
-
-function lerBonus() {
-    const bonus = {}
-
-    ATRIBUTOS.forEach(function (atributo) {
-        const selectEL = document.getElementById(`bonus-${atributo}`)
-        bonus[atributo] = Number(selectEL.value)
-    })
-
-    return bonus
-}
-
-function escreverBonus(bonusSalvo) {
-    const bonus = bonusSalvo || {}
-
-    ATRIBUTOS.forEach(function (atributo) {
-        const selectEL = document.getElementById(`bonus-${atributo}`)
-        selectEL.value = String(bonus[atributo] || 0)
-    })
-}
-
-function bonusValido() {
-    return distribuicaoBonusValida(lerBonus())
-}
-
-function mostrarStatusBonus() {
-    if (bonusValido()) {
-        statusBonusEL.textContent = "Distribuição válida."
-        statusBonusEL.className = "status-bonus status-ok"
-        return
-    }
-
-    statusBonusEL.textContent =
-        "Escolha +2 num atributo e +1 em outro, ou +1 em três atributos diferentes."
-    statusBonusEL.className = "status-bonus status-erro"
-}
-
-// com a distribuicao fechada, quem ficou sem bonus trava.
-// quem ja tem bonus continua liberado: eh por ali que o jogador desfaz a escolha.
-function atualizarTravaBonus() {
-    const bonus = lerBonus()
-    const distribuicaoFechada = bonusValido()
-
-    ATRIBUTOS.forEach(function (atributo) {
-        const selectEL = document.getElementById(`bonus-${atributo}`)
-        selectEL.disabled = distribuicaoFechada && bonus[atributo] === 0
-    })
-}
-
-/* ---------- RF07: modificadores ---------- */
-
-function calcularAtributos() {
-    const bonus = lerBonus()
-    const totais = {}
-    const modificadores = {}
-
-    ATRIBUTOS.forEach(function (atributo) {
-        const base = Number(document.getElementById(atributo).value)
-        totais[atributo] = base + bonus[atributo]
-        modificadores[atributo] = modificadorDe(totais[atributo])
-    })
-
-    return { totais: totais, modificadores: modificadores }
-}
-
-function atualizarModificadores() {
-    const calculo = calcularAtributos()
-
-    ATRIBUTOS.forEach(function (atributo) {
-        document.getElementById(`total-${atributo}`).textContent =
-            `Total ${calculo.totais[atributo]}`
-        document.getElementById(`mod-${atributo}`).textContent =
-            formatarModificador(calculo.modificadores[atributo])
-    })
-}
-
-ATRIBUTOS.forEach(function (atributo) {
-    document
-        .getElementById(atributo)
-        .addEventListener("input", atualizarModificadores)
-
-    document
-        .getElementById(`bonus-${atributo}`)
-        .addEventListener("change", function () {
-            mostrarStatusBonus()
-            atualizarTravaBonus()
-            atualizarModificadores()
-        })
-})
-
 /* ---------- Carregar e salvar ---------- */
 
 if (!personagem) {
@@ -180,12 +89,24 @@ if (!personagem) {
     mostrarStatusBonus()
     atualizarTravaBonus()
     atualizarModificadores()
+    atualizarProficiencia()
+
+    // renderizarPericias roda dentro de escreverPericias
+    escreverPericias(personagem.pericias)
+
+    // ficha-comum.js montou as salvaguardas antes da classe ser preenchida aqui
+    atualizarSalvaguardas()
 
     formFicha.addEventListener("submit", function (evento) {
         evento.preventDefault()
 
         if (!bonusValido()) {
             mostrarStatusBonus()
+            return
+        }
+
+        if (!periciasCompletas()) {
+            atualizarPericias()
             return
         }
 
@@ -208,6 +129,10 @@ if (!personagem) {
         personagem.bonusAntecedente = lerBonus()
         personagem.atributosTotais = calculo.totais
         personagem.modificadores = calculo.modificadores
+        personagem.pericias = lerPericias()
+        personagem.bonusProficiencia = bonusDeProficiencia(personagem.nivel)
+        // derivado da classe, mas salvo pra ficha poder ser lida sem recalcular
+        personagem.salvaguardas = salvaguardasDaClasse(personagem.classe)
 
         localStorage.setItem("fichas", JSON.stringify(personagens))
 

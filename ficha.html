@@ -14,6 +14,7 @@
     </p>
 
     <form id="form-ficha" class="ficha">
+      <!-- ---------- Cabeçalho: identidade ---------- -->
       <header class="ficha-cabecalho">
         <div class="bloco-nome">
           <input
@@ -25,17 +26,7 @@
           />
           <span class="rotulo">Nome do Personagem</span>
         </div>
-        <div class="campo">
-          <input
-            type="number"
-            id="nivel"
-            name="nivel"
-            min="1"
-            max="20"
-            required
-          />
-          <span class="rotulo">Nível</span>
-        </div>
+
         <div class="cabecalho-grade">
           <div class="campo">
             <select id="classe" name="classe" required>
@@ -56,11 +47,34 @@
             <span class="rotulo">Classe</span>
           </div>
 
+          <div class="campo">
+            <input
+              type="number"
+              id="nivel"
+              name="nivel"
+              min="1"
+              max="20"
+              required
+            />
+            <span class="rotulo">Nível</span>
+          </div>
+
           <div class="campo" id="bloco-subclasse" hidden>
             <select id="subclasse" name="subclasse">
               <option value="">Selecione...</option>
             </select>
             <span class="rotulo">Subclasse</span>
+          </div>
+
+          <div class="campo">
+            <input
+              type="text"
+              id="antecedente"
+              name="antecedente"
+              placeholder="Ex: Guarda da cidade"
+              required
+            />
+            <span class="rotulo">Antecedente</span>
           </div>
 
           <div class="campo">
@@ -87,17 +101,6 @@
           </div>
 
           <div class="campo">
-            <input
-              type="text"
-              id="antecedente"
-              name="antecedente"
-              placeholder="Ex: Guarda da cidade"
-              required
-            />
-            <span class="rotulo">Antecedente</span>
-          </div>
-
-          <div class="campo">
             <select id="alinhamento" name="alinhamento" required>
               <option value="">Selecione...</option>
               <option value="leal-e-bom">Leal e Bom</option>
@@ -112,139 +115,220 @@
             </select>
             <span class="rotulo">Alinhamento</span>
           </div>
+
+          <div class="campo bloco-vazio-mini">
+            <span class="vazio-texto">—</span>
+            <span class="rotulo">Pontos de Experiência</span>
+          </div>
         </div>
       </header>
 
       <div class="ficha-corpo">
-        <aside class="coluna-atributos">
-          <div class="atributo">
-            <span class="atributo-nome">Força</span>
-            <input type="number" id="forca" min="1" max="20" value="10" />
-            <span class="atributo-total" id="total-forca"></span>
-            <span class="atributo-mod" id="mod-forca"></span>
-          </div>
-          <div class="atributo">
-            <span class="atributo-nome">Destreza</span>
-            <input type="number" id="destreza" min="1" max="20" value="10" />
-            <span class="atributo-total" id="total-destreza"></span>
-            <span class="atributo-mod" id="mod-destreza"></span>
-          </div>
-          <div class="atributo">
-            <span class="atributo-nome">Constituição</span>
-            <input
-              type="number"
-              id="constituicao"
-              min="1"
-              max="20"
-              value="10"
-            />
-            <span class="atributo-total" id="total-constituicao"></span>
-            <span class="atributo-mod" id="mod-constituicao"></span>
-          </div>
-          <div class="atributo">
-            <span class="atributo-nome">Inteligência</span>
-            <input
-              type="number"
-              id="inteligencia"
-              min="1"
-              max="20"
-              value="10"
-            />
-            <span class="atributo-total" id="total-inteligencia"></span>
-            <span class="atributo-mod" id="mod-inteligencia"></span>
-          </div>
-          <div class="atributo">
-            <span class="atributo-nome">Sabedoria</span>
-            <input type="number" id="sabedoria" min="1" max="20" value="10" />
-            <span class="atributo-total" id="total-sabedoria"></span>
-            <span class="atributo-mod" id="mod-sabedoria"></span>
-          </div>
-          <div class="atributo">
-            <span class="atributo-nome">Carisma</span>
-            <input type="number" id="carisma" min="1" max="20" value="10" />
-            <span class="atributo-total" id="total-carisma"></span>
-            <span class="atributo-mod" id="mod-carisma"></span>
-          </div>
-        </aside>
-
-        <main class="coluna-central">
-          <fieldset class="etapa">
-            <legend>Bônus do Antecedente</legend>
-            <p class="explicacao">
-              +2 num atributo e +1 em outro, ou +1 em três atributos diferentes.
-            </p>
-            <div class="grade-bonus">
-              <div class="campo">
+        <!-- ---------- Coluna 1: atributos, proficiência, perícias ---------- -->
+        <div class="coluna coluna-esquerda">
+          <div class="linha-atributos">
+            <aside class="coluna-atributos">
+            <div class="atributo">
+              <span class="atributo-nome">Força</span>
+              <span class="atributo-mod" id="mod-forca"></span>
+              <span class="atributo-total" id="total-forca"></span>
+              <div class="atributo-edicao">
+                <input type="number" id="forca" min="1" max="20" value="10" />
                 <select id="bonus-forca" class="select-bonus">
                   <option value="0">—</option>
                   <option value="1">+1</option>
                   <option value="2">+2</option>
                 </select>
-                <span class="rotulo">Força</span>
               </div>
+            </div>
 
-              <div class="campo">
+            <div class="atributo">
+              <span class="atributo-nome">Destreza</span>
+              <span class="atributo-mod" id="mod-destreza"></span>
+              <span class="atributo-total" id="total-destreza"></span>
+              <div class="atributo-edicao">
+                <input type="number" id="destreza" min="1" max="20" value="10" />
                 <select id="bonus-destreza" class="select-bonus">
                   <option value="0">—</option>
                   <option value="1">+1</option>
                   <option value="2">+2</option>
                 </select>
-                <span class="rotulo">Destreza</span>
               </div>
+            </div>
 
-              <div class="campo">
+            <div class="atributo">
+              <span class="atributo-nome">Constituição</span>
+              <span class="atributo-mod" id="mod-constituicao"></span>
+              <span class="atributo-total" id="total-constituicao"></span>
+              <div class="atributo-edicao">
+                <input
+                  type="number"
+                  id="constituicao"
+                  min="1"
+                  max="20"
+                  value="10"
+                />
                 <select id="bonus-constituicao" class="select-bonus">
                   <option value="0">—</option>
                   <option value="1">+1</option>
                   <option value="2">+2</option>
                 </select>
-                <span class="rotulo">Constituição</span>
               </div>
+            </div>
 
-              <div class="campo">
+            <div class="atributo">
+              <span class="atributo-nome">Inteligência</span>
+              <span class="atributo-mod" id="mod-inteligencia"></span>
+              <span class="atributo-total" id="total-inteligencia"></span>
+              <div class="atributo-edicao">
+                <input
+                  type="number"
+                  id="inteligencia"
+                  min="1"
+                  max="20"
+                  value="10"
+                />
                 <select id="bonus-inteligencia" class="select-bonus">
                   <option value="0">—</option>
                   <option value="1">+1</option>
                   <option value="2">+2</option>
                 </select>
-                <span class="rotulo">Inteligência</span>
               </div>
+            </div>
 
-              <div class="campo">
+            <div class="atributo">
+              <span class="atributo-nome">Sabedoria</span>
+              <span class="atributo-mod" id="mod-sabedoria"></span>
+              <span class="atributo-total" id="total-sabedoria"></span>
+              <div class="atributo-edicao">
+                <input type="number" id="sabedoria" min="1" max="20" value="10" />
                 <select id="bonus-sabedoria" class="select-bonus">
                   <option value="0">—</option>
                   <option value="1">+1</option>
                   <option value="2">+2</option>
                 </select>
-                <span class="rotulo">Sabedoria</span>
               </div>
+            </div>
 
-              <div class="campo">
+            <div class="atributo">
+              <span class="atributo-nome">Carisma</span>
+              <span class="atributo-mod" id="mod-carisma"></span>
+              <span class="atributo-total" id="total-carisma"></span>
+              <div class="atributo-edicao">
+                <input type="number" id="carisma" min="1" max="20" value="10" />
                 <select id="bonus-carisma" class="select-bonus">
                   <option value="0">—</option>
                   <option value="1">+1</option>
                   <option value="2">+2</option>
                 </select>
-                <span class="rotulo">Carisma</span>
               </div>
             </div>
+            </aside>
 
-            <p id="status-bonus" class="status-bonus"></p>
-          </fieldset>
+            <div class="coluna-lado-atributos">
+              <div class="bloco-ficha bloco-proficiencia">
+                <span class="valor-destaque" id="valor-proficiencia"></span>
+                <span class="rotulo">Bônus de Proficiência</span>
+              </div>
 
-          <div class="area-reservada">
-            <p>
-              Perícias, pontos de vida, combate e magias entram aqui nos
-              próximos sprints.
-            </p>
+              <div class="bloco-ficha bloco-salvaguardas">
+                <span class="rotulo-bloco">Salvaguardas</span>
+                <div class="lista-salvaguardas" id="lista-salvaguardas"></div>
+              </div>
+            </div>
           </div>
-        </main>
+
+          <p id="status-bonus" class="status-bonus"></p>
+
+          <div class="bloco-ficha">
+            <span class="rotulo-bloco">Perícias</span>
+            <div class="grade-pericias" id="lista-pericias" data-modo="todas"></div>
+            <p id="status-pericias" class="status-pericias"></p>
+          </div>
+
+          <div class="bloco-ficha bloco-vazio">
+            <span class="valor-destaque">—</span>
+            <span class="rotulo">Sabedoria Passiva (Percepção)</span>
+          </div>
+
+          <div class="bloco-ficha bloco-vazio">
+            <span class="rotulo-bloco">Outras Proficiências e Idiomas</span>
+            <p class="vazio-texto">Entra com raça e antecedente (RF04).</p>
+          </div>
+        </div>
+
+        <!-- ---------- Coluna 2: combate e equipamento ---------- -->
+        <div class="coluna coluna-central">
+          <div class="linha-combate">
+            <div class="bloco-ficha bloco-vazio bloco-combate">
+              <span class="valor-destaque">—</span>
+              <span class="rotulo">Classe de Armadura</span>
+            </div>
+            <div class="bloco-ficha bloco-vazio bloco-combate">
+              <span class="valor-destaque">—</span>
+              <span class="rotulo">Iniciativa</span>
+            </div>
+            <div class="bloco-ficha bloco-vazio bloco-combate">
+              <span class="valor-destaque">—</span>
+              <span class="rotulo">Deslocamento</span>
+            </div>
+          </div>
+
+          <div class="bloco-ficha bloco-vazio">
+            <span class="rotulo-bloco">Pontos de Vida</span>
+            <p class="vazio-texto">Entra no Sprint 3 (RF21 a RF24).</p>
+          </div>
+
+          <div class="bloco-ficha bloco-vazio">
+            <span class="rotulo-bloco">Dados de Vida e Testes de Morte</span>
+            <p class="vazio-texto">Entra no Sprint 3.</p>
+          </div>
+
+          <div class="bloco-ficha bloco-vazio bloco-alto">
+            <span class="rotulo-bloco">Ataques e Conjuração</span>
+            <p class="vazio-texto">Entra nos Sprints 5 e 7.</p>
+          </div>
+
+          <div class="bloco-ficha bloco-vazio bloco-alto">
+            <span class="rotulo-bloco">Equipamento</span>
+            <p class="vazio-texto">Entra no Sprint 8 (RF36, RF37).</p>
+          </div>
+        </div>
+
+        <!-- ---------- Coluna 3: personalidade e traços ---------- -->
+        <div class="coluna coluna-direita">
+          <div class="bloco-ficha bloco-vazio">
+            <span class="rotulo-bloco">Traços de Personalidade</span>
+            <p class="vazio-texto">Entra com o RF03.</p>
+          </div>
+
+          <div class="bloco-ficha bloco-vazio">
+            <span class="rotulo-bloco">Ideais</span>
+            <p class="vazio-texto">Entra com o RF03.</p>
+          </div>
+
+          <div class="bloco-ficha bloco-vazio">
+            <span class="rotulo-bloco">Vínculos</span>
+            <p class="vazio-texto">Entra com o RF03.</p>
+          </div>
+
+          <div class="bloco-ficha bloco-vazio">
+            <span class="rotulo-bloco">Defeitos</span>
+            <p class="vazio-texto">Entra com o RF03.</p>
+          </div>
+
+          <div class="bloco-ficha bloco-vazio bloco-alto">
+            <span class="rotulo-bloco">Características e Traços</span>
+            <p class="vazio-texto">Entra com raça e classe (RF11, RF13).</p>
+          </div>
+        </div>
       </div>
 
       <button type="submit" id="btn-salvar">Salvar Alterações</button>
     </form>
 
     <script src="regras.js"></script>
+    <script src="ficha-comum.js"></script>
     <script src="ficha.js"></script>
   </body>
 </html>

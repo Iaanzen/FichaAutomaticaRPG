@@ -1,13 +1,15 @@
 const formFicha = document.getElementById("form-personagem");
 
 
-// As tabelas de regras (subracas, subclasses, ATRIBUTOS, NIVEL_SUBCLASSE) e os
-// calculos de modificador vivem em regras.js, compartilhado com a ficha.
+// As tabelas de regras vivem em regras.js.
+// Bonus, modificadores e pericias vivem em ficha-comum.js.
+// Este arquivo cuida so do que eh do wizard.
 
-const TOTAL_ETAPAS = 8
+const TOTAL_ETAPAS = 9
 
-// etapa onde o jogador distribui os bonus do antecedente
+// etapas com regra propria de validacao
 const ETAPA_BONUS = 5
+const ETAPA_PERICIAS = 8
 
 const btnProximo = document.getElementById("btn-proximo")
 const btnSalvar = document.getElementById("btn-salvar")
@@ -15,11 +17,16 @@ const btnSalvar = document.getElementById("btn-salvar")
 // guarda qual etapa o Proximo vai liberar no proximo clique
 let proximaEtapa = 2
 
-// a etapa de bonus tem regra propria; as outras usam a validacao nativa do HTML
+// bonus e pericias tem regra propria; as outras usam a validacao nativa do HTML
 function etapaValida(numeroEtapa) {
     if (numeroEtapa === ETAPA_BONUS) {
         mostrarStatusBonus()
         return bonusValido()
+    }
+
+    if (numeroEtapa === ETAPA_PERICIAS) {
+        atualizarPericias()
+        return periciasCompletas()
     }
 
     const etapa = document.getElementById(`etapa-${numeroEtapa}`)
@@ -103,99 +110,63 @@ formFicha.addEventListener("keydown", function(evento) {
     }
 })
 
-const statusBonusEL = document.getElementById("status-bonus")
+/* ---------- Array padrão: 15, 14, 13, 12, 10, 8 ---------- */
 
-// le os seis selects e devolve { forca: 2, destreza: 1, ... }
-function lerBonus() {
-    const bonus = {}
+const statusArrayEL = document.getElementById("status-array")
+
+// valores do array que ja foram colocados em algum atributo
+function valoresUsados() {
+    const usados = []
 
     ATRIBUTOS.forEach(function(atributo) {
-        const selectEL = document.getElementById(`bonus-${atributo}`)
-        bonus[atributo] = Number(selectEL.value)
+        const valor = document.getElementById(atributo).value
+
+        if (valor !== "") {
+            usados.push(valor)
+        }
     })
 
-    return bonus
+    return usados
 }
 
-// a regra em si vive em regras.js; aqui so lemos a tela e perguntamos
-function bonusValido() {
-    return distribuicaoBonusValida(lerBonus())
-}
+// cada valor so pode aparecer uma vez: desabilita nos outros selects o que ja foi usado
+function atualizarArrayPadrao() {
+    const usados = valoresUsados()
 
-function mostrarStatusBonus() {
-    if (bonusValido()) {
-        statusBonusEL.textContent = "Distribuição válida."
-        statusBonusEL.className = "status-bonus status-ok"
+    ATRIBUTOS.forEach(function(atributo) {
+        const selectEL = document.getElementById(atributo)
+
+        Array.from(selectEL.options).forEach(function(opcao) {
+            if (opcao.value === "") {
+                return
+            }
+
+            // o proprio valor escolhido continua liberado, senao ele sumiria do select
+            opcao.disabled = opcao.value !== selectEL.value && usados.includes(opcao.value)
+        })
+    })
+
+    const faltam = ARRAY_PADRAO.length - usados.length
+
+    if (faltam === 0) {
+        statusArrayEL.textContent = "Array distribuído."
+        statusArrayEL.className = "status-array status-ok"
         return
     }
 
-    statusBonusEL.textContent =
-        "Escolha +2 num atributo e +1 em outro, ou +1 em três atributos diferentes."
-    statusBonusEL.className = "status-bonus status-erro"
-}
-
-// com a distribuicao fechada, quem ficou sem bonus trava.
-// quem ja tem bonus continua liberado: eh por ali que o jogador desfaz a escolha.
-function atualizarTravaBonus() {
-    const bonus = lerBonus()
-    const distribuicaoFechada = bonusValido()
-
-    ATRIBUTOS.forEach(function(atributo) {
-        const selectEL = document.getElementById(`bonus-${atributo}`)
-        selectEL.disabled = distribuicaoFechada && bonus[atributo] === 0
-    })
+    statusArrayEL.textContent = `Faltam ${faltam} de ${ARRAY_PADRAO.length} valores para distribuir.`
+    statusArrayEL.className = "status-array status-erro"
 }
 
 ATRIBUTOS.forEach(function(atributo) {
-    const selectEL = document.getElementById(`bonus-${atributo}`)
-
-    selectEL.addEventListener("change", function() {
-        mostrarStatusBonus()
-        atualizarTravaBonus()
-        // o bonus entra na conta do modificador, entao a etapa 7 muda junto
-        atualizarModificadores()
-    })
+    document
+        .getElementById(atributo)
+        .addEventListener("change", atualizarArrayPadrao)
 })
 
-/* ---------- RF07: modificadores ---------- */
-// modificadorDe e formatarModificador vem de regras.js
+atualizarArrayPadrao()
 
-// junta valor base + bonus do antecedente e devolve totais e modificadores
-function calcularAtributos() {
-    const bonus = lerBonus()
-    const totais = {}
-    const modificadores = {}
-
-    ATRIBUTOS.forEach(function(atributo) {
-        const base = Number(document.getElementById(atributo).value)
-        totais[atributo] = base + bonus[atributo]
-        modificadores[atributo] = modificadorDe(totais[atributo])
-    })
-
-    return { totais: totais, modificadores: modificadores }
-}
-
-function atualizarModificadores() {
-    const calculo = calcularAtributos()
-
-    ATRIBUTOS.forEach(function(atributo) {
-        const totalEL = document.getElementById(`total-${atributo}`)
-        const modEL = document.getElementById(`mod-${atributo}`)
-
-        totalEL.textContent = `Total ${calculo.totais[atributo]}`
-        modEL.textContent = formatarModificador(calculo.modificadores[atributo])
-    })
-}
-
-ATRIBUTOS.forEach(function(atributo) {
-    const inputEL = document.getElementById(atributo)
-    inputEL.addEventListener("input", atualizarModificadores)
-})
-
-atualizarModificadores()
-
-const nivelEL = document.getElementById("nivel")
-const classeEL = document.getElementById("classe")
+// nivelEL e classeEL vem de ficha-comum.js
 const subclasseEL = document.getElementById("subclasse")
 const blocoSubclasseEL = document.getElementById("bloco-subclasse")
 
@@ -293,6 +264,10 @@ formFicha.addEventListener('submit', function (evento) {
         // os seis campos acima guardam o valor base; abaixo o resultado da conta
         atributosTotais: calculo.totais,
         modificadores: calculo.modificadores,
+        pericias: lerPericias(),
+        bonusProficiencia: bonusDeProficiencia(nivel),
+        // derivado da classe, mas salvo pra ficha poder ser lida sem recalcular
+        salvaguardas: salvaguardasDaClasse(classe),
         id: Date.now()
     }
 

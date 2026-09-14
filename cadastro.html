@@ -207,63 +207,114 @@
       <fieldset class="etapa" id="etapa-7" disabled>
         <legend>7. Atributos</legend>
         <p class="explicacao">
-          Digite os valores base dos seis atributos. O total já soma o bônus que
-          você escolheu na etapa 5, e o modificador é calculado sozinho.
+          Distribua o array padrão entre os seis atributos:
+          <strong>15, 14, 13, 12, 10 e 8</strong>. Cada valor é usado uma única
+          vez. Para trocar um valor de lugar, devolva-o para o traço primeiro.
+          O total já soma o bônus que você escolheu na etapa 5.
         </p>
         <div class="coluna-atributos">
           <div class="atributo">
             <span class="atributo-nome">Força</span>
-            <input type="number" id="forca" min="1" max="20" value="10" />
+            <select id="forca" class="select-atributo" required>
+              <option value="">—</option>
+              <option value="15">15</option>
+              <option value="14">14</option>
+              <option value="13">13</option>
+              <option value="12">12</option>
+              <option value="10">10</option>
+              <option value="8">8</option>
+            </select>
             <span class="atributo-total" id="total-forca"></span>
             <span class="atributo-mod" id="mod-forca"></span>
           </div>
           <div class="atributo">
             <span class="atributo-nome">Destreza</span>
-            <input type="number" id="destreza" min="1" max="20" value="10" />
+            <select id="destreza" class="select-atributo" required>
+              <option value="">—</option>
+              <option value="15">15</option>
+              <option value="14">14</option>
+              <option value="13">13</option>
+              <option value="12">12</option>
+              <option value="10">10</option>
+              <option value="8">8</option>
+            </select>
             <span class="atributo-total" id="total-destreza"></span>
             <span class="atributo-mod" id="mod-destreza"></span>
           </div>
           <div class="atributo">
             <span class="atributo-nome">Constituição</span>
-            <input
-              type="number"
-              id="constituicao"
-              min="1"
-              max="20"
-              value="10"
-            />
+            <select id="constituicao" class="select-atributo" required>
+              <option value="">—</option>
+              <option value="15">15</option>
+              <option value="14">14</option>
+              <option value="13">13</option>
+              <option value="12">12</option>
+              <option value="10">10</option>
+              <option value="8">8</option>
+            </select>
             <span class="atributo-total" id="total-constituicao"></span>
             <span class="atributo-mod" id="mod-constituicao"></span>
           </div>
           <div class="atributo">
             <span class="atributo-nome">Inteligência</span>
-            <input
-              type="number"
-              id="inteligencia"
-              min="1"
-              max="20"
-              value="10"
-            />
+            <select id="inteligencia" class="select-atributo" required>
+              <option value="">—</option>
+              <option value="15">15</option>
+              <option value="14">14</option>
+              <option value="13">13</option>
+              <option value="12">12</option>
+              <option value="10">10</option>
+              <option value="8">8</option>
+            </select>
             <span class="atributo-total" id="total-inteligencia"></span>
             <span class="atributo-mod" id="mod-inteligencia"></span>
           </div>
           <div class="atributo">
             <span class="atributo-nome">Sabedoria</span>
-            <input type="number" id="sabedoria" min="1" max="20" value="10" />
+            <select id="sabedoria" class="select-atributo" required>
+              <option value="">—</option>
+              <option value="15">15</option>
+              <option value="14">14</option>
+              <option value="13">13</option>
+              <option value="12">12</option>
+              <option value="10">10</option>
+              <option value="8">8</option>
+            </select>
             <span class="atributo-total" id="total-sabedoria"></span>
             <span class="atributo-mod" id="mod-sabedoria"></span>
           </div>
           <div class="atributo">
             <span class="atributo-nome">Carisma</span>
-            <input type="number" id="carisma" min="1" max="20" value="10" />
+            <select id="carisma" class="select-atributo" required>
+              <option value="">—</option>
+              <option value="15">15</option>
+              <option value="14">14</option>
+              <option value="13">13</option>
+              <option value="12">12</option>
+              <option value="10">10</option>
+              <option value="8">8</option>
+            </select>
             <span class="atributo-total" id="total-carisma"></span>
             <span class="atributo-mod" id="mod-carisma"></span>
           </div>
         </div>
+
+        <p id="status-array" class="status-array"></p>
       </fieldset>
 
       <fieldset class="etapa" id="etapa-8" disabled>
-        <legend>8. Detalhes</legend>
+        <legend>8. Perícias</legend>
+        <p class="explicacao">
+          Cada classe escolhe uma quantidade fixa de perícias, de uma lista
+          própria. O bônus ao lado já soma o modificador do atributo com o bônus
+          de proficiência do seu nível.
+        </p>
+        <div class="grade-pericias" id="lista-pericias"></div>
+        <p id="status-pericias" class="status-pericias"></p>
+      </fieldset>
+
+      <fieldset class="etapa" id="etapa-9" disabled>
+        <legend>9. Detalhes</legend>
         <p class="explicacao">
           Últimos ajustes antes de fechar a ficha.
         </p>
@@ -293,6 +344,7 @@
     </form>
 
     <script src="regras.js"></script>
+    <script src="ficha-comum.js"></script>
     <script src="cadastro.js"></script>
   </body>
 </html>

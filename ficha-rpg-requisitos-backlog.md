@@ -25,7 +25,7 @@
   - Para classes conjuradoras: aprender nova magia e/ou trocar uma magia já conhecida (quando a classe permitir essa troca no level up).
 
 ### 1.3 Raça e Traços
-- RF10: Aplicar automaticamente os bônus de atributo da raça/sub-raça escolhida. O select de sub-raça deve ser preenchido dinamicamente com as opções corretas conforme a raça escolhida (ex: Anão → Anão da Colina / Anão da Montanha).
+- RF10: ~~Aplicar automaticamente os bônus de atributo da raça/sub-raça escolhida.~~ **Revogado pela seção 3.1** — nas regras 2024 o bônus vem do antecedente. O que continua valendo: o select de sub-raça deve ser preenchido dinamicamente com as opções corretas conforme a raça escolhida (ex: Anão → Anão da Colina / Anão da Montanha). *(Feito.)*
 - RF11: Exibir os traços passivos da raça (ex: visão no escuro, resistência a veneno).
 - RF12: Aplicar deslocamento (velocidade) padrão da raça, editável se algo o alterar.
 
@@ -35,7 +35,7 @@
 - RF15: Ao subir de nível, recalcular automaticamente PV, bônus de proficiência, espaços de magia e habilidades novas.
 
 ### 1.5 Perícias e Proficiências
-- RF16: Conceder automaticamente as perícias fixas do antecedente.
+- RF16: ~~Conceder automaticamente as perícias fixas do antecedente.~~ **Revisto:** como o antecedente é texto livre (seção 3.1), não há tabela de onde tirar perícias fixas. A escolha de perícias é **manual**, dentro do limite da classe (RF17).
 - RF17: Apresentar a lista de perícias elegíveis pela classe, com limite de escolhas definido pela classe.
 - RF18: Destacar visualmente as perícias já selecionadas e impedir escolha além do limite.
 - RF19: Marcar proficiência em salvaguardas (definidas pela classe).
@@ -110,13 +110,33 @@ Decidido migrar do modelo 2014 (bônus fixos por raça) para uma variação do m
 - O app obriga a forma da distribuição: **+2 em um atributo e +1 em outro**, OU **+1 em três atributos diferentes**.
 - As tabelas bonusPorRaca / bonusPorSubRaca deixam de valer para cálculo de atributo (raça ainda dará traços/perícias em sprints futuros).
 
-## 3.2 Wizard de criação de personagem (novo sprint)
+## 3.2 Wizard de criação de personagem (CONCLUÍDO)
 
-Fluxo passo a passo (estilo criação de videogame), substituindo o formulário único:
-- Cada etapa desbloqueia a próxima; etapas seguintes ficam bloqueadas até a atual ser concluída.
+Fluxo passo a passo (estilo criação de videogame), substituindo o formulário único. Entregue com 8 etapas, nesta ordem:
+
+| # | Etapa | Observação |
+|---|---|---|
+| 1 | Nome | — |
+| 2 | Nível | vem antes da classe porque define se há subclasse |
+| 3 | Classe | subclasse só aparece a partir do nível 3 |
+| 4 | Antecedente | texto livre |
+| 5 | Bônus do antecedente | +2/+1 ou +1/+1/+1, validado pelo app |
+| 6 | Raça | sub-raça preenchida dinamicamente |
+| 7 | Atributos | mostra total (base + bônus) e modificador |
+| 8 | Detalhes | alinhamento |
+
+Regras de funcionamento decididas durante a sprint:
+- Cada etapa desbloqueia a próxima; as seguintes ficam bloqueadas (`fieldset disabled`) até a atual ser válida.
+- **A etapa anterior continua liberada.** Decisão de UX: corrigir algo já preenchido não deve exigir voltar. Por isso não existe botão "Voltar".
 - Cada etapa tem uma breve explicação do que fazer.
-- Etapa de bônus: após informar o antecedente, libera a distribuição de bônus com o limite +2/+1 ou +1/+1/+1 validado pelo app.
-- Só depois da distribuição, o modificador (RF07) é calculado já com os bônus inclusos.
+- Validação por etapa antes de avançar, usando a validação nativa do HTML (`required`), mais a regra própria da etapa de bônus.
+- Barra de navegação **fixa** no rodapé, para o botão nunca sair da tela.
+- **Enter avança** de etapa; na última etapa o Enter salva.
+- Ao liberar uma etapa, o foco vai automaticamente para o primeiro campo dela.
+- Na etapa de bônus, fechada a distribuição, os atributos restantes travam até o jogador desfazer alguma escolha.
+- O modificador (RF07) é calculado já com os bônus inclusos, e recalculado ao vivo.
+
+Decisão de organização de código feita nesta sprint: as tabelas e regras de D&D ficam em **`regras.js`**, carregado pelo cadastro e pela ficha. Regra nova entra lá, nunca duplicada nas páginas — foi duplicação que deixou a página de edição desatualizada uma vez.
 
 ## 3.3 Cobertura de conteúdo e conteúdo próprio (implementar durante o projeto)
 
@@ -135,7 +155,7 @@ Escrito como histórias de usuário, do jeito Scrum — cada uma vira uma entreg
 
 1. Como mestre, quero cadastrar nome, raça, classe e nível de um personagem, para iniciar a ficha.
 2. Como mestre, quero que os atributos calculem seus modificadores automaticamente, para não fazer conta de cabeça na mesa.
-3. Como mestre, quero que a raça aplique seus bônus e traços automaticamente, para refletir as regras corretas sem esforço manual.
+3. Como mestre, quero que a raça aplique seus traços, deslocamento e perícias automaticamente, para refletir as regras corretas sem esforço manual. *(Reescrito: a parte de "aplicar bônus de atributo" saiu, porque nas regras 2024 o bônus vem do antecedente — ver seção 3.1. Cobre RF11 e RF12.)*
 4. Como mestre, quero escolher perícias dentro do limite da classe, com destaque visual, para não errar a montagem do personagem.
 5. Como mestre, quero que o PV inicial e por nível seja calculado automaticamente, para acompanhar a saúde do personagem sem planilha externa.
 6. Como mestre, quero gerenciar descanso curto/longo, para recuperar recursos de forma correta durante o jogo.
@@ -155,16 +175,17 @@ Escrito como histórias de usuário, do jeito Scrum — cada uma vira uma entreg
 
 *(sprints de 1–2 semanas, ajustável — cada um entrega algo jogável, mesmo que incompleto)*
 
-| Sprint | Foco | Itens do backlog |
-|---|---|---|
-| Sprint 1 | Fundação da ficha | 1, 2 |
-| Sprint 2 | Raça e perícias | 3, 4 |
-| Sprint 3 | Vida e descanso | 5, 6, 7 |
-| Sprint 4 | Level up dedicado | 8 |
-| Sprint 5 | Magias | 9, 10 |
-| Sprint 6 | Recursos de classe | 11 |
-| Sprint 7 | Combate | 12 |
-| Sprint 8 | Inventário | 13 |
-| Sprint 9 | Gestão avançada de fichas | 14, 15 |
+| Sprint | Foco | Itens do backlog | Situação |
+|---|---|---|---|
+| Sprint 1 | Fundação da ficha | 1, 2 | concluída |
+| Sprint 1.5 | Wizard de criação (seção 3.2) | — | concluída |
+| Sprint 2 | Raça e perícias | 3, 4 | próxima |
+| Sprint 3 | Vida e descanso | 5, 6, 7 | |
+| Sprint 4 | Level up dedicado | 8 | |
+| Sprint 5 | Magias | 9, 10 | |
+| Sprint 6 | Recursos de classe | 11 | |
+| Sprint 7 | Combate | 12 | |
+| Sprint 8 | Inventário | 13 | |
+| Sprint 9 | Gestão avançada de fichas | 14, 15 | |
 
 Cada sprint deve terminar com algo **funcionando de ponta a ponta**, mesmo que simples — é melhor ter "PV calcula certo, mas sem animação bonita" do que travar tentando fazer tudo perfeito de uma vez. Isso também deixa espaço pra mudança: se no meio do Sprint 3 você perceber que quer inverter a ordem com Magias, tudo bem, é revisão de backlog, não quebra de processo.

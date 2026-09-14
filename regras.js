@@ -96,7 +96,178 @@ const subclassesPorClasse = {
     ]
 };
 
-/* ---------- RF07: modificadores ---------- */
+/* ---------- RF16 a RF20: pericias ---------- */
+
+// cada pericia usa o modificador de um atributo fixo
+const PERICIAS = [
+    { valor: "acrobacia", nome: "Acrobacia", atributo: "destreza" },
+    { valor: "adestrarAnimais", nome: "Adestrar Animais", atributo: "sabedoria" },
+    { valor: "arcanismo", nome: "Arcanismo", atributo: "inteligencia" },
+    { valor: "atletismo", nome: "Atletismo", atributo: "forca" },
+    { valor: "atuacao", nome: "Atuação", atributo: "carisma" },
+    { valor: "enganacao", nome: "Enganação", atributo: "carisma" },
+    { valor: "furtividade", nome: "Furtividade", atributo: "destreza" },
+    { valor: "historia", nome: "História", atributo: "inteligencia" },
+    { valor: "intimidacao", nome: "Intimidação", atributo: "carisma" },
+    { valor: "intuicao", nome: "Intuição", atributo: "sabedoria" },
+    { valor: "investigacao", nome: "Investigação", atributo: "inteligencia" },
+    { valor: "medicina", nome: "Medicina", atributo: "sabedoria" },
+    { valor: "natureza", nome: "Natureza", atributo: "inteligencia" },
+    { valor: "percepcao", nome: "Percepção", atributo: "sabedoria" },
+    { valor: "persuasao", nome: "Persuasão", atributo: "carisma" },
+    { valor: "prestidigitacao", nome: "Prestidigitação", atributo: "destreza" },
+    { valor: "religiao", nome: "Religião", atributo: "inteligencia" },
+    { valor: "sobrevivencia", nome: "Sobrevivência", atributo: "sabedoria" }
+]
+
+// quantas pericias cada classe escolhe, e de qual lista.
+// opcoes "todas" = o Bardo escolhe de qualquer pericia.
+const periciasPorClasse = {
+    barbaro: {
+        limite: 2,
+        opcoes: ["adestrarAnimais", "atletismo", "intimidacao", "natureza", "percepcao", "sobrevivencia"]
+    },
+    bardo: {
+        limite: 3,
+        opcoes: "todas"
+    },
+    bruxo: {
+        limite: 2,
+        opcoes: ["arcanismo", "enganacao", "historia", "intimidacao", "investigacao", "natureza", "religiao"]
+    },
+    clerigo: {
+        limite: 2,
+        opcoes: ["historia", "intuicao", "medicina", "persuasao", "religiao"]
+    },
+    druida: {
+        limite: 2,
+        opcoes: ["arcanismo", "adestrarAnimais", "intuicao", "medicina", "natureza", "percepcao", "religiao", "sobrevivencia"]
+    },
+    feiticeiro: {
+        limite: 2,
+        opcoes: ["arcanismo", "enganacao", "intuicao", "intimidacao", "persuasao", "religiao"]
+    },
+    guerreiro: {
+        limite: 2,
+        opcoes: ["acrobacia", "adestrarAnimais", "atletismo", "historia", "intuicao", "intimidacao", "percepcao", "sobrevivencia"]
+    },
+    ladino: {
+        limite: 4,
+        opcoes: ["acrobacia", "atletismo", "atuacao", "enganacao", "furtividade", "intimidacao", "intuicao", "investigacao", "percepcao", "persuasao", "prestidigitacao"]
+    },
+    mago: {
+        limite: 2,
+        opcoes: ["arcanismo", "historia", "intuicao", "investigacao", "medicina", "religiao"]
+    },
+    monge: {
+        limite: 2,
+        opcoes: ["acrobacia", "atletismo", "furtividade", "historia", "intuicao", "religiao"]
+    },
+    paladino: {
+        limite: 2,
+        opcoes: ["atletismo", "intimidacao", "intuicao", "medicina", "persuasao", "religiao"]
+    },
+    patrulheiro: {
+        limite: 3,
+        opcoes: ["adestrarAnimais", "atletismo", "furtividade", "intuicao", "investigacao", "natureza", "percepcao", "sobrevivencia"]
+    }
+}
+
+// abreviacao mostrada ao lado da pericia, como na folha oficial
+const ABREVIACAO_ATRIBUTO = {
+    forca: "For",
+    destreza: "Des",
+    constituicao: "Con",
+    inteligencia: "Int",
+    sabedoria: "Sab",
+    carisma: "Car"
+}
+
+// array padrao do PHB: seis valores fixos, cada um usado uma vez so
+const ARRAY_PADRAO = [15, 14, 13, 12, 10, 8]
+
+const NOME_ATRIBUTO = {
+    forca: "Força",
+    destreza: "Destreza",
+    constituicao: "Constituição",
+    inteligencia: "Inteligência",
+    sabedoria: "Sabedoria",
+    carisma: "Carisma"
+}
+
+/* ---------- RF19: salvaguardas ---------- */
+
+// Salvaguarda nao se escolhe: cada classe da proficiencia em duas, fixas desde
+// o nivel 1. Sempre uma "forte" (For/Des/Con) e uma "fraca" (Int/Sab/Car).
+const salvaguardasPorClasse = {
+    barbaro: ["forca", "constituicao"],
+    bardo: ["destreza", "carisma"],
+    bruxo: ["sabedoria", "carisma"],
+    clerigo: ["sabedoria", "carisma"],
+    druida: ["inteligencia", "sabedoria"],
+    feiticeiro: ["constituicao", "carisma"],
+    guerreiro: ["forca", "constituicao"],
+    ladino: ["destreza", "inteligencia"],
+    mago: ["inteligencia", "sabedoria"],
+    monge: ["forca", "destreza"],
+    paladino: ["sabedoria", "carisma"],
+    patrulheiro: ["forca", "destreza"]
+}
+
+function salvaguardasDaClasse(classe) {
+    return salvaguardasPorClasse[classe] || []
+}
+
+function periciaPorValor(valor) {
+    return PERICIAS.find(function(pericia) {
+        return pericia.valor === valor
+    })
+}
+
+// quantas pericias a classe deixa escolher (0 se nenhuma classe escolhida)
+function limiteDePericias(classe) {
+    const regra = periciasPorClasse[classe]
+
+    if (!regra) {
+        return 0
+    }
+
+    return regra.limite
+}
+
+// lista de valores que a classe permite escolher
+function opcoesDePericias(classe) {
+    const regra = periciasPorClasse[classe]
+
+    if (!regra) {
+        return []
+    }
+
+    if (regra.opcoes === "todas") {
+        return PERICIAS.map(function(pericia) {
+            return pericia.valor
+        })
+    }
+
+    return regra.opcoes
+}
+
+/* ---------- RF07 e RF08: modificadores e proficiencia ---------- */
+
+// regra do PHB: +2 do nivel 1 ao 4, subindo um degrau a cada 4 niveis
+function bonusDeProficiencia(nivel) {
+    return 2 + Math.floor((nivel - 1) / 4)
+}
+
+// serve para pericia e para salvaguarda: a conta e a mesma nas duas
+function bonusComProficiencia(modificador, proficiente, proficiencia) {
+    if (proficiente) {
+        return modificador + proficiencia
+    }
+
+    return modificador
+}
+
 
 // regra do PHB: (valor final - 10) / 2, sempre arredondado para baixo
 function modificadorDe(valor) {

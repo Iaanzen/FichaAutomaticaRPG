@@ -107,88 +107,159 @@ input:focus, select:focus {
     border-bottom-color: var(--sangue-dragao);
 }
 
-/* ---------- Corpo ---------- */
+/* ---------- Corpo: três colunas como na folha oficial ---------- */
 .ficha-corpo {
     display: flex;
-    gap: 20px;
+    gap: 15px;
+    align-items: flex-start;
 }
 
-/* Coluna de atributos à esquerda (blocos verticais como na folha) */
+.coluna {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.coluna-esquerda { width: 290px; }
+.coluna-central { flex: 1; }
+.coluna-direita { flex: 1; }
+
+/* Atributos numa tira estreita, com proficiência e salvaguardas ao lado */
+.linha-atributos {
+    display: flex;
+    gap: 10px;
+    align-items: stretch;
+}
+
+.coluna-lado-atributos {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.bloco-salvaguardas { flex: 1; }
+
+/* Coluna de atributos (blocos verticais como na folha) */
 .coluna-atributos {
     display: flex;
     flex-direction: column;
-    gap: 15px;
-    width: 130px;
+    gap: 8px;
+    width: 92px;
+    flex-shrink: 0;
 }
 
 .atributo {
     border: 2px solid var(--tinta);
     border-radius: 10px;
     background: rgba(255,255,255,0.3);
-    padding: 10px 5px;
+    padding: 6px 3px;
     text-align: center;
 }
 
 .atributo-nome {
     display: block;
     font-family: 'Cinzel', serif;
-    font-size: 0.8rem;
+    font-size: 0.58rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Modificador em destaque, como na folha oficial */
+.atributo-mod {
+    display: block;
+    font-family: 'Cinzel', serif;
+    font-size: 1.45rem;
+    font-weight: 700;
+    line-height: 1.1;
+}
+
+/* Total (base + bônus) no círculo embaixo */
+.atributo-total {
+    display: block;
+    width: 34px;
+    margin: 0 auto;
+    padding: 2px 0;
+    font-size: 0.85rem;
+    font-weight: 700;
+    background: var(--pergaminho);
+    border: 2px solid var(--tinta);
+    border-radius: 50%;
+}
+
+/* Campos de edição miúdos: valor base e bônus do antecedente.
+   Empilhados porque a tira é estreita demais pra dois lado a lado. */
+.atributo-edicao {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    margin-top: 5px;
+}
+
+.atributo-edicao input,
+.atributo-edicao select {
+    width: 100%;
+    min-width: 0;
+    padding: 1px;
+    font-size: 0.72rem;
+    text-align: center;
+    border-radius: 3px;
+}
+
+/* ---------- Blocos da folha ---------- */
+.bloco-ficha {
+    border: 2px solid var(--tinta);
+    border-radius: 8px;
+    background: rgba(255,255,255,0.25);
+    padding: 10px;
+    text-align: center;
+}
+
+.rotulo-bloco {
+    display: block;
+    font-family: 'Cinzel', serif;
+    font-size: 0.78rem;
+    font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 1px;
     margin-bottom: 8px;
 }
 
-.atributo input {
-    text-align: center;
-    font-size: 1.8rem;
-    font-weight: 700;
-    border: none;
-    border-radius: 50%;
-    width: 70px;
-    height: 70px;
-    margin: 0 auto;
-    background: var(--pergaminho);
-    border: 2px solid var(--tinta);
-}
-
-/* Total (base + bônus) e modificador calculado */
-.atributo-total {
+.valor-destaque {
     display: block;
-    margin-top: 6px;
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: #6a4f3a;
-}
-
-.atributo-mod {
-    display: block;
-    width: 42px;
-    margin: 4px auto 0;
-    padding: 2px 0;
     font-family: 'Cinzel', serif;
-    font-size: 1.1rem;
+    font-size: 1.6rem;
     font-weight: 700;
-    color: var(--pergaminho);
-    background-color: var(--tinta);
-    border-radius: 12px;
 }
 
-/* Coluna central (reservada pra evolução) */
-.coluna-central { flex: 1; }
+.bloco-proficiencia { padding: 6px 10px; }
 
-.area-reservada {
-    height: 100%;
-    min-height: 300px;
-    border: 2px dashed var(--pergaminho-sombra);
-    border-radius: 8px;
+.linha-combate {
     display: flex;
-    align-items: center;
+    gap: 12px;
+}
+
+.bloco-combate { flex: 1; }
+
+/* Espaço reservado para o que ainda não foi implementado */
+.bloco-vazio {
+    border-style: dashed;
+    border-color: var(--pergaminho-sombra);
+    background: rgba(255,255,255,0.12);
+}
+
+.bloco-alto { min-height: 150px; }
+
+.vazio-texto {
+    margin: 0;
+    font-style: italic;
+    font-size: 0.8rem;
+    color: #8a6f57;
+}
+
+.bloco-vazio-mini {
     justify-content: center;
     text-align: center;
-    color: #8a6f57;
-    font-style: italic;
-    padding: 20px;
 }
 
 /* ---------- Botão salvar ---------- */
@@ -221,6 +292,9 @@ input:focus, select:focus {
     .ficha-cabecalho { flex-direction: column; }
     .cabecalho-grade { grid-template-columns: repeat(2, 1fr); }
     .ficha-corpo { flex-direction: column; }
+    .coluna-esquerda { width: 100%; }
+    .linha-combate { flex-direction: column; }
+    .linha-atributos { flex-direction: column; }
     .coluna-atributos {
         width: 100%;
         flex-direction: row;
@@ -324,6 +398,139 @@ body {
 .status-ok { color: #2f6b32; }
 .status-erro { color: var(--sangue-dragao); }
 
+/* ---------- Salvaguardas ---------- */
+.lista-salvaguardas {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    text-align: left;
+}
+
+.salvaguarda {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 6px;
+    font-size: 0.85rem;
+    border: 1px solid transparent;
+    border-radius: 4px;
+}
+
+/* círculo vazio/cheio, como na folha oficial */
+.salvaguarda-marcador {
+    width: 11px;
+    height: 11px;
+    flex-shrink: 0;
+    border: 2px solid var(--tinta);
+    border-radius: 50%;
+}
+
+.salvaguarda-proficiente .salvaguarda-marcador {
+    background-color: var(--tinta);
+}
+
+.salvaguarda-bonus {
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
+    min-width: 2.2em;
+    text-align: right;
+}
+
+.salvaguarda-nome { flex: 1; }
+
+/* as duas que a classe dá: mesmo destaque das perícias proficientes */
+.salvaguarda-proficiente {
+    background: var(--ouro);
+    border-color: var(--tinta);
+    font-weight: 700;
+}
+
+/* ---------- Perícias ---------- */
+.grade-pericias {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px 15px;
+}
+
+/* na ficha a coluna é estreita: uma perícia por linha, como na folha oficial */
+.coluna-esquerda .grade-pericias {
+    grid-template-columns: 1fr;
+    gap: 3px;
+    text-align: left;
+}
+
+.coluna-esquerda .pericia {
+    padding: 3px 6px;
+    font-size: 0.85rem;
+}
+
+.pericia {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border: 1px solid var(--borda-fina);
+    border-radius: 4px;
+    background: rgba(255,255,255,0.35);
+    cursor: pointer;
+}
+
+.pericia input {
+    width: auto;
+    margin: 0;
+    cursor: pointer;
+}
+
+.pericia-nome { flex: 1; }
+
+.pericia-atributo {
+    font-size: 0.78em;
+    color: #8a6f57;
+}
+
+.pericia-bonus {
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
+    min-width: 2.2em;
+    text-align: right;
+}
+
+/* proficiente: é o destaque que o jogador procura no meio da lista */
+.pericia-escolhida {
+    background: var(--ouro);
+    border-color: var(--tinta);
+    font-weight: 700;
+}
+
+.pericia-escolhida .pericia-atributo { color: var(--tinta); }
+
+/* a classe não oferece esta perícia: o bônus continua legível, só não dá pra marcar */
+.pericia-indisponivel {
+    background: none;
+    border-color: transparent;
+    cursor: default;
+}
+
+.pericia-indisponivel input { opacity: 0.3; }
+
+/* limite atingido: as ainda escolhíveis saem de alcance até liberar uma */
+.pericia-travada {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.status-pericias {
+    margin: 15px 0 0;
+    font-family: 'Cinzel', serif;
+    font-size: 0.9rem;
+    text-align: center;
+    min-height: 1.2em;
+}
+
+@media (max-width: 700px) {
+    .grade-pericias { grid-template-columns: 1fr; }
+}
+
 @media (max-width: 700px) {
     .grade-bonus { grid-template-columns: repeat(2, 1fr); }
 }
@@ -334,6 +541,60 @@ body {
     flex-wrap: wrap;
     justify-content: center;
     width: 100%;
+}
+
+/* No wizard o valor do atributo vem do array padrão, num select */
+.etapa .atributo .select-atributo {
+    width: 68px;
+    margin: 6px auto 0;
+    padding: 6px 2px;
+    text-align: center;
+    font-family: 'Cinzel', serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    background: var(--pergaminho);
+    border: 2px solid var(--tinta);
+    border-radius: 6px;
+}
+
+/* valor já usado em outro atributo */
+.etapa .atributo .select-atributo option:disabled {
+    color: #b0a08c;
+}
+
+.status-array {
+    margin: 15px 0 0;
+    font-family: 'Cinzel', serif;
+    font-size: 0.9rem;
+    text-align: center;
+    min-height: 1.2em;
+}
+
+/* aqui o total é uma legenda, não o círculo da folha */
+.etapa .atributo-total {
+    width: auto;
+    margin-top: 6px;
+    padding: 0;
+    background: none;
+    border: none;
+    border-radius: 0;
+    font-size: 0.7rem;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #6a4f3a;
+}
+
+.etapa .atributo-total::before { content: "Total "; }
+
+.etapa .atributo-mod {
+    width: 42px;
+    margin: 4px auto 0;
+    padding: 2px 0;
+    font-size: 1.1rem;
+    color: var(--pergaminho);
+    background-color: var(--tinta);
+    border-radius: 12px;
 }
 
 /* ---------- Wizard: barra de navegação fixa ---------- */
