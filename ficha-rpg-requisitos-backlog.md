@@ -56,7 +56,7 @@
   - exceção: **Bruxo (Warlock)** recupera espaços de magia em **descanso curto**.
 - RF28: Controlar concentração (apenas uma magia de concentração ativa por vez).
 - RF29: Impor o **limite de magias conhecidas/preparadas por nível**, definido pela progressão de cada classe — a aba de gerenciamento de magias deve impedir selecionar mais magias do que esse limite permite.
-- RF30: Permitir a **troca de magias preparadas** seguindo a regra oficial: disponível após descanso longo para a maioria das classes preparadoras (Clérigo, Druida, Mago); para classes de magias conhecidas fixas (ex: Bruxo, Feiticeiro), a troca ocorre normalmente apenas no level up (RF09), não em descanso.
+- RF30: Permitir a **troca de magias preparadas** seguindo a regra oficial: disponível após descanso longo para a maioria das classes preparadoras (Clérigo, Druida, Mago); para classes de magias conhecidas fixas (ex: Bruxo, Feiticeiro), a troca ocorre normalmente apenas no level up (RF09), não em descanso. **Revisto:** seguir a regra de **2024** (ver seção 3.6).
 
 ### 1.8 Recursos de Classe
 - RF31: Gerenciar recursos próprios de cada classe (Fúria, Pontos de Ki, Pontos de Feitiçaria, Inspiração de Bardo, Dados Superiores etc.), com contagem de uso e recuperação por descanso.
@@ -86,7 +86,7 @@
 
 ## 2. Requisitos Não Funcionais (RNF)
 
-- RNF01: Persistência local via localStorage, funcionando sem internet.
+- RNF01: Persistência local via localStorage, funcionando sem internet. **Revisto (Sprint 5):** a aba de magias consulta a API ao vivo e precisa de conexão. O resto do app, inclusive as magias já equipadas na ficha, continua funcionando offline (ver seção 3.6).
 - RNF02: Interface rápida de usar durante a sessão — poucos cliques até a informação que o jogador precisa no meio do combate.
 - RNF03: Compatibilidade com os navegadores mais comuns (Chrome, Firefox).
 - RNF04: Código organizado de forma que novas regras (magias, classes, itens) possam ser adicionadas sem reescrever tudo — já que o projeto vai crescer por sprints.
@@ -102,6 +102,7 @@
 - Talentos avançados com pré-requisitos complexos
 - Descrições curtas de cada raça/sub-raça/classe exibidas na interface (nice-to-have)
 - Separar raças/classes do livro base das expansões/homebrew nos selects, com filtro e busca
+- Subclasses conjuradoras de classes não conjuradoras: **Cavaleiro Arcano** (Guerreiro) e **Trapaceiro Arcano** (Ladino). Usam a lista de magias do Mago e a progressão de espaços de um terço de conjurador. Implementar depois do Sprint 5, reaproveitando a aba de magias.
 
 ## 3.1 Mudança de regra — bônus de atributo (D&D 2024 / 5.5)
 
@@ -182,6 +183,40 @@ O app é para as campanhas do próprio mestre, então não precisa seguir uma ed
   - Subclasses: uma ou duas novas por classe (ex: Caminho da Árvore do Mundo, Colégio da Dança, Patrono Celestial, Domínio da Trapaça, Círculo das Estrelas, Feitiçaria Aberrante, Guerreiro Psíquico, Lâmina da Alma, Adivinho, Guerreiro da Misericórdia, Juramento da Glória, Perseguidor Sombrio).
 - **Regras de 2024 aplicadas:** bônus de atributo pelo antecedente (seção 3.1), subclasse no nível 3 para todas as classes, Dádiva Épica no nível 19 (seção 3.4) e **descanso longo devolve todos os dados de vida gastos**.
 
+## 3.6 Magias — decisões do Sprint 5 (planejamento)
+
+**Como vai funcionar:**
+- Uma **aba só para gerenciar magias** (`magias.html`), aberta pela ficha.
+- Vale para **todas as classes conjuradoras**: Bardo, Bruxo, Clérigo, Druida, Feiticeiro, Mago, Paladino e Patrulheiro.
+- A lista mostra **só as magias da classe do personagem, até o círculo que o nível dele permite**.
+- O jogador **equipa** magias até o limite da classe e do nível. As equipadas **aparecem na ficha**.
+
+**Fonte das magias: D&D 5e API ao vivo** (`dnd5eapi.co`, versão 2024 / SRD 5.2), sem baixar os dados para o projeto. Testado em 15/09/2026:
+- Aceita chamadas do navegador, inclusive com o app aberto direto do arquivo (CORS liberado).
+- GraphQL em `/graphql/2024` busca as magias de uma classe numa requisição só (ex: 124 do Druida).
+- 339 magias no total, com círculo, classes, concentração, ritual, tempo, alcance, duração, componentes e descrição (`description`).
+- Tempo medido: lista do Druida sem descrição 0,6 s (12 KB); com descrição 3,8 s (100 KB).
+- Limite de 100 requisições por janela curta.
+- Só cobre o conteúdo gratuito (SRD): algumas magias do livro completo não existem na API.
+- Exige crédito ao conteúdo SRD (licença CC-BY) se o app for publicado.
+
+**Uso da API decidido:**
+- A lista vem **sem descrição**, para abrir rápido; a descrição é buscada ao abrir uma magia.
+- Ao equipar, a ficha salva **código, nome, círculo e concentração** da magia, para funcionar sem internet ou com a API fora do ar. Só a aba de magias depende de conexão.
+
+**Idioma: a API é em inglês. Decidido traduzir em camadas:**
+1. **Campos fixos traduzidos no código** por dicionário: tempo de conjuração, duração e alcance (só 64 valores diferentes). Distâncias em pés viram metros (5 pés = 1,5 m). Valor fora do dicionário aparece em inglês.
+2. **Nomes em português** num arquivo de traduções próprio (código da magia → nome), com o nome em inglês como reserva enquanto não houver tradução.
+3. **Descrições começam em inglês** e são traduzidas aos poucos, conforme as magias forem usadas na campanha, no mesmo arquivo de traduções.
+- Descartado: tradutor automático ao vivo (chave de acesso exposta no navegador, custo, lentidão e erro em termos do jogo).
+- Não copiar descrições do livro oficial em português; traduzir o texto da API é permitido mantendo o crédito.
+
+**Decidido também:**
+- **Regra de troca de magias: 2024** (substitui o texto de 2014 do RF30). Conferir no livro os detalhes de cada classe, principalmente Paladino e Patrulheiro, antes de implementar no 5b.
+- **Cavaleiro Arcano e Trapaceiro Arcano ficam para depois** (item registrado na seção 3).
+- **Sprint dividido em 5a e 5b** (ver tabela da seção 5), entregue em passos pequenos e testáveis.
+- **Sem internet:** a aba de magias mostra só o aviso "sem conexão, tente de novo"; a ficha continua funcionando com as magias já equipadas.
+
 ---
 
 ## 4. Backlog do Produto (ordenado por prioridade e dependência)
@@ -217,7 +252,8 @@ Escrito como histórias de usuário, do jeito Scrum — cada uma vira uma entreg
 | Sprint 2 | Raça e perícias | 3, 4 | concluída |
 | Sprint 3 | Vida e descanso | 5, 6, 7 | concluída |
 | Sprint 4 | Level up dedicado (seção 3.4) | 8 | concluída (magias no level up vão para o Sprint 5) |
-| Sprint 5 | Magias | 9, 10 | próxima |
+| Sprint 5a | Magias em jogo: espaços de magia, CD e ataque mágico, concentração, descanso | 9, 10 (parte) | próxima |
+| Sprint 5b | Aba de magias: lista pela API, limites, equipar, troca (2024), coluna do level up | 9, 10 (parte) | |
 | Sprint 6 | Recursos de classe | 11 | |
 | Sprint 7 | Combate | 12 | |
 | Sprint 8 | Inventário | 13 | |

@@ -266,6 +266,21 @@ input:focus, select:focus {
     text-align: center;
 }
 
+/* Conjuração (Sprint 5a): atributo, CD e ataque lado a lado */
+.linha-conjuracao {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 6px;
+    text-align: center;
+}
+
+.campo-conjuracao {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
 /* ---------- Botão salvar ---------- */
 /* na ficha ele fica solto no fim do form; no cadastro entra na barra fixa */
 #btn-salvar {
@@ -689,7 +704,9 @@ body {
     background: rgba(255,255,255,0.12);
 }
 
-.linha-morte {
+/* linhas de círculos: testes de morte e espaços de magia usam o mesmo visual */
+.linha-morte,
+.linha-espaco {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -697,19 +714,22 @@ body {
     margin-bottom: 5px;
 }
 
-.morte-rotulo {
+.morte-rotulo,
+.espaco-rotulo {
     font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 1px;
     color: #6a4f3a;
 }
 
-.morte-circulos {
+.morte-circulos,
+.espaco-circulos {
     display: flex;
+    flex-wrap: wrap;
     gap: 5px;
 }
 
-.morte-circulo {
+.circulo {
     width: 14px;
     height: 14px;
     padding: 0;
@@ -719,10 +739,70 @@ body {
     cursor: pointer;
 }
 
-.morte-circulo-cheio { background-color: var(--tinta); }
+.circulo-cheio { background-color: var(--tinta); }
 
-.morte-circulo:disabled {
+.circulo:disabled {
     opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.lista-espacos { margin-top: 8px; text-align: left; }
+
+.espaco-circulos { flex: 1; }
+
+.espaco-restantes {
+    min-width: 48px;
+    font-size: 0.75rem;
+    text-align: right;
+}
+
+/* Concentração (Sprint 5a) */
+.concentracao {
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid var(--borda-fina);
+    text-align: left;
+}
+
+.concentracao-ativa {
+    margin: 4px 0 6px;
+    font-size: 0.85rem;
+    font-style: italic;
+}
+
+/* com magia ativa o texto perde o itálico e ganha peso, para chamar atenção */
+.concentracao-ligada {
+    font-style: normal;
+    font-weight: 700;
+}
+
+.linha-concentracao {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.linha-concentracao input {
+    flex: 1;
+    min-width: 0;
+}
+
+.linha-concentracao button {
+    padding: 5px 8px;
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
+    font-size: 0.75rem;
+    color: var(--tinta);
+    background-color: rgba(255,255,255,0.5);
+    border: 2px solid var(--tinta);
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.linha-concentracao button:hover:not(:disabled) { background-color: var(--ouro); }
+
+.linha-concentracao button:disabled {
+    opacity: 0.4;
     cursor: not-allowed;
 }
 

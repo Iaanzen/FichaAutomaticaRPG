@@ -76,6 +76,7 @@ const acaoDadosVidaEL = document.getElementById("acao-dados-vida")
 const acaoDescansoLongoEL = document.getElementById("acao-descanso-longo")
 const dadosDisponiveisEL = document.getElementById("dados-disponiveis")
 const btnGastarDadoEL = document.getElementById("btn-gastar-dado")
+const acaoPactoEL = document.getElementById("acao-pacto")
 
 // quantos dados de vida ja foram gastos desde o ultimo descanso longo
 let dadosVidaGastos = 0
@@ -95,6 +96,9 @@ function definirPvAtual(valor) {
 
     // mexer nos PV liga ou desliga os testes de morte
     atualizarTestesDeMorte()
+
+    // cura mudou o PV por código: sem isso o próximo dano seria calculado errado
+    lembrarPv()
 }
 
 function atualizarDadosDeVida() {
@@ -125,18 +129,39 @@ function gastarDadoDeVida() {
         `Rolou ${rolagem} no d${dado} ${formatarModificador(modificador)} = ${recuperado} PV recuperados.`
 }
 
+// RF27: espaços de magia voltam ao total; atualizarEspacosDeMagia fica mais abaixo
+function recuperarEspacosDeMagia() {
+    espacosGastos = {}
+    atualizarEspacosDeMagia()
+}
+
+// RF27: Bruxo recupera a Magia de Pacto ao fim do descanso curto
+function recuperarEspacosDePacto() {
+    recuperarEspacosDeMagia()
+    resultadoDescansoEL.textContent = "Espaços de Pacto recuperados."
+}
+
 // RF23: descanso longo devolve tudo, inclusive todos os dados de vida (regra 2024)
 function concluirDescansoLongo() {
     const devolvidos = dadosVidaGastos
+    const conjura = conjuracaoDaClasse(classeEL.value) !== null
 
     definirPvAtual(calcularPvMaximo())
     pvTemporarioEL.value = 0
+    lembrarPv()
     dadosVidaGastos = 0
 
     atualizarDadosDeVida()
 
+    // RF27: no descanso longo toda classe conjuradora recupera os espaços
+    if (conjura) {
+        recuperarEspacosDeMagia()
+    }
+
+    const espacos = conjura ? ", espaços de magia recuperados" : ""
+
     resultadoDescansoEL.textContent =
-        `PV no máximo, temporários zerados e ${devolvidos} dado(s) de vida recuperado(s).`
+        `PV no máximo, temporários zerados${espacos} e ${devolvidos} dado(s) de vida recuperado(s).`
 }
 
 // RF42, RF43: o modo destaca o que dá pra fazer naquele descanso
@@ -152,18 +177,17 @@ function entrarNoDescanso(tipo) {
 
     acaoDadosVidaEL.hidden = !curto
     acaoDescansoLongoEL.hidden = curto
+    acaoPactoEL.hidden = !(curto && recuperaMagiaEmDescansoCurto(classeEL.value))
 
     // o que ainda não existe no app, mas o jogador precisa lembrar na mesa
     const pendencias = []
 
     if (curto) {
-        if (recuperaMagiaEmDescansoCurto(classeEL.value)) {
-            pendencias.push("Bruxo recupera os espaços de magia (entra no Sprint 5).")
-        }
         pendencias.push("Recursos de classe que voltam em descanso curto (Sprint 6).")
     } else {
-        pendencias.push("Espaços de magia voltam ao total (Sprint 5).")
-        pendencias.push("Troca de magias preparadas (Sprint 5).")
+        if (conjuracaoDaClasse(classeEL.value) !== null) {
+            pendencias.push("Troca de magias preparadas (Sprint 5b).")
+        }
         pendencias.push("Recursos de classe são zerados (Sprint 6).")
     }
 
@@ -192,6 +216,10 @@ document
 btnGastarDadoEL.addEventListener("click", gastarDadoDeVida)
 
 document
+    .getElementById("btn-recuperar-pacto")
+    .addEventListener("click", recuperarEspacosDePacto)
+
+document
     .getElementById("btn-concluir-longo")
     .addEventListener("click", concluirDescansoLongo)
 
@@ -217,18 +245,19 @@ function estaCaido() {
     return Number(pvAtualEL.value) === 0
 }
 
-// monta os tres circulos de uma linha; clicar marca ou desmarca
-function montarCirculos(containerEL, marcados, aoClicar) {
+// monta uma linha de circulos; clicar marca ou desmarca.
+// Serve para testes de morte e para espacos de magia.
+function montarCirculos(containerEL, total, marcados, bloqueado, aoClicar) {
     containerEL.innerHTML = ""
 
-    for (let posicao = 1; posicao <= TESTES_DE_MORTE; posicao++) {
+    for (let posicao = 1; posicao <= total; posicao++) {
         const circulo = document.createElement("button")
         circulo.type = "button"
-        circulo.className = "morte-circulo"
-        circulo.disabled = !estaCaido()
+        circulo.className = "circulo"
+        circulo.disabled = bloqueado
 
         if (posicao <= marcados) {
-            circulo.classList.add("morte-circulo-cheio")
+            circulo.classList.add("circulo-cheio")
         }
 
         // clicar no que ja esta marcado desmarca ate ali
@@ -252,12 +281,12 @@ function atualizarTestesDeMorte() {
     blocoMortesEL.classList.toggle("bloco-vazio", !caido)
     btnRolarMorteEL.disabled = !caido
 
-    montarCirculos(sucessosMorteEL, sucessosMorte, function (novo) {
+    montarCirculos(sucessosMorteEL, TESTES_DE_MORTE, sucessosMorte, !caido, function (novo) {
         sucessosMorte = novo
         atualizarTestesDeMorte()
     })
 
-    montarCirculos(falhasMorteEL, falhasMorte, function (novo) {
+    montarCirculos(falhasMorteEL, TESTES_DE_MORTE, falhasMorte, !caido, function (novo) {
         falhasMorte = novo
         atualizarTestesDeMorte()
     })
@@ -316,6 +345,186 @@ btnRolarMorteEL.addEventListener("click", rolarTesteDeMorte)
 
 // o bloco só vale a 0 PV, então acompanha qualquer mudança nos PV atuais
 pvAtualEL.addEventListener("input", atualizarTestesDeMorte)
+
+/* ---------- Sprint 5a: espaços de magia (RF25, RF27) ---------- */
+
+const listaEspacosEL = document.getElementById("lista-espacos")
+
+// quantos espacos de cada circulo ja foram gastos: { "1": 2, "3": 1 }
+let espacosGastos = {}
+
+// o que foi marcado, limitado ao que a classe e o nivel atuais permitem
+function espacosGastosValidos() {
+    const validos = {}
+
+    espacosDeMagia(classeEL.value, Number(nivelEL.value)).forEach(function (espaco) {
+        validos[espaco.circulo] = Math.min(espacosGastos[espaco.circulo] || 0, espaco.total)
+    })
+
+    return validos
+}
+
+function atualizarEspacosDeMagia() {
+    const espacos = espacosDeMagia(classeEL.value, Number(nivelEL.value))
+    const conjuracao = conjuracaoDaClasse(classeEL.value)
+    const gastos = espacosGastosValidos()
+
+    listaEspacosEL.innerHTML = ""
+
+    if (espacos.length === 0) {
+        return
+    }
+
+    const ajuda = document.createElement("p")
+    ajuda.className = "descanso-ajuda"
+    ajuda.textContent = "Espaços de magia: marque os que já foram gastos."
+    listaEspacosEL.appendChild(ajuda)
+
+    espacos.forEach(function (espaco) {
+        const linha = document.createElement("div")
+        linha.className = "linha-espaco"
+
+        const rotulo = document.createElement("span")
+        rotulo.className = "espaco-rotulo"
+        rotulo.textContent = conjuracao.tipo === "pacto"
+            ? `${espaco.circulo}º círculo (Pacto)`
+            : `${espaco.circulo}º círculo`
+
+        const circulosEL = document.createElement("div")
+        circulosEL.className = "espaco-circulos"
+
+        montarCirculos(circulosEL, espaco.total, gastos[espaco.circulo], false, function (novo) {
+            espacosGastos[espaco.circulo] = novo
+            atualizarEspacosDeMagia()
+        })
+
+        const restantes = document.createElement("span")
+        restantes.className = "espaco-restantes"
+        restantes.textContent = `${espaco.total - gastos[espaco.circulo]} de ${espaco.total}`
+
+        linha.appendChild(rotulo)
+        linha.appendChild(circulosEL)
+        linha.appendChild(restantes)
+        listaEspacosEL.appendChild(linha)
+    })
+}
+
+// trocar de classe muda a tabela de espacos (ou tira ela)
+classeEL.addEventListener("change", atualizarEspacosDeMagia)
+
+/* ---------- Sprint 5a: concentração (RF28) ---------- */
+
+const blocoConcentracaoEL = document.getElementById("bloco-concentracao")
+const magiaConcentracaoEL = document.getElementById("magia-concentracao")
+const concentracaoAtivaEL = document.getElementById("concentracao-ativa")
+const statusConcentracaoEL = document.getElementById("status-concentracao")
+const btnConcentrarEL = document.getElementById("btn-concentrar")
+const btnEncerrarConcentracaoEL = document.getElementById("btn-encerrar-concentracao")
+
+// nome da magia; vazio = sem concentração. No 5b passa a ser uma das magias equipadas.
+let concentracaoAtual = ""
+
+function atualizarConcentracao(mensagem) {
+    blocoConcentracaoEL.hidden = conjuracaoDaClasse(classeEL.value) === null
+
+    const ativa = concentracaoAtual !== ""
+
+    concentracaoAtivaEL.textContent = ativa
+        ? `Concentrando em: ${concentracaoAtual}`
+        : "Nenhuma magia de concentração ativa."
+    concentracaoAtivaEL.classList.toggle("concentracao-ligada", ativa)
+
+    btnConcentrarEL.textContent = ativa ? "Trocar" : "Concentrar"
+    btnEncerrarConcentracaoEL.disabled = !ativa
+    statusConcentracaoEL.textContent = mensagem || ""
+}
+
+// RF28: só uma por vez; começar outra encerra a anterior, com aviso
+function concentrar() {
+    const magia = magiaConcentracaoEL.value.trim()
+
+    if (magia === "") {
+        atualizarConcentracao("Digite o nome da magia.")
+        magiaConcentracaoEL.focus()
+        return
+    }
+
+    const anterior = concentracaoAtual
+    concentracaoAtual = magia
+    magiaConcentracaoEL.value = ""
+
+    if (anterior !== "" && anterior !== magia) {
+        atualizarConcentracao(
+            `Concentração em ${anterior} encerrada: só uma magia de concentração por vez.`
+        )
+        return
+    }
+
+    atualizarConcentracao("")
+}
+
+function encerrarConcentracao(motivo) {
+    const magia = concentracaoAtual
+    concentracaoAtual = ""
+    atualizarConcentracao(magia === "" ? "" : `${motivo || "Concentração"} em ${magia} encerrada.`)
+}
+
+// Último PV visto, para saber quanto dano entrou. Usa "change" e não "input":
+// apagar o campo para digitar outro número não pode contar como cair a 0 PV.
+let pvVisto = 0
+let temporarioVisto = 0
+
+function lembrarPv() {
+    pvVisto = Number(pvAtualEL.value)
+    temporarioVisto = Number(pvTemporarioEL.value)
+}
+
+function aoMudarPv() {
+    // dano nos PV temporários também exige salvaguarda
+    const dano =
+        Math.max(0, pvVisto - Number(pvAtualEL.value)) +
+        Math.max(0, temporarioVisto - Number(pvTemporarioEL.value))
+
+    lembrarPv()
+
+    if (concentracaoAtual === "") {
+        return
+    }
+
+    // a 0 PV o personagem fica inconsciente, e a concentração acaba
+    if (estaCaido()) {
+        encerrarConcentracao("Caiu a 0 PV: concentração")
+        return
+    }
+
+    if (dano > 0) {
+        atualizarConcentracao(
+            `Sofreu ${dano} de dano: salvaguarda de Constituição CD ${cdConcentracao(dano)} para manter ${concentracaoAtual}.`
+        )
+    }
+}
+
+btnConcentrarEL.addEventListener("click", concentrar)
+
+btnEncerrarConcentracaoEL.addEventListener("click", function () {
+    encerrarConcentracao()
+})
+
+// Enter no campo concentra, em vez de enviar o formulário da ficha
+magiaConcentracaoEL.addEventListener("keydown", function (evento) {
+    if (evento.key === "Enter") {
+        evento.preventDefault()
+        concentrar()
+    }
+})
+
+pvAtualEL.addEventListener("change", aoMudarPv)
+pvTemporarioEL.addEventListener("change", aoMudarPv)
+
+// classe que não conjura esconde o bloco
+classeEL.addEventListener("change", function () {
+    atualizarConcentracao()
+})
 
 /* ---------- RF09: talentos escolhidos no level up ---------- */
 
@@ -385,6 +594,15 @@ if (!personagem) {
     falhasMorte = personagem.falhasMorte || 0
     atualizarTestesDeMorte()
 
+    espacosGastos = personagem.espacosGastos || {}
+    atualizarEspacosDeMagia()
+
+    concentracaoAtual = personagem.concentracao || ""
+    atualizarConcentracao()
+
+    // ponto de partida para medir dano; os PV já foram carregados acima
+    lembrarPv()
+
     // o nível só muda por aqui (o campo na ficha é somente leitura),
     // para ninguém pular a Melhoria de Atributo ou o Talento
     const linkLevelupEL = document.getElementById("link-levelup")
@@ -441,6 +659,11 @@ if (!personagem) {
         personagem.dadosVidaGastos = dadosVidaGastos
         personagem.sucessosMorte = sucessosMorte
         personagem.falhasMorte = falhasMorte
+        // guarda só o que ainda existe na tabela da classe e do nível atuais
+        personagem.espacosGastos = espacosGastosValidos()
+        // classe que não conjura não guarda concentração
+        personagem.concentracao =
+            conjuracaoDaClasse(personagem.classe) === null ? "" : concentracaoAtual
 
         localStorage.setItem("fichas", JSON.stringify(personagens))
 

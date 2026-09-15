@@ -354,13 +354,23 @@
                 </p>
               </div>
 
+              <div class="acao-descanso" id="acao-pacto" hidden>
+                <button type="button" id="btn-recuperar-pacto">
+                  Recuperar espaços de Pacto
+                </button>
+                <p class="descanso-ajuda">
+                  Magia de Pacto do Bruxo: os espaços voltam ao fim do descanso
+                  curto.
+                </p>
+              </div>
+
               <div class="acao-descanso" id="acao-descanso-longo">
                 <button type="button" id="btn-concluir-longo">
                   Concluir descanso longo
                 </button>
                 <p class="descanso-ajuda">
-                  Recupera todos os PV, zera os temporários e devolve todos os
-                  dados de vida gastos.
+                  Recupera todos os PV, zera os temporários, devolve todos os
+                  dados de vida gastos e recupera os espaços de magia.
                 </p>
               </div>
 
@@ -374,9 +384,46 @@
             </div>
           </div>
 
+          <div class="bloco-ficha" id="bloco-conjuracao">
+            <span class="rotulo-bloco">Conjuração</span>
+            <div class="linha-conjuracao">
+              <div class="campo-conjuracao">
+                <span class="valor-destaque" id="valor-atributo-conjuracao"></span>
+                <span class="rotulo">Atributo</span>
+              </div>
+              <div class="campo-conjuracao">
+                <span class="valor-destaque" id="valor-cd-magia"></span>
+                <span class="rotulo">CD de Magia</span>
+              </div>
+              <div class="campo-conjuracao">
+                <span class="valor-destaque" id="valor-ataque-magico"></span>
+                <span class="rotulo">Ataque Mágico</span>
+              </div>
+            </div>
+            <p class="vazio-texto" id="tipo-conjuracao"></p>
+            <div class="lista-espacos" id="lista-espacos"></div>
+
+            <div class="concentracao" id="bloco-concentracao" hidden>
+              <span class="espaco-rotulo">Concentração</span>
+              <p class="concentracao-ativa" id="concentracao-ativa"></p>
+              <div class="linha-concentracao">
+                <input
+                  type="text"
+                  id="magia-concentracao"
+                  placeholder="Nome da magia"
+                />
+                <button type="button" id="btn-concentrar">Concentrar</button>
+                <button type="button" id="btn-encerrar-concentracao">
+                  Encerrar
+                </button>
+              </div>
+              <p class="descanso-ajuda" id="status-concentracao"></p>
+            </div>
+          </div>
+
           <div class="bloco-ficha bloco-vazio bloco-alto">
-            <span class="rotulo-bloco">Ataques e Conjuração</span>
-            <p class="vazio-texto">Entra nos Sprints 5 e 7.</p>
+            <span class="rotulo-bloco">Ataques</span>
+            <p class="vazio-texto">Entra no Sprint 7 (RF34).</p>
           </div>
 
           <div class="bloco-ficha bloco-vazio bloco-alto">

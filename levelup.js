@@ -141,6 +141,14 @@ function montarGanhos() {
         )
     }
 
+    // só aparece quando a tabela muda; quem não conjura tem lista vazia nos dois
+    const espacosAntes = descreverEspacos(espacosDeMagia(personagem.classe, personagem.nivel))
+    const espacosDepois = descreverEspacos(espacosDeMagia(personagem.classe, nivelNovo()))
+
+    if (espacosDepois !== espacosAntes) {
+        ganhos.push(`Espaços de magia por círculo: ${espacosDepois}.`)
+    }
+
     if (precisaSubclasse()) {
         ganhos.push("Escolha de subclasse.")
     }

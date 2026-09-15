@@ -509,7 +509,7 @@ function rolarDado(lados) {
 }
 
 // Bruxo e a excecao: recupera espacos de magia em descanso curto (RF27).
-// Ainda nao ha magias no app, mas o modo de descanso ja avisa o jogador.
+// No descanso longo todas as classes conjuradoras recuperam.
 function recuperaMagiaEmDescansoCurto(classe) {
     return classe === "bruxo"
 }
@@ -782,6 +782,166 @@ function opcoesDePericias(classe) {
     }
 
     return regra.opcoes
+}
+
+/* ---------- Sprint 5a: conjuração ---------- */
+
+// Regra 2024. O tipo decide a tabela de espacos de magia (passo 2 do 5a):
+// completo = tabela cheia; meio = Paladino e Patrulheiro, ja com espacos no nivel 1;
+// pacto = Magia de Pacto do Bruxo, que recupera em descanso curto.
+// Classe fora desta tabela nao conjura.
+const conjuracaoPorClasse = {
+    bardo: { atributo: "carisma", tipo: "completo" },
+    bruxo: { atributo: "carisma", tipo: "pacto" },
+    clerigo: { atributo: "sabedoria", tipo: "completo" },
+    druida: { atributo: "sabedoria", tipo: "completo" },
+    feiticeiro: { atributo: "carisma", tipo: "completo" },
+    mago: { atributo: "inteligencia", tipo: "completo" },
+    paladino: { atributo: "carisma", tipo: "meio" },
+    patrulheiro: { atributo: "sabedoria", tipo: "meio" }
+}
+
+const NOME_TIPO_CONJURADOR = {
+    completo: "Conjurador completo",
+    meio: "Meio conjurador",
+    pacto: "Magia de Pacto"
+}
+
+// classe que nao conjura (ou ainda nao escolhida) devolve null
+function conjuracaoDaClasse(classe) {
+    return conjuracaoPorClasse[classe] || null
+}
+
+// CD que o alvo precisa superar: 8 + proficiencia + modificador do atributo
+function cdDeMagia(proficiencia, modificador) {
+    return 8 + proficiencia + modificador
+}
+
+// bonus somado ao d20 nos ataques com magia
+function ataqueMagico(proficiencia, modificador) {
+    return proficiencia + modificador
+}
+
+/* ---------- Sprint 5a: espaços de magia (RF25) ---------- */
+
+// Regra 2024. Cada linha e um nivel de personagem (primeira linha = nivel 1)
+// e traz quantos espacos ha em cada circulo, do 1º em diante.
+const ESPACOS_CONJURADOR_COMPLETO = [
+    [2],
+    [3],
+    [4, 2],
+    [4, 3],
+    [4, 3, 2],
+    [4, 3, 3],
+    [4, 3, 3, 1],
+    [4, 3, 3, 2],
+    [4, 3, 3, 3, 1],
+    [4, 3, 3, 3, 2],
+    [4, 3, 3, 3, 2, 1],
+    [4, 3, 3, 3, 2, 1],
+    [4, 3, 3, 3, 2, 1, 1],
+    [4, 3, 3, 3, 2, 1, 1],
+    [4, 3, 3, 3, 2, 1, 1, 1],
+    [4, 3, 3, 3, 2, 1, 1, 1],
+    [4, 3, 3, 3, 2, 1, 1, 1, 1],
+    [4, 3, 3, 3, 3, 1, 1, 1, 1],
+    [4, 3, 3, 3, 3, 2, 1, 1, 1],
+    [4, 3, 3, 3, 3, 2, 2, 1, 1]
+]
+
+// Paladino e Patrulheiro: em 2024 ja comecam com 2 espacos no nivel 1
+const ESPACOS_MEIO_CONJURADOR = [
+    [2],
+    [2],
+    [3],
+    [3],
+    [4, 2],
+    [4, 2],
+    [4, 3],
+    [4, 3],
+    [4, 3, 2],
+    [4, 3, 2],
+    [4, 3, 3],
+    [4, 3, 3],
+    [4, 3, 3, 1],
+    [4, 3, 3, 1],
+    [4, 3, 3, 2],
+    [4, 3, 3, 2],
+    [4, 3, 3, 3, 1],
+    [4, 3, 3, 3, 1],
+    [4, 3, 3, 3, 2],
+    [4, 3, 3, 3, 2]
+]
+
+// Magia de Pacto do Bruxo: todos os espacos sao do mesmo circulo.
+// As Arcanas Misticas (6º ao 9º circulo) nao sao espacos e ficam para depois.
+const PACTO_POR_NIVEL = [
+    { espacos: 1, circulo: 1 },
+    { espacos: 2, circulo: 1 },
+    { espacos: 2, circulo: 2 },
+    { espacos: 2, circulo: 2 },
+    { espacos: 2, circulo: 3 },
+    { espacos: 2, circulo: 3 },
+    { espacos: 2, circulo: 4 },
+    { espacos: 2, circulo: 4 },
+    { espacos: 2, circulo: 5 },
+    { espacos: 2, circulo: 5 },
+    { espacos: 3, circulo: 5 },
+    { espacos: 3, circulo: 5 },
+    { espacos: 3, circulo: 5 },
+    { espacos: 3, circulo: 5 },
+    { espacos: 3, circulo: 5 },
+    { espacos: 3, circulo: 5 },
+    { espacos: 4, circulo: 5 },
+    { espacos: 4, circulo: 5 },
+    { espacos: 4, circulo: 5 },
+    { espacos: 4, circulo: 5 }
+]
+
+// devolve [{ circulo: 1, total: 4 }, ...] so com os circulos que tem espaco;
+// classe que nao conjura devolve lista vazia
+function espacosDeMagia(classe, nivel) {
+    const conjuracao = conjuracaoDaClasse(classe)
+
+    if (conjuracao === null || nivel < 1 || nivel > NIVEL_MAXIMO) {
+        return []
+    }
+
+    if (conjuracao.tipo === "pacto") {
+        const pacto = PACTO_POR_NIVEL[nivel - 1]
+        return [{ circulo: pacto.circulo, total: pacto.espacos }]
+    }
+
+    const tabela = conjuracao.tipo === "meio"
+        ? ESPACOS_MEIO_CONJURADOR
+        : ESPACOS_CONJURADOR_COMPLETO
+
+    return tabela[nivel - 1].map(function(total, indice) {
+        return { circulo: indice + 1, total: total }
+    })
+}
+
+// texto curto para o level up: "1º: 4 · 2º: 3 · 3º: 2"
+function descreverEspacos(espacos) {
+    return espacos
+        .map(function(espaco) {
+            return `${espaco.circulo}º: ${espaco.total}`
+        })
+        .join(" · ")
+}
+
+/* ---------- Sprint 5a: concentração (RF28) ---------- */
+
+// Regra 2024: ao sofrer dano concentrado, salvaguarda de Constituição com
+// CD 10 ou metade do dano (arredondada para baixo), o que for maior, até 30.
+const CD_CONCENTRACAO_MINIMA = 10
+const CD_CONCENTRACAO_MAXIMA = 30
+
+function cdConcentracao(dano) {
+    return Math.min(
+        CD_CONCENTRACAO_MAXIMA,
+        Math.max(CD_CONCENTRACAO_MINIMA, Math.floor(dano / 2))
+    )
 }
 
 /* ---------- RF07 e RF08: modificadores e proficiencia ---------- */

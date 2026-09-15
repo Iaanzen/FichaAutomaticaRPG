@@ -400,6 +400,44 @@ function atualizarPericias() {
         : "status-pericias status-erro"
 }
 
+/* ---------- Sprint 5a: conjuração ---------- */
+
+// So a ficha tem esse bloco. Classe que nao conjura deixa o bloco como espaco vazio.
+function atualizarConjuracao() {
+    const blocoEL = document.getElementById("bloco-conjuracao")
+
+    if (blocoEL === null) {
+        return
+    }
+
+    const atributoEL = document.getElementById("valor-atributo-conjuracao")
+    const cdEL = document.getElementById("valor-cd-magia")
+    const ataqueEL = document.getElementById("valor-ataque-magico")
+    const tipoEL = document.getElementById("tipo-conjuracao")
+
+    const conjuracao = conjuracaoDaClasse(classeEL.value)
+    blocoEL.classList.toggle("bloco-vazio", conjuracao === null)
+
+    if (conjuracao === null) {
+        atributoEL.textContent = "—"
+        cdEL.textContent = "—"
+        ataqueEL.textContent = "—"
+        tipoEL.textContent = classeEL.value === ""
+            ? "Escolha uma classe."
+            : "Esta classe não conjura magias."
+        return
+    }
+
+    const modificador = calcularAtributos().modificadores[conjuracao.atributo]
+    const proficiencia = bonusDeProficiencia(Number(nivelEL.value))
+
+    atributoEL.textContent = ABREVIACAO_ATRIBUTO[conjuracao.atributo]
+    cdEL.textContent = cdDeMagia(proficiencia, modificador)
+    ataqueEL.textContent = formatarModificador(ataqueMagico(proficiencia, modificador))
+    tipoEL.textContent =
+        `${NOME_TIPO_CONJURADOR[conjuracao.tipo]} · usa ${NOME_ATRIBUTO[conjuracao.atributo]}`
+}
+
 /* ---------- Ligacoes ---------- */
 
 // Tudo que e derivado sai daqui. Bloco novo entra nesta funcao e passa a
@@ -410,6 +448,7 @@ function recalcularDerivados() {
     atualizarPericias()
     atualizarSalvaguardas()
     atualizarPontosDeVida()
+    atualizarConjuracao()
 }
 
 // atualizarRaca fica de fora: traços e idiomas só dependem de raça e sub-raça,
