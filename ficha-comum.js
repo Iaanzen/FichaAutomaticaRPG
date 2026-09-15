@@ -160,6 +160,9 @@ function atualizarRaca() {
 
 /* ---------- RF21, RF22: pontos de vida ---------- */
 
+// talentos vem do level up: a ficha preenche ao carregar, o cadastro fica vazio
+let talentosDoPersonagem = []
+
 // o maximo e calculado; o PV atual e do jogador e so ele mexe
 function calcularPvMaximo() {
     const calculo = calcularAtributos()
@@ -167,7 +170,8 @@ function calcularPvMaximo() {
     return pontosDeVida(
         classeEL.value,
         Number(nivelEL.value),
-        calculo.modificadores.constituicao
+        calculo.modificadores.constituicao,
+        talentosDoPersonagem
     )
 }
 

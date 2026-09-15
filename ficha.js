@@ -125,13 +125,13 @@ function gastarDadoDeVida() {
         `Rolou ${rolagem} no d${dado} ${formatarModificador(modificador)} = ${recuperado} PV recuperados.`
 }
 
-// RF23: descanso longo devolve tudo e metade dos dados de vida
+// RF23: descanso longo devolve tudo, inclusive todos os dados de vida (regra 2024)
 function concluirDescansoLongo() {
-    const devolvidos = dadosRecuperadosEmDescansoLongo(dadosVidaTotais())
+    const devolvidos = dadosVidaGastos
 
     definirPvAtual(calcularPvMaximo())
     pvTemporarioEL.value = 0
-    dadosVidaGastos = Math.max(0, dadosVidaGastos - devolvidos)
+    dadosVidaGastos = 0
 
     atualizarDadosDeVida()
 
@@ -317,6 +317,21 @@ btnRolarMorteEL.addEventListener("click", rolarTesteDeMorte)
 // o bloco só vale a 0 PV, então acompanha qualquer mudança nos PV atuais
 pvAtualEL.addEventListener("input", atualizarTestesDeMorte)
 
+/* ---------- RF09: talentos escolhidos no level up ---------- */
+
+function mostrarTalentos() {
+    const textos = talentosDoPersonagem.map(function (valor) {
+        const talento = talentoPorValor(valor)
+        return talento ? `${talento.nome}: ${talento.descricao}` : valor
+    })
+
+    preencherLista(
+        document.getElementById("lista-talentos"),
+        textos,
+        "Nenhum talento. Eles são escolhidos ao subir de nível."
+    )
+}
+
 /* ---------- Carregar e salvar ---------- */
 
 if (!personagem) {
@@ -349,6 +364,10 @@ if (!personagem) {
     // renderizarPericias roda dentro de escreverPericias
     escreverPericias(personagem.pericias)
 
+    // precisa vir antes do recálculo: o talento Robusto muda o PV máximo
+    talentosDoPersonagem = personagem.talentos || []
+    mostrarTalentos()
+
     // ficha-comum.js montou tudo antes da classe e da raça serem preenchidas aqui
     recalcularDerivados()
 
@@ -365,6 +384,12 @@ if (!personagem) {
     sucessosMorte = personagem.sucessosMorte || 0
     falhasMorte = personagem.falhasMorte || 0
     atualizarTestesDeMorte()
+
+    // o nível só muda por aqui (o campo na ficha é somente leitura),
+    // para ninguém pular a Melhoria de Atributo ou o Talento
+    const linkLevelupEL = document.getElementById("link-levelup")
+    linkLevelupEL.href = `levelup.html?id=${personagem.id}`
+    linkLevelupEL.hidden = personagem.nivel >= NIVEL_MAXIMO
 
     formFicha.addEventListener("submit", function (evento) {
         evento.preventDefault()

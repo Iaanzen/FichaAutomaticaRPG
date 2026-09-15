@@ -5,11 +5,11 @@ const formFicha = document.getElementById("form-personagem");
 // Bonus, modificadores e pericias vivem em ficha-comum.js.
 // Este arquivo cuida so do que eh do wizard.
 
-const TOTAL_ETAPAS = 9
+const TOTAL_ETAPAS = 8
 
 // etapas com regra propria de validacao
-const ETAPA_BONUS = 5
-const ETAPA_PERICIAS = 8
+const ETAPA_BONUS = 4
+const ETAPA_PERICIAS = 7
 
 const btnProximo = document.getElementById("btn-proximo")
 const btnSalvar = document.getElementById("btn-salvar")
@@ -52,7 +52,7 @@ function focarPrimeiroCampo(etapa) {
     const campos = etapa.querySelectorAll("input, select")
 
     for (const campo of campos) {
-        // offsetParent nulo = campo escondido na tela (ex: subclasse antes do nivel 3)
+        // offsetParent nulo = campo escondido na tela
         if (!campo.disabled && campo.offsetParent !== null) {
             campo.scrollIntoView({ block: "center", behavior: "smooth" })
             // o scroll acima ja posiciona; sem isso o foco daria um segundo pulo
@@ -166,47 +166,6 @@ ATRIBUTOS.forEach(function(atributo) {
 
 atualizarArrayPadrao()
 
-// nivelEL e classeEL vem de ficha-comum.js
-const subclasseEL = document.getElementById("subclasse")
-const blocoSubclasseEL = document.getElementById("bloco-subclasse")
-
-function atualizarSubclasse() {
-    const nivel = Number(nivelEL.value)
-    const classeEscolha = classeEL.value
-    const subclassesLista = subclassesPorClasse[classeEscolha] || []
-
-    // so aparece a partir do nivel 3 e se a classe ja tiver sido escolhida
-    const podeEscolher = nivel >= NIVEL_SUBCLASSE && subclassesLista.length > 0
-    blocoSubclasseEL.hidden = !podeEscolher
-
-    // so eh obrigatoria enquanto visivel: campo escondido e required trava o envio
-    subclasseEL.required = podeEscolher
-
-    if (!podeEscolher) {
-        // some da tela e some do dado: ninguem salva subclasse que nao escolheu
-        subclasseEL.value = ""
-        return
-    }
-
-    subclasseEL.innerHTML = ""
-
-    const opcaoVazia = document.createElement("option")
-    opcaoVazia.value = ""
-    opcaoVazia.textContent = "Selecione..."
-    subclasseEL.appendChild(opcaoVazia)
-
-    subclassesLista.forEach(function(subclasseItem) {
-        const opcao = document.createElement("option")
-        opcao.value = subclasseItem.valor
-        opcao.textContent = subclasseItem.nome
-        subclasseEL.appendChild(opcao)
-    })
-}
-
-nivelEL.addEventListener("input", atualizarSubclasse)
-classeEL.addEventListener("change", atualizarSubclasse)
-atualizarSubclasse()
-
 // racaEL e subracaEL vem de ficha-comum.js
 
 racaEL.addEventListener("change", function() {
@@ -233,8 +192,10 @@ formFicha.addEventListener('submit', function (evento) {
     const raca = document.getElementById("raca").value
     const subraca = document.getElementById("subraca").value
     const classe = document.getElementById("classe").value
-    const subclasse = document.getElementById("subclasse").value
-    const nivel = Number(document.getElementById("nivel").value)
+    // todo personagem nasce no nível 1, ainda sem subclasse (ela vem no nível 3,
+    // pela tela de level up)
+    const subclasse = ""
+    const nivel = 1
     const antecedente = document.getElementById("antecedente").value
     const alinhamento = document.getElementById("alinhamento").value
     const forca = Number(document.getElementById("forca").value)

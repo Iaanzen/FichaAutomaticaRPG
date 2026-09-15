@@ -23,6 +23,7 @@
   - Melhoria de Atributo (ASI);
   - Talento;
   - Para classes conjuradoras: aprender nova magia e/ou trocar uma magia já conhecida (quando a classe permitir essa troca no level up).
+  - *(ASI e Talento feitos no Sprint 4 — ver seção 3.4. A parte de magias fica para o Sprint 5.)*
 
 ### 1.3 Raça e Traços
 - RF10: ~~Aplicar automaticamente os bônus de atributo da raça/sub-raça escolhida.~~ **Revogado pela seção 3.1** — nas regras 2024 o bônus vem do antecedente. O que continua valendo: o select de sub-raça deve ser preenchido dinamicamente com as opções corretas conforme a raça escolhida (ex: Anão → Anão da Colina / Anão da Montanha). *(Feito.)*
@@ -112,18 +113,20 @@ Decidido migrar do modelo 2014 (bônus fixos por raça) para uma variação do m
 
 ## 3.2 Wizard de criação de personagem (CONCLUÍDO)
 
-Fluxo passo a passo (estilo criação de videogame), substituindo o formulário único. Entregue com 8 etapas, nesta ordem:
+Fluxo passo a passo (estilo criação de videogame), substituindo o formulário único. Etapas atuais, nesta ordem:
 
 | # | Etapa | Observação |
 |---|---|---|
 | 1 | Nome | — |
-| 2 | Nível | vem antes da classe porque define se há subclasse |
-| 3 | Classe | subclasse só aparece a partir do nível 3 |
-| 4 | Antecedente | texto livre |
-| 5 | Bônus do antecedente | +2/+1 ou +1/+1/+1, validado pelo app |
-| 6 | Raça | sub-raça preenchida dinamicamente |
-| 7 | Atributos | mostra total (base + bônus) e modificador |
+| 2 | Classe | sem subclasse: o personagem nasce no nível 1 |
+| 3 | Antecedente | texto livre |
+| 4 | Bônus do antecedente | +2/+1 ou +1/+1/+1, validado pelo app |
+| 5 | Raça | sub-raça preenchida dinamicamente |
+| 6 | Atributos | array padrão; mostra total (base + bônus) e modificador |
+| 7 | Perícias | dentro do limite da classe |
 | 8 | Detalhes | alinhamento |
+
+**Revisão (Sprint 4): o personagem só é criado no nível 1.** A etapa de Nível foi removida do wizard, junto com a escolha de subclasse. Criar direto num nível alto pulava as escolhas que a tela de level up faz (subclasse, Melhoria de Atributo, Talento, Dádiva Épica), então o personagem sobe um nível por vez pela ficha.
 
 Regras de funcionamento decididas durante a sprint:
 - Cada etapa desbloqueia a próxima; as seguintes ficam bloqueadas (`fieldset disabled`) até a atual ser válida.
@@ -147,6 +150,37 @@ Ideias que não travam nenhum sprint específico, mas que precisam entrar em alg
 - **IDEIA03: Cobertura mínima do livro oficial.** Estabelecer como meta que raças, sub-raças, classes e subclasses cubram pelo menos o conteúdo do livro base oficial, antes de qualquer expansão ou homebrew. Serve de critério de "pronto" para IDEIA01 e IDEIA02.
 - **IDEIA04: Criar a própria raça (homebrew).** Permitir que o jogador defina uma raça própria em vez de escolher da lista: nome, deslocamento, traços passivos (texto livre) e perícias/idiomas concedidos. Nas regras 2024 a raça não dá bônus de atributo, então a raça personalizada não afeta a distribuição +2/+1 ou +1/+1/+1 da seção 3.1. Depende de IDEIA03 estar fechada, para que o conteúdo oficial e o homebrew fiquem distinguíveis no select (ver item correspondente na seção 3).
 - **IDEIA05: Cadeado de edição na ficha.** Durante a sessão o jogador fica com a ficha aberta o tempo todo e pode alterar um campo sem querer — um clique no select de classe, uma rolagem do mouse sobre um campo numérico. Um botão de cadeado no topo da ficha alterna entre **travada** e **liberada**: travada, os campos ficam somente leitura; liberada, a ficha volta a ser editável. A ficha deve **abrir travada**, já que em jogo ler é o uso normal e editar é a exceção, e o estado deve ser lembrado por personagem. Atenção: campos que mudam durante o jogo (PV atuais, PV temporários, testes de morte, usos de recursos de classe) precisam continuar editáveis mesmo com o cadeado fechado. O cadeado protege a **construção** do personagem, não o estado dele em jogo.
+
+## 3.4 Level up dedicado (CONCLUÍDO — Sprint 4)
+
+Tela própria (`levelup.html`), aberta pelo botão "Subir de Nível" no topo da ficha. Sobe um nível por vez.
+
+O que a tela faz:
+- Mostra nível atual → novo e o que o nível traz: PV máximo (antes → depois), dados de vida, bônus de proficiência.
+- Nos níveis de escolha (4, 8, 12, 16, 19; Guerreiro também 6 e 14; Ladino também 10), mostra **Melhoria de Atributo** e **Talento** lado a lado. A coluna de **Magias** está reservada para o Sprint 5.
+- Melhoria de Atributo: +2 num atributo ou +1 em dois, sem passar de 20 (contando o bônus do antecedente).
+- Talento: lista de 10 talentos com descrição; talento já escolhido não se repete.
+- Nível sem escolha: só confirma.
+- Personagem sem subclasse, chegando ao nível 3 ou acima, escolhe a subclasse na própria tela.
+
+Regras decididas nesta sprint:
+- **O nível na ficha é somente leitura.** Só muda pela tela de level up, para ninguém pular a escolha de ASI/Talento.
+- **Subir de nível não cura:** só o PV máximo aumenta. O PV atual fica como estava e sobe com descanso ou cura (ex: 36/36 → 36/44).
+- Aumento de Constituição e o talento **Robusto** (+2 PV por nível) valem para todos os níveis, inclusive os já passados. A prévia de PV acompanha a escolha ao vivo.
+- Os talentos escolhidos aparecem num bloco próprio na ficha. Só o Robusto tem efeito mecânico por enquanto; os outros dependem de blocos futuros (iniciativa no Sprint 7, magias no Sprint 5, percepção passiva no RF05).
+- **Nível 19 — Dádiva Épica (regra 2024):** além da Melhoria de Atributo e dos talentos comuns, a tela oferece 12 Dádivas Épicas. A dádiva dá +1 num atributo, que pode passar de 20 até 30 (algumas limitam o atributo). A Dádiva da Fortitude soma +40 PV máximos; as demais são texto por enquanto.
+- Ainda falta: as habilidades de classe de cada nível (RF13). O cadeado de edição (IDEIA05) continua necessário, porque os atributos base ainda podem ser editados à mão na ficha.
+
+## 3.5 Mistura 2014 + 2024 (decisão consciente)
+
+O app é para as campanhas do próprio mestre, então não precisa seguir uma edição pura. Regra adotada:
+- **Conteúdo que saiu em 2024 continua disponível** (ex: Meio-Elfo, Meio-Orc, sub-raças de Anão e Halfling).
+- **Nomes que mudaram usam o de 2024.** Ex: Caminho do Guerreiro Totêmico → Caminho do Coração Selvagem; Escola de Evocação → Evocador; Caminho da Mão Aberta → Guerreiro da Mão Aberta; Linhagem Dracônica → Feitiçaria Dracônica. Ao renomear, só o nome muda; o valor salvo continua o mesmo, para fichas antigas não quebrarem.
+- **Conteúdo novo de 2024 foi acrescentado:**
+  - Raças: Aasimar, Golias (ancestralidade gigante como sub-raça) e Orc.
+  - Tiefling: os legados de 2024 (Abissal, Ctônico, Infernal) viraram sub-raças. A resistência e as magias saíram da raça base e ficaram no legado; o Tiefling de 2014 equivale ao Legado Infernal.
+  - Subclasses: uma ou duas novas por classe (ex: Caminho da Árvore do Mundo, Colégio da Dança, Patrono Celestial, Domínio da Trapaça, Círculo das Estrelas, Feitiçaria Aberrante, Guerreiro Psíquico, Lâmina da Alma, Adivinho, Guerreiro da Misericórdia, Juramento da Glória, Perseguidor Sombrio).
+- **Regras de 2024 aplicadas:** bônus de atributo pelo antecedente (seção 3.1), subclasse no nível 3 para todas as classes, Dádiva Épica no nível 19 (seção 3.4) e **descanso longo devolve todos os dados de vida gastos**.
 
 ---
 
@@ -180,10 +214,10 @@ Escrito como histórias de usuário, do jeito Scrum — cada uma vira uma entreg
 |---|---|---|---|
 | Sprint 1 | Fundação da ficha | 1, 2 | concluída |
 | Sprint 1.5 | Wizard de criação (seção 3.2) | — | concluída |
-| Sprint 2 | Raça e perícias | 3, 4 | próxima |
-| Sprint 3 | Vida e descanso | 5, 6, 7 | |
-| Sprint 4 | Level up dedicado | 8 | |
-| Sprint 5 | Magias | 9, 10 | |
+| Sprint 2 | Raça e perícias | 3, 4 | concluída |
+| Sprint 3 | Vida e descanso | 5, 6, 7 | concluída |
+| Sprint 4 | Level up dedicado (seção 3.4) | 8 | concluída (magias no level up vão para o Sprint 5) |
+| Sprint 5 | Magias | 9, 10 | próxima |
 | Sprint 6 | Recursos de classe | 11 | |
 | Sprint 7 | Combate | 12 | |
 | Sprint 8 | Inventário | 13 | |

@@ -291,6 +291,239 @@ input:focus, select:focus {
     transform: translateY(-2px);
 }
 
+/* ---------- Level up (RF09) ---------- */
+.levelup-cabecalho {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 15px;
+    margin-bottom: 20px;
+    border: 2px solid var(--tinta);
+    border-radius: 10px;
+    background: rgba(255,255,255,0.25);
+}
+
+.levelup-identidade { display: flex; flex-direction: column; }
+
+.levelup-nome {
+    font-family: 'Cinzel', serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.levelup-identidade .rotulo { text-align: left; }
+
+.levelup-niveis {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.levelup-nivel {
+    font-family: 'Cinzel', serif;
+    font-size: 2rem;
+    font-weight: 700;
+    min-width: 52px;
+    padding: 4px 0;
+    text-align: center;
+    border: 2px solid var(--tinta);
+    border-radius: 8px;
+    background: var(--pergaminho);
+}
+
+.levelup-nivel-novo {
+    color: var(--pergaminho);
+    background: var(--sangue-dragao);
+}
+
+.levelup-seta {
+    font-size: 1.5rem;
+    color: #6a4f3a;
+}
+
+.levelup-ganhos { text-align: left; margin-bottom: 15px; }
+
+.levelup-subclasse { text-align: left; margin-bottom: 15px; }
+.levelup-subclasse select { width: 100%; }
+
+/* na ficha o nível só muda pela tela de level up */
+#nivel[readonly] { cursor: not-allowed; }
+
+/* as opções lado a lado, que é o ponto do RF09 */
+.levelup-colunas {
+    display: flex;
+    gap: 15px;
+    align-items: stretch;
+}
+
+.levelup-coluna {
+    flex: 1;
+    padding: 15px;
+    border: 2px solid var(--tinta);
+    border-radius: 10px;
+    background: rgba(255,255,255,0.25);
+    transition: opacity 0.2s ease;
+}
+
+.levelup-titulo {
+    display: block;
+    width: 100%;
+    margin-bottom: 6px;
+    padding: 8px;
+    font-family: 'Cinzel', serif;
+    font-size: 1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--tinta);
+    background: rgba(255,255,255,0.4);
+    border: 2px solid var(--tinta);
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.levelup-titulo-inerte {
+    background: none;
+    border-style: dashed;
+    border-color: var(--pergaminho-sombra);
+    cursor: default;
+}
+
+/* caminho escolhido em destaque, o outro apagado mas ainda clicável */
+.coluna-ativa {
+    border-width: 3px;
+    background: rgba(212, 175, 55, 0.2);
+}
+
+.coluna-ativa .levelup-titulo { background: var(--ouro); }
+
+.coluna-apagada { opacity: 0.55; }
+
+.lista-talentos {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 320px;
+    overflow-y: auto;
+}
+
+.talento {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 8px;
+    text-align: left;
+    color: var(--tinta);
+    background: rgba(255,255,255,0.4);
+    border: 1px solid var(--borda-fina);
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'Lora', serif;
+}
+
+.talento:hover:not(:disabled) { background: rgba(255,255,255,0.75); }
+
+.talento-nome {
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
+    font-size: 0.85rem;
+}
+
+.talento-descricao {
+    font-size: 0.78rem;
+    line-height: 1.35;
+}
+
+.talento-escolhido {
+    background: var(--ouro);
+    border-color: var(--tinta);
+    border-width: 2px;
+}
+
+.talento:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* nível 19: separa as Dádivas Épicas dos talentos comuns */
+.talento-grupo {
+    margin-top: 4px;
+    font-family: 'Cinzel', serif;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-align: left;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.dadiva-atributo { margin-top: 10px; }
+.dadiva-atributo select { width: 100%; }
+
+#btn-confirmar-nivel {
+    flex: 1;
+    padding: 15px;
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
+    font-size: 1.2rem;
+    color: var(--pergaminho);
+    background-color: var(--sangue-dragao);
+    border: 2px solid var(--tinta);
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+}
+
+#btn-confirmar-nivel:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* ---------- Botão secundário (links que agem como botão) ---------- */
+.botao-secundario {
+    flex: 1;
+    max-width: 320px;
+    padding: 15px;
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
+    font-size: 1rem;
+    text-align: center;
+    text-decoration: none;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--tinta);
+    background-color: rgba(255,255,255,0.5);
+    border: 2px solid var(--tinta);
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.botao-secundario:hover { background-color: var(--ouro); }
+
+/* Barra do topo: voltar à esquerda, subir de nível à direita */
+.topo-pagina {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    width: 100%;
+    max-width: 900px;
+    margin-bottom: 12px;
+}
+
+.topo-pagina .link-voltar {
+    width: auto;
+    margin-bottom: 0;
+}
+
+.botao-topo {
+    flex: 0 0 auto;
+    max-width: none;
+    padding: 8px 16px;
+    font-size: 0.85rem;
+}
+
 /* ---------- Responsivo ---------- */
 @media (max-width: 700px) {
     .ficha-cabecalho { flex-direction: column; }
@@ -299,6 +532,9 @@ input:focus, select:focus {
     .coluna-esquerda { width: 100%; }
     .linha-combate { flex-direction: column; }
     .linha-atributos { flex-direction: column; }
+    .levelup-colunas { flex-direction: column; }
+    .levelup-cabecalho { flex-direction: column; align-items: flex-start; }
+    .botao-secundario { max-width: none; }
     .coluna-atributos {
         width: 100%;
         flex-direction: row;

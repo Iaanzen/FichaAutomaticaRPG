@@ -30,32 +30,17 @@
         </div>
       </fieldset>
 
-      <fieldset class="etapa" id="etapa-2" disabled>
-        <legend>2. Nível</legend>
-        <p class="explicacao">
-          Em que nível esse personagem começa? O nível define o que já está
-          disponível para ele — a subclasse, por exemplo, só é escolhida a
-          partir do nível 3.
-        </p>
-        <div class="campo">
-          <input
-            type="number"
-            id="nivel"
-            name="nivel"
-            min="1"
-            max="20"
-            value="1"
-            required
-          />
-          <span class="rotulo">Nível</span>
-        </div>
-      </fieldset>
+      <!-- todo personagem nasce no nível 1 e sobe pela tela de level up,
+           onde estão as escolhas de cada nível (subclasse, ASI, talento).
+           O campo existe porque ficha-comum.js lê o nível para as contas. -->
+      <input type="hidden" id="nivel" name="nivel" value="1" />
 
-      <fieldset class="etapa" id="etapa-3" disabled>
-        <legend>3. Classe</legend>
+      <fieldset class="etapa" id="etapa-2" disabled>
+        <legend>2. Classe</legend>
         <p class="explicacao">
           A classe define o papel do personagem em combate, os dados de vida e
-          as perícias que ele poderá escolher.
+          as perícias que ele poderá escolher. Todo personagem começa no nível
+          1; a subclasse e as demais escolhas vêm ao subir de nível, pela ficha.
         </p>
         <div class="linha-campos">
           <div class="campo">
@@ -76,18 +61,11 @@
             </select>
             <span class="rotulo">Classe</span>
           </div>
-
-          <div class="campo" id="bloco-subclasse" hidden>
-            <select id="subclasse" name="subclasse">
-              <option value="">Selecione...</option>
-            </select>
-            <span class="rotulo">Subclasse</span>
-          </div>
         </div>
       </fieldset>
 
-      <fieldset class="etapa" id="etapa-4" disabled>
-        <legend>4. Antecedente</legend>
+      <fieldset class="etapa" id="etapa-3" disabled>
+        <legend>3. Antecedente</legend>
         <p class="explicacao">
           O que seu personagem fazia antes de virar aventureiro? Escreva
           livremente (ex: "Guarda da cidade", "Ferreiro exilado"). É aqui que os
@@ -105,8 +83,8 @@
         </div>
       </fieldset>
 
-      <fieldset class="etapa" id="etapa-5" disabled>
-        <legend>5. Bônus do Antecedente</legend>
+      <fieldset class="etapa" id="etapa-4" disabled>
+        <legend>4. Bônus do Antecedente</legend>
         <p class="explicacao">
           Nas regras de 2024 os bônus de atributo vêm do antecedente, e é você
           quem escolhe onde colocá-los. Só existem duas formas válidas:
@@ -172,8 +150,8 @@
         <p id="status-bonus" class="status-bonus"></p>
       </fieldset>
 
-      <fieldset class="etapa" id="etapa-6" disabled>
-        <legend>6. Raça</legend>
+      <fieldset class="etapa" id="etapa-5" disabled>
+        <legend>5. Raça</legend>
         <p class="explicacao">
           Nas regras de 2024 a raça não dá bônus de atributo — ela dá traços,
           deslocamento e perícias. A sub-raça só aparece para as raças que têm.
@@ -191,6 +169,9 @@
               <option value="meio-elfo">Meio-Elfo</option>
               <option value="meio-orc">Meio-Orc</option>
               <option value="tiefling">Tiefling</option>
+              <option value="aasimar">Aasimar</option>
+              <option value="golias">Golias</option>
+              <option value="orc">Orc</option>
             </select>
             <span class="rotulo">Raça</span>
           </div>
@@ -217,13 +198,13 @@
         </div>
       </fieldset>
 
-      <fieldset class="etapa" id="etapa-7" disabled>
-        <legend>7. Atributos</legend>
+      <fieldset class="etapa" id="etapa-6" disabled>
+        <legend>6. Atributos</legend>
         <p class="explicacao">
           Distribua o array padrão entre os seis atributos:
           <strong>15, 14, 13, 12, 10 e 8</strong>. Cada valor é usado uma única
           vez. Para trocar um valor de lugar, devolva-o para o traço primeiro.
-          O total já soma o bônus que você escolheu na etapa 5.
+          O total já soma o bônus que você escolheu na etapa 4.
         </p>
         <div class="coluna-atributos">
           <div class="atributo">
@@ -326,19 +307,19 @@
         </div>
       </fieldset>
 
-      <fieldset class="etapa" id="etapa-8" disabled>
-        <legend>8. Perícias</legend>
+      <fieldset class="etapa" id="etapa-7" disabled>
+        <legend>7. Perícias</legend>
         <p class="explicacao">
           Cada classe escolhe uma quantidade fixa de perícias, de uma lista
           própria. O bônus ao lado já soma o modificador do atributo com o bônus
-          de proficiência do seu nível.
+          de proficiência do nível 1 (+2).
         </p>
         <div class="grade-pericias" id="lista-pericias"></div>
         <p id="status-pericias" class="status-pericias"></p>
       </fieldset>
 
-      <fieldset class="etapa" id="etapa-9" disabled>
-        <legend>9. Detalhes</legend>
+      <fieldset class="etapa" id="etapa-8" disabled>
+        <legend>8. Detalhes</legend>
         <p class="explicacao">
           Últimos ajustes antes de fechar a ficha.
         </p>

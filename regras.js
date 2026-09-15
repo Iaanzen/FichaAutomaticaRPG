@@ -34,6 +34,21 @@ const subracasPorRaca = {
     gnomo: [
         { valor: "gnomoFloresta", nome: "Gnomo da Floresta" },
         { valor: "gnomoRocha", nome: "Gnomo das Rochas" }
+    ],
+    // regra 2024: o legado ínfero do Tiefling funciona como sub-raça
+    tiefling: [
+        { valor: "tieflingAbissal", nome: "Legado Abissal" },
+        { valor: "tieflingCtonico", nome: "Legado Ctônico" },
+        { valor: "tieflingInfernal", nome: "Legado Infernal" }
+    ],
+    // regra 2024: a ancestralidade gigante do Golias funciona como sub-raça
+    golias: [
+        { valor: "goliasNuvens", nome: "Gigante das Nuvens" },
+        { valor: "goliasFogo", nome: "Gigante do Fogo" },
+        { valor: "goliasGelo", nome: "Gigante do Gelo" },
+        { valor: "goliasColina", nome: "Gigante da Colina" },
+        { valor: "goliasPedra", nome: "Gigante da Pedra" },
+        { valor: "goliasTempestade", nome: "Gigante da Tempestade" }
     ]
 };
 
@@ -117,9 +132,42 @@ const dadosPorRaca = {
         deslocamento: 9,
         idiomas: ["Comum", "Infernal"],
         tracos: [
+            // a resistência e as magias vêm do legado (sub-raça); o de 2014 equivale ao Infernal
             "Visão no Escuro: enxerga a até 18 metros na penumbra como se fosse luz plena.",
-            "Resistência Infernal: resistência a dano de fogo.",
-            "Legado Infernal: conhece o truque Taumaturgia e ganha magias conforme sobe de nível."
+            "Presença Sobrenatural: conhece o truque Taumaturgia.",
+            "Legado Ínfero: resistência a um tipo de dano e magias que crescem com o nível (definidos pela sub-raça). As magias de legado são conjuradas uma vez por descanso longo sem gastar espaço, usando Inteligência, Sabedoria ou Carisma."
+        ]
+    },
+
+    // Raças que entraram no livro de 2024. As de 2014 acima continuam valendo.
+    // Em 2024 os idiomas vêm da origem: Comum mais dois à escolha.
+    aasimar: {
+        deslocamento: 9,
+        idiomas: ["Comum", "Dois idiomas à sua escolha"],
+        tracos: [
+            "Resistência Celestial: resistência a dano necrótico e radiante.",
+            "Visão no Escuro: enxerga a até 18 metros na penumbra como se fosse luz plena.",
+            "Mãos Curativas: com uma ação de Magia, toca uma criatura que recupera um número de d4 igual ao seu bônus de proficiência (uma vez por descanso longo).",
+            "Portador da Luz: conhece o truque Luz, usando Carisma.",
+            "Revelação Celestial (nível 3): com uma ação bônus, assume por 1 minuto Asas Celestiais, Radiância Interior ou Mortalha Necrótica, e causa dano extra igual ao bônus de proficiência (uma vez por descanso longo)."
+        ]
+    },
+    golias: {
+        deslocamento: 10.5,
+        idiomas: ["Comum", "Dois idiomas à sua escolha"],
+        tracos: [
+            "Ancestralidade Gigante: um poder herdado dos gigantes (definido pela sub-raça), usado um número de vezes igual ao bônus de proficiência por descanso longo.",
+            "Forma Grande (nível 5): com uma ação bônus, fica Grande por 10 minutos, com vantagem em testes de Força e +3 metros de deslocamento (uma vez por descanso longo).",
+            "Constituição Poderosa: vantagem em testes para escapar de agarrão e conta como um tamanho maior para carregar peso."
+        ]
+    },
+    orc: {
+        deslocamento: 9,
+        idiomas: ["Comum", "Dois idiomas à sua escolha"],
+        tracos: [
+            "Surto de Adrenalina: usa Disparada como ação bônus e ganha PV temporários iguais ao bônus de proficiência (usos iguais ao bônus de proficiência, recuperados em descanso curto ou longo).",
+            "Visão no Escuro: enxerga a até 36 metros na penumbra como se fosse luz plena.",
+            "Resistência Implacável: ao cair a 0 pontos de vida sem morrer, fica com 1 em vez disso (uma vez por descanso longo)."
         ]
     }
 }
@@ -164,6 +212,42 @@ const dadosPorSubRaca = {
             "Conhecimento de Artífice: bônus dobrado em testes de História sobre itens mágicos e tecnológicos.",
             "Brinquedista: proficiência com ferramentas de funileiro."
         ]
+    },
+    tieflingAbissal: {
+        tracos: [
+            "Legado Abissal: resistência a dano de veneno e conhece o truque Rajada de Veneno.",
+            "Nível 3: Raio Adoecente. Nível 5: Imobilizar Pessoa."
+        ]
+    },
+    tieflingCtonico: {
+        tracos: [
+            "Legado Ctônico: resistência a dano necrótico e conhece o truque Toque Arrepiante.",
+            "Nível 3: Vida Falsa. Nível 5: Raio do Enfraquecimento."
+        ]
+    },
+    tieflingInfernal: {
+        tracos: [
+            "Legado Infernal: resistência a dano de fogo e conhece o truque Raio de Fogo.",
+            "Nível 3: Repreensão Infernal. Nível 5: Escuridão."
+        ]
+    },
+    goliasNuvens: {
+        tracos: ["Salto das Nuvens: com uma ação bônus, teleporta-se até 9 metros para um espaço que consiga ver."]
+    },
+    goliasFogo: {
+        tracos: ["Queimadura do Fogo: ao acertar um ataque, causa 1d10 de dano de fogo extra."]
+    },
+    goliasGelo: {
+        tracos: ["Frio do Gelo: ao acertar um ataque, causa 1d6 de dano de frio extra e reduz o deslocamento do alvo em 3 metros até o início do seu próximo turno."]
+    },
+    goliasColina: {
+        tracos: ["Tombo da Colina: ao acertar uma criatura Grande ou menor, pode derrubá-la."]
+    },
+    goliasPedra: {
+        tracos: ["Resistência da Pedra: com uma reação ao sofrer dano, rola 1d12 + modificador de Constituição e reduz o dano nesse valor."]
+    },
+    goliasTempestade: {
+        tracos: ["Trovão da Tempestade: com uma reação ao sofrer dano de uma criatura a até 18 metros, causa 1d8 de dano trovejante nela."]
     }
 }
 
@@ -186,61 +270,88 @@ function dadosDaRaca(raca, subraca) {
 }
 
 // mesma estrutura de subracasPorRaca: chave = valor do select de classe
+//
+// Mistura consciente de 2014 e 2024: as subclasses que saíram continuam aqui,
+// as renomeadas usam o nome de 2024 e as novas foram acrescentadas.
+// Renomear mexe só no "nome": o "valor" fica igual para as fichas salvas não quebrarem.
 const subclassesPorClasse = {
     barbaro: [
         { valor: "berserker", nome: "Caminho do Berserker" },
-        { valor: "guerreiroTotemico", nome: "Caminho do Guerreiro Totêmico" }
+        // 2014: Caminho do Guerreiro Totêmico
+        { valor: "guerreiroTotemico", nome: "Caminho do Coração Selvagem" },
+        { valor: "arvoreMundo", nome: "Caminho da Árvore do Mundo" },
+        { valor: "zelote", nome: "Caminho do Zelote" }
     ],
     bardo: [
         { valor: "colegioConhecimento", nome: "Colégio do Conhecimento" },
-        { valor: "colegioBravura", nome: "Colégio da Bravura" }
+        { valor: "colegioBravura", nome: "Colégio da Bravura" },
+        { valor: "colegioDanca", nome: "Colégio da Dança" },
+        { valor: "colegioGlamour", nome: "Colégio do Glamour" }
     ],
     bruxo: [
-        { valor: "arquifada", nome: "O Arquifada" },
-        { valor: "corruptor", nome: "O Corruptor" },
-        { valor: "grandeAntigo", nome: "O Grande Antigo" }
+        // 2014: O Arquifada, O Corruptor, O Grande Antigo
+        { valor: "arquifada", nome: "Patrono Arquifada" },
+        { valor: "corruptor", nome: "Patrono Corruptor" },
+        { valor: "grandeAntigo", nome: "Patrono Grande Antigo" },
+        { valor: "celestial", nome: "Patrono Celestial" }
     ],
     clerigo: [
         { valor: "dominioVida", nome: "Domínio da Vida" },
         { valor: "dominioLuz", nome: "Domínio da Luz" },
-        { valor: "dominioGuerra", nome: "Domínio da Guerra" }
+        { valor: "dominioGuerra", nome: "Domínio da Guerra" },
+        { valor: "dominioTrapaca", nome: "Domínio da Trapaça" }
     ],
     druida: [
         { valor: "circuloTerra", nome: "Círculo da Terra" },
-        { valor: "circuloLua", nome: "Círculo da Lua" }
+        { valor: "circuloLua", nome: "Círculo da Lua" },
+        { valor: "circuloMar", nome: "Círculo do Mar" },
+        { valor: "circuloEstrelas", nome: "Círculo das Estrelas" }
     ],
     feiticeiro: [
-        { valor: "linhagemDraconica", nome: "Linhagem Dracônica" },
-        { valor: "magiaSelvagem", nome: "Magia Selvagem" }
+        // 2014: Linhagem Dracônica, Magia Selvagem
+        { valor: "linhagemDraconica", nome: "Feitiçaria Dracônica" },
+        { valor: "magiaSelvagem", nome: "Feitiçaria Selvagem" },
+        { valor: "feiticariaAberrante", nome: "Feitiçaria Aberrante" },
+        { valor: "feiticariaMecanica", nome: "Feitiçaria Mecânica" }
     ],
     guerreiro: [
         { valor: "campeao", nome: "Campeão" },
         { valor: "mestreBatalha", nome: "Mestre de Batalha" },
-        { valor: "cavaleiroArcano", nome: "Cavaleiro Arcano" }
+        { valor: "cavaleiroArcano", nome: "Cavaleiro Arcano" },
+        { valor: "guerreiroPsiquico", nome: "Guerreiro Psíquico" }
     ],
     ladino: [
-        { valor: "trapaceiro", nome: "Trapaceiro" },
+        // "Thief" do livro; antes aparecia como Trapaceiro
+        { valor: "trapaceiro", nome: "Ladrão" },
         { valor: "assassino", nome: "Assassino" },
-        { valor: "trapaceiroArcano", nome: "Trapaceiro Arcano" }
+        { valor: "trapaceiroArcano", nome: "Trapaceiro Arcano" },
+        { valor: "laminaAlma", nome: "Lâmina da Alma" }
     ],
     mago: [
-        { valor: "evocacao", nome: "Escola de Evocação" },
-        { valor: "abjuracao", nome: "Escola de Abjuração" },
-        { valor: "ilusao", nome: "Escola de Ilusão" }
+        // 2014: Escola de Evocação, Abjuração e Ilusão
+        { valor: "evocacao", nome: "Evocador" },
+        { valor: "abjuracao", nome: "Abjurador" },
+        { valor: "ilusao", nome: "Ilusionista" },
+        { valor: "adivinho", nome: "Adivinho" }
     ],
     monge: [
-        { valor: "maoAberta", nome: "Caminho da Mão Aberta" },
-        { valor: "sombras", nome: "Caminho das Sombras" },
-        { valor: "quatroElementos", nome: "Caminho dos Quatro Elementos" }
+        // 2014: Caminho da Mão Aberta, das Sombras e dos Quatro Elementos
+        { valor: "maoAberta", nome: "Guerreiro da Mão Aberta" },
+        { valor: "sombras", nome: "Guerreiro das Sombras" },
+        { valor: "quatroElementos", nome: "Guerreiro dos Elementos" },
+        { valor: "misericordia", nome: "Guerreiro da Misericórdia" }
     ],
     paladino: [
         { valor: "juramentoDevocao", nome: "Juramento da Devoção" },
         { valor: "juramentoAnciaos", nome: "Juramento dos Anciãos" },
-        { valor: "juramentoVinganca", nome: "Juramento da Vingança" }
+        { valor: "juramentoVinganca", nome: "Juramento da Vingança" },
+        { valor: "juramentoGloria", nome: "Juramento da Glória" }
     ],
     patrulheiro: [
         { valor: "cacador", nome: "Caçador" },
-        { valor: "senhorFeras", nome: "Senhor das Feras" }
+        { valor: "senhorFeras", nome: "Senhor das Feras" },
+        { valor: "andarilhoFeerico", nome: "Andarilho Feérico" },
+        { valor: "perseguidorSombrio", nome: "Perseguidor Sombrio" }
     ]
 };
 
@@ -366,9 +477,13 @@ function mediaDoDado(dado) {
     return Math.floor(dado / 2) + 1
 }
 
+// talento Robusto: +2 PV por nivel, contando os niveis ja passados.
+// A Dadiva da Fortitude (PV_DADIVA_FORTITUDE) soma +40 fixos.
+const PV_POR_NIVEL_ROBUSTO = 2
+
 // Nivel 1 leva o dado cheio; os seguintes levam a media.
 // O modificador de Constituicao entra em todos os niveis.
-function pontosDeVida(classe, nivel, modificadorConstituicao) {
+function pontosDeVida(classe, nivel, modificadorConstituicao, talentos) {
     const dado = dadoDeVidaPorClasse[classe]
 
     if (!dado || nivel < 1) {
@@ -378,8 +493,13 @@ function pontosDeVida(classe, nivel, modificadorConstituicao) {
     const primeiroNivel = dado + modificadorConstituicao
     const demaisNiveis = (nivel - 1) * (mediaDoDado(dado) + modificadorConstituicao)
 
+    const lista = talentos || []
+
+    const robusto = lista.includes("robusto") ? PV_POR_NIVEL_ROBUSTO * nivel : 0
+    const fortitude = lista.includes("dadivaFortitude") ? PV_DADIVA_FORTITUDE : 0
+
     // um personagem nunca fica abaixo de 1 PV por causa de Constituicao baixa
-    return Math.max(1, primeiroNivel + demaisNiveis)
+    return Math.max(1, primeiroNivel + demaisNiveis) + robusto + fortitude
 }
 
 /* ---------- RF23: descanso ---------- */
@@ -388,15 +508,202 @@ function rolarDado(lados) {
     return Math.floor(Math.random() * lados) + 1
 }
 
-// no descanso longo volta metade dos dados de vida totais, no minimo 1
-function dadosRecuperadosEmDescansoLongo(nivel) {
-    return Math.max(1, Math.floor(nivel / 2))
-}
-
 // Bruxo e a excecao: recupera espacos de magia em descanso curto (RF27).
 // Ainda nao ha magias no app, mas o modo de descanso ja avisa o jogador.
 function recuperaMagiaEmDescansoCurto(classe) {
     return classe === "bruxo"
+}
+
+/* ---------- RF09: level up ---------- */
+
+const NIVEL_MAXIMO = 20
+
+// niveis que dao Melhoria de Atributo ou Talento.
+// Guerreiro e Ladino ganham escolhas extras.
+const NIVEIS_DE_ESCOLHA_PADRAO = [4, 8, 12, 16, 19]
+
+const niveisDeEscolhaPorClasse = {
+    guerreiro: [4, 6, 8, 12, 14, 16, 19],
+    ladino: [4, 8, 10, 12, 16, 19]
+}
+
+function niveisDeEscolha(classe) {
+    return niveisDeEscolhaPorClasse[classe] || NIVEIS_DE_ESCOLHA_PADRAO
+}
+
+function nivelTemEscolha(classe, nivel) {
+    return niveisDeEscolha(classe).includes(nivel)
+}
+
+// teto de atributo: 20, contando o bonus do antecedente
+const ATRIBUTO_MAXIMO = 20
+
+// Melhoria de Atributo: +2 num atributo OU +1 em dois diferentes
+function melhoriaAtributoValida(melhoria) {
+    const valores = []
+
+    ATRIBUTOS.forEach(function(atributo) {
+        if (melhoria[atributo] > 0) {
+            valores.push(melhoria[atributo])
+        }
+    })
+
+    if (valores.length === 1) {
+        return valores[0] === 2
+    }
+
+    if (valores.length === 2) {
+        return valores[0] === 1 && valores[1] === 1
+    }
+
+    return false
+}
+
+// Robusto ja entra na conta de PV (pontosDeVida). Os demais sao texto por
+// enquanto: dependem de blocos que ainda nao existem (iniciativa no Sprint 7,
+// magias no Sprint 5, percepcao passiva no RF05).
+const TALENTOS = [
+    {
+        valor: "alerta",
+        nome: "Alerta",
+        descricao: "Soma o bônus de proficiência à iniciativa e não pode ser surpreendido enquanto estiver consciente."
+    },
+    {
+        valor: "atiradorElite",
+        nome: "Atirador de Elite",
+        descricao: "Ignora cobertura leve e média, e pode trocar precisão por dano extra em ataques à distância."
+    },
+    {
+        valor: "mestreArmasGrandes",
+        nome: "Mestre em Armas Grandes",
+        descricao: "Ataque extra ao derrubar um inimigo, e pode trocar precisão por dano extra com armas pesadas."
+    },
+    {
+        valor: "sentinela",
+        nome: "Sentinela",
+        descricao: "Ataques de oportunidade param o movimento do alvo e alcançam quem ataca seus aliados."
+    },
+    {
+        valor: "robusto",
+        nome: "Robusto",
+        descricao: "Pontos de vida máximos aumentam em 2 por nível de personagem."
+    },
+    {
+        valor: "sortudo",
+        nome: "Sortudo",
+        descricao: "Três pontos de sorte por descanso longo para rolar de novo um d20 seu ou de um inimigo."
+    },
+    {
+        valor: "observador",
+        nome: "Observador",
+        descricao: "Lê lábios e ganha +5 em Percepção e Investigação passivas."
+    },
+    {
+        valor: "iniciadoMagia",
+        nome: "Iniciado em Magia",
+        descricao: "Aprende dois truques e uma magia de 1º círculo de uma classe conjuradora."
+    },
+    {
+        valor: "duasArmas",
+        nome: "Combatente com Duas Armas",
+        descricao: "+1 de CA empunhando duas armas, e pode usar armas sem a propriedade leve."
+    },
+    {
+        valor: "curandeiro",
+        nome: "Curandeiro",
+        descricao: "Usa kit de medicina para estabilizar com 1 PV e recuperar vida com um gasto de uso."
+    }
+]
+
+/* ---------- Nível 19: Dádiva Épica (regra 2024) ---------- */
+
+// No 19 o personagem pode pegar uma Dádiva Épica, ou ainda um talento comum
+// ou a Melhoria de Atributo. Por isso o 19 continua na lista de níveis de escolha.
+const NIVEL_DADIVA_EPICA = 19
+
+// a Dádiva dá +1 num atributo e deixa passar de 20, até 30
+const ATRIBUTO_MAXIMO_DADIVA = 30
+
+// "atributos" limita onde o +1 pode entrar; sem ele, vale qualquer um.
+// Só a Fortitude tem efeito mecânico na ficha (PV); as demais são texto.
+const DADIVAS_EPICAS = [
+    {
+        valor: "dadivaProezaCombate",
+        nome: "Dádiva da Proeza em Combate",
+        descricao: "Uma vez por turno, quando erra uma jogada de ataque, pode acertar em vez disso."
+    },
+    {
+        valor: "dadivaViagemDimensional",
+        nome: "Dádiva da Viagem Dimensional",
+        descricao: "Logo depois de uma ação de Ataque ou de Magia, teleporta-se até 9 metros."
+    },
+    {
+        valor: "dadivaResistenciaEnergia",
+        nome: "Dádiva da Resistência a Energia",
+        descricao: "Resistência a dois tipos de dano à escolha (trocáveis em descanso longo) e pode desviar esse dano para outra criatura."
+    },
+    {
+        valor: "dadivaDestino",
+        nome: "Dádiva do Destino",
+        descricao: "Quando alguém a até 18 metros faz um teste de d20, soma ou subtrai 2d4 do resultado. Recarrega na iniciativa ou em descanso."
+    },
+    {
+        valor: "dadivaFortitude",
+        nome: "Dádiva da Fortitude",
+        descricao: "PV máximos aumentam em 40, e ao recuperar PV recupera também o modificador de Constituição (uma vez por turno)."
+    },
+    {
+        valor: "dadivaAtaqueIrresistivel",
+        nome: "Dádiva do Ataque Irresistível",
+        descricao: "Dano de concussão, perfurante e cortante ignora resistência; no 20 natural causa dano extra igual ao atributo aumentado.",
+        atributos: ["forca", "destreza"]
+    },
+    {
+        valor: "dadivaRecuperacao",
+        nome: "Dádiva da Recuperação",
+        descricao: "Uma vez por descanso longo, ao cair a 0 PV fica com 1 e recupera metade dos PV máximos. Tem dez d10 para se curar com ação bônus."
+    },
+    {
+        valor: "dadivaPericia",
+        nome: "Dádiva da Perícia",
+        descricao: "Proficiência em todas as perícias e especialização em uma delas."
+    },
+    {
+        valor: "dadivaVelocidade",
+        nome: "Dádiva da Velocidade",
+        descricao: "Deslocamento aumenta 9 metros e pode usar Desengajar como ação bônus."
+    },
+    {
+        valor: "dadivaRecordacaoMagia",
+        nome: "Dádiva da Recordação de Magia",
+        descricao: "Uma vez por descanso longo, conjura uma magia de 1º a 4º círculo sem gastar espaço.",
+        atributos: ["inteligencia", "sabedoria", "carisma"]
+    },
+    {
+        valor: "dadivaEspiritoNoturno",
+        nome: "Dádiva do Espírito Noturno",
+        descricao: "Fica invisível na penumbra ou escuridão com uma ação bônus, e lá resiste a todo dano exceto psíquico e radiante."
+    },
+    {
+        valor: "dadivaVisaoVerdadeira",
+        nome: "Dádiva da Visão Verdadeira",
+        descricao: "Visão verdadeira a até 18 metros."
+    }
+]
+
+const PV_DADIVA_FORTITUDE = 40
+
+function dadivaPorValor(valor) {
+    return DADIVAS_EPICAS.find(function(dadiva) {
+        return dadiva.valor === valor
+    })
+}
+
+// busca nos talentos comuns e nas dádivas: os dois ficam em personagem.talentos
+function talentoPorValor(valor) {
+    return TALENTOS.concat(DADIVAS_EPICAS).find(function(talento) {
+        return talento.valor === valor
+    })
 }
 
 /* ---------- RF24: testes de morte ---------- */

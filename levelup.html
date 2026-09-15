@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Subir de Nível - D&D 5e</title>
+    <link rel="stylesheet" href="cadastro.css" />
+  </head>
+  <body class="tem-barra-fixa">
+    <a href="index.html" class="link-voltar">← Voltar ao menu</a>
+
+    <p id="mensagem-erro" style="display: none">
+      Personagem não encontrado. <a href="index.html">Voltar ao menu</a>
+    </p>
+
+    <div class="ficha" id="tela-levelup">
+      <h1 class="ficha-titulo">Subir de Nível</h1>
+
+      <div class="levelup-cabecalho">
+        <div class="levelup-identidade">
+          <span class="levelup-nome" id="nome-personagem"></span>
+          <span class="rotulo" id="classe-personagem"></span>
+        </div>
+
+        <div class="levelup-niveis">
+          <span class="levelup-nivel" id="nivel-atual"></span>
+          <span class="levelup-seta">→</span>
+          <span class="levelup-nivel levelup-nivel-novo" id="nivel-novo"></span>
+        </div>
+      </div>
+
+      <div class="bloco-ficha levelup-ganhos">
+        <span class="rotulo-bloco">O que este nível traz</span>
+        <ul class="lista-texto" id="lista-ganhos"></ul>
+      </div>
+
+      <div class="bloco-ficha levelup-subclasse" id="bloco-subclasse" hidden>
+        <span class="rotulo-bloco">Subclasse</span>
+        <p class="descanso-ajuda">
+          A partir do nível 3 a classe se especializa. Escolha o caminho.
+        </p>
+        <select id="subclasse"></select>
+      </div>
+
+      <p class="explicacao" id="instrucao-escolha"></p>
+
+      <div class="levelup-colunas" id="colunas-escolha">
+        <!-- Coluna 1: Melhoria de Atributo -->
+        <section class="levelup-coluna" id="coluna-asi">
+          <button type="button" class="levelup-titulo" id="escolher-asi">
+            Melhoria de Atributo
+          </button>
+          <p class="descanso-ajuda">
+            +2 num atributo, ou +1 em dois atributos diferentes. Nenhum passa
+            de 20.
+          </p>
+
+          <div class="grade-bonus" id="grade-asi"></div>
+          <p id="status-asi" class="status-bonus"></p>
+        </section>
+
+        <!-- Coluna 2: Talento -->
+        <section class="levelup-coluna" id="coluna-talento">
+          <button type="button" class="levelup-titulo" id="escolher-talento">
+            Talento
+          </button>
+          <p class="descanso-ajuda">
+            Uma habilidade especial no lugar da melhoria de atributo.
+          </p>
+
+          <div class="lista-talentos" id="lista-talentos"></div>
+
+          <div class="campo dadiva-atributo" id="bloco-dadiva-atributo" hidden>
+            <select id="atributo-dadiva"></select>
+            <span class="rotulo">Atributo da Dádiva (+1, até 30)</span>
+          </div>
+        </section>
+
+        <!-- Coluna 3: Magias (Sprint 5) -->
+        <section class="levelup-coluna bloco-vazio" id="coluna-magias">
+          <span class="levelup-titulo levelup-titulo-inerte">Magias</span>
+          <p class="vazio-texto">
+            Aprender e trocar magias entra no Sprint 5 (RF26 a RF30).
+          </p>
+        </section>
+      </div>
+
+      <p class="status-bonus" id="status-levelup"></p>
+
+      <footer class="barra-navegacao">
+        <a href="#" class="botao-secundario" id="link-cancelar">Cancelar</a>
+        <button type="button" id="btn-confirmar-nivel" disabled>
+          Confirmar Nível
+        </button>
+      </footer>
+    </div>
+
+    <script src="regras.js"></script>
+    <script src="levelup.js"></script>
+  </body>
+</html>
