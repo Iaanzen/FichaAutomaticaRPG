@@ -526,6 +526,69 @@ classeEL.addEventListener("change", function () {
     atualizarConcentracao()
 })
 
+/* ---------- Sprint 5b: magias equipadas (RF26) ---------- */
+
+// A escolha é feita na aba de magias; a ficha só mostra, agrupado por círculo.
+// Usa o que foi salvo junto com a magia, então funciona sem internet.
+function mostrarMagiasEquipadas() {
+    const blocoEL = document.getElementById("bloco-magias-equipadas")
+    const listaEL = document.getElementById("lista-magias-equipadas")
+
+    blocoEL.hidden = conjuracaoDaClasse(classeEL.value) === null
+    listaEL.innerHTML = ""
+
+    const equipadas = personagem.magiasEquipadas || []
+
+    if (equipadas.length === 0) {
+        const vazio = document.createElement("p")
+        vazio.className = "vazio-texto"
+        vazio.textContent = "Nenhuma magia equipada. Escolha na aba Magias."
+        listaEL.appendChild(vazio)
+        return
+    }
+
+    const circulos = []
+
+    equipadas.forEach(function (magia) {
+        if (!circulos.includes(magia.circulo)) {
+            circulos.push(magia.circulo)
+        }
+    })
+
+    circulos.sort(function (a, b) {
+        return a - b
+    })
+
+    circulos.forEach(function (circulo) {
+        const grupo = document.createElement("p")
+        grupo.className = "magias-grupo"
+
+        const titulo = document.createElement("strong")
+        titulo.textContent = circulo === 0 ? "Truques: " : `${nomeDoCirculo(circulo)}: `
+
+        const nomes = equipadas
+            .filter(function (magia) {
+                return magia.circulo === circulo
+            })
+            .map(function (magia) {
+                // (C) marca concentração, como nas fichas de papel
+                return magia.concentracao ? `${magia.nome} (C)` : magia.nome
+            })
+            .sort()
+
+        grupo.appendChild(titulo)
+        grupo.appendChild(document.createTextNode(nomes.join(", ")))
+        listaEL.appendChild(grupo)
+    })
+}
+
+// classe que não conjura esconde o bloco
+classeEL.addEventListener("change", function () {
+    if (personagem) {
+        mostrarMagiasEquipadas()
+    }
+})
+
 /* ---------- RF09: talentos escolhidos no level up ---------- */
 
 function mostrarTalentos() {
@@ -600,6 +663,8 @@ if (!personagem) {
     concentracaoAtual = personagem.concentracao || ""
     atualizarConcentracao()
 
+    mostrarMagiasEquipadas()
+
     // ponto de partida para medir dano; os PV já foram carregados acima
     lembrarPv()
 
@@ -608,6 +673,11 @@ if (!personagem) {
     const linkLevelupEL = document.getElementById("link-levelup")
     linkLevelupEL.href = `levelup.html?id=${personagem.id}`
     linkLevelupEL.hidden = personagem.nivel >= NIVEL_MAXIMO
+
+    // só quem conjura tem o que ver na aba de magias
+    const linkMagiasEL = document.getElementById("link-magias")
+    linkMagiasEL.href = `magias.html?id=${personagem.id}`
+    linkMagiasEL.hidden = conjuracaoDaClasse(personagem.classe) === null
 
     formFicha.addEventListener("submit", function (evento) {
         evento.preventDefault()

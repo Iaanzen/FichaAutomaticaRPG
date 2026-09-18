@@ -812,6 +812,22 @@ function conjuracaoDaClasse(classe) {
     return conjuracaoPorClasse[classe] || null
 }
 
+// como cada classe conjuradora se chama na API de magias (dnd5eapi.co)
+const CLASSE_NA_API = {
+    bardo: "bard",
+    bruxo: "warlock",
+    clerigo: "cleric",
+    druida: "druid",
+    feiticeiro: "sorcerer",
+    mago: "wizard",
+    paladino: "paladin",
+    patrulheiro: "ranger"
+}
+
+function classeNaApi(classe) {
+    return CLASSE_NA_API[classe] || null
+}
+
 // CD que o alvo precisa superar: 8 + proficiencia + modificador do atributo
 function cdDeMagia(proficiencia, modificador) {
     return 8 + proficiencia + modificador
@@ -919,6 +935,11 @@ function espacosDeMagia(classe, nivel) {
     return tabela[nivel - 1].map(function(total, indice) {
         return { circulo: indice + 1, total: total }
     })
+}
+
+// usado na ficha e na aba de magias: círculo 0 é truque
+function nomeDoCirculo(circulo) {
+    return circulo === 0 ? "Truque" : `${circulo}º círculo`
 }
 
 // texto curto para o level up: "1º: 4 · 2º: 3 · 3º: 2"

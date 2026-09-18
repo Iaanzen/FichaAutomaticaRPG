@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Magias - D&D 5e</title>
+    <link rel="stylesheet" href="cadastro.css" />
+  </head>
+  <body>
+    <div class="topo-pagina">
+      <a href="#" class="link-voltar" id="link-ficha">← Voltar à ficha</a>
+    </div>
+
+    <p id="mensagem-erro" style="display: none">
+      Personagem não encontrado. <a href="index.html">Voltar ao menu</a>
+    </p>
+
+    <div class="ficha" id="tela-magias">
+      <h1 class="ficha-titulo">Magias</h1>
+
+      <div class="levelup-cabecalho">
+        <div class="levelup-identidade">
+          <span class="levelup-nome" id="nome-personagem"></span>
+          <span class="rotulo" id="classe-personagem"></span>
+        </div>
+
+        <div class="levelup-identidade">
+          <span class="levelup-nome" id="circulo-maximo"></span>
+          <span class="rotulo">Círculo máximo</span>
+        </div>
+      </div>
+
+      <p class="explicacao">
+        Estas são as magias da sua classe até o círculo que o seu nível alcança.
+        Equipe as que o personagem tem preparadas: elas aparecem na ficha. A
+        lista vem da API do D&D 5e (regras de 2024), por isso precisa de
+        internet; o que você equipar fica salvo na hora.
+      </p>
+
+      <div class="contadores-magias">
+        <span class="contador" id="contador-truques"></span>
+        <span class="contador" id="contador-magias"></span>
+      </div>
+
+      <p class="status-bonus status-erro" id="aviso-magias" hidden></p>
+
+      <div class="magias-filtros">
+        <div class="campo">
+          <input type="text" id="busca-magia" placeholder="Buscar pelo nome" />
+          <span class="rotulo">Busca</span>
+        </div>
+
+        <div class="campo">
+          <select id="filtro-circulo"></select>
+          <span class="rotulo">Círculo</span>
+        </div>
+
+        <label class="filtro-equipadas">
+          <input type="checkbox" id="so-equipadas" />
+          Só equipadas
+        </label>
+      </div>
+
+      <p class="status-bonus" id="status-magias"></p>
+      <button type="button" id="btn-tentar-de-novo" hidden>Tentar de novo</button>
+
+      <div class="lista-magias" id="lista-magias"></div>
+    </div>
+
+    <script src="regras.js"></script>
+    <script src="magias.js"></script>
+  </body>
+</html>

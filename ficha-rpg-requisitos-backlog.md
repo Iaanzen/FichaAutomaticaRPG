@@ -151,6 +151,14 @@ Ideias que não travam nenhum sprint específico, mas que precisam entrar em alg
 - **IDEIA03: Cobertura mínima do livro oficial.** Estabelecer como meta que raças, sub-raças, classes e subclasses cubram pelo menos o conteúdo do livro base oficial, antes de qualquer expansão ou homebrew. Serve de critério de "pronto" para IDEIA01 e IDEIA02.
 - **IDEIA04: Criar a própria raça (homebrew).** Permitir que o jogador defina uma raça própria em vez de escolher da lista: nome, deslocamento, traços passivos (texto livre) e perícias/idiomas concedidos. Nas regras 2024 a raça não dá bônus de atributo, então a raça personalizada não afeta a distribuição +2/+1 ou +1/+1/+1 da seção 3.1. Depende de IDEIA03 estar fechada, para que o conteúdo oficial e o homebrew fiquem distinguíveis no select (ver item correspondente na seção 3).
 - **IDEIA05: Cadeado de edição na ficha.** Durante a sessão o jogador fica com a ficha aberta o tempo todo e pode alterar um campo sem querer — um clique no select de classe, uma rolagem do mouse sobre um campo numérico. Um botão de cadeado no topo da ficha alterna entre **travada** e **liberada**: travada, os campos ficam somente leitura; liberada, a ficha volta a ser editável. A ficha deve **abrir travada**, já que em jogo ler é o uso normal e editar é a exceção, e o estado deve ser lembrado por personagem. Atenção: campos que mudam durante o jogo (PV atuais, PV temporários, testes de morte, usos de recursos de classe) precisam continuar editáveis mesmo com o cadeado fechado. O cadeado protege a **construção** do personagem, não o estado dele em jogo.
+- **IDEIA06: Limite de 20 nos atributos e opção +2 que some ao ser usada.** Implementar depois do Sprint 5.
+  - **Limite de 20** no valor total dos atributos (base + bônus) em três lugares: na **ficha**, no **wizard** e no **level up**.
+  - **Distribuição de pontos:** quando o jogador escolher **+2** num atributo, a opção +2 **some** dos outros atributos, deixando claro que agora só dá para escolher +1. Vale para o bônus do antecedente (wizard e ficha) e para a Melhoria de Atributo do level up.
+  - Pontos a decidir na implementação:
+    - **Dádiva Épica (nível 19):** a regra de 2024 permite passar de 20, até 30. Hoje a ficha aceita valor base até 30 por causa dela. O limite de 20 precisa abrir essa exceção.
+    - **Melhoria de Atributo:** +2 num atributo já fecha a escolha (+2 num atributo *ou* +1 em dois). Ao escolher +2, os outros atributos não têm mais opção nenhuma, e não só a de +2.
+    - **Hoje:** o bônus do antecedente já trava os atributos restantes quando a distribuição fecha, e o level up já não oferece valores que passem de 20. O que falta é a opção +2 sumir no meio da escolha e o limite na ficha e no wizard.
+- **IDEIA07: Aviso para avançar no wizard.** Implementar depois do Sprint 5. Quando a etapa atual estiver completa, mostrar um **pop-up em forma de notificação** avisando que o jogador deve apertar **Próximo** ou **Enter** para ir à próxima etapa.
 
 ## 3.4 Level up dedicado (CONCLUÍDO — Sprint 4)
 
@@ -217,6 +225,22 @@ O app é para as campanhas do próprio mestre, então não precisa seguir uma ed
 - **Sprint dividido em 5a e 5b** (ver tabela da seção 5), entregue em passos pequenos e testáveis.
 - **Sem internet:** a aba de magias mostra só o aviso "sem conexão, tente de novo"; a ficha continua funcionando com as magias já equipadas.
 
+## 3.7 Magias em jogo (CONCLUÍDO — Sprint 5a)
+
+Entregue em quatro passos, cada um testado antes do seguinte:
+1. **Conjuração:** atributo de cada classe (regra 2024), CD de magia (8 + proficiência + modificador) e bônus de ataque mágico, num bloco próprio da ficha. Classe que não conjura mostra o bloco vazio.
+2. **Espaços de magia (RF25):** tabelas de conjurador completo, meio conjurador (com os 2 espaços do nível 1, novidade de 2024) e Magia de Pacto do Bruxo. Na ficha, uma linha de bolinhas por círculo para marcar os gastos. O level up mostra os espaços novos do nível.
+3. **Descanso (RF27):** o longo recupera os espaços de toda classe conjuradora; o curto recupera a Magia de Pacto do Bruxo.
+4. **Concentração (RF28):** uma magia por vez, com aviso ao trocar; ao sofrer dano aparece a salvaguarda de Constituição com a CD de 2024 (10 ou metade do dano, até 30); cair a 0 PV encerra.
+
+Conferido em 16/09/2026: as três tabelas de espaços batem com a API do D&D 5e em todos os 20 níveis, nas três progressões.
+
+Decisões desta sprint:
+- Os círculos dos testes de morte viraram um componente só, usado também pelos espaços de magia.
+- O dano é medido quando o campo de PV perde o foco, e não a cada tecla, senão apagar o número para digitar outro contaria como cair a 0 PV.
+- A magia em concentração é digitada à mão por enquanto; no 5b passa a ser escolhida entre as magias equipadas.
+- **Limites de magias:** a API informa, por classe e nível, quantos truques e quantas magias preparadas o personagem tem (ex: Druida nível 5 = 3 truques e 9 preparadas). O app usa esses números em vez de manter mais uma tabela.
+
 ---
 
 ## 4. Backlog do Produto (ordenado por prioridade e dependência)
@@ -252,8 +276,9 @@ Escrito como histórias de usuário, do jeito Scrum — cada uma vira uma entreg
 | Sprint 2 | Raça e perícias | 3, 4 | concluída |
 | Sprint 3 | Vida e descanso | 5, 6, 7 | concluída |
 | Sprint 4 | Level up dedicado (seção 3.4) | 8 | concluída (magias no level up vão para o Sprint 5) |
-| Sprint 5a | Magias em jogo: espaços de magia, CD e ataque mágico, concentração, descanso | 9, 10 (parte) | próxima |
-| Sprint 5b | Aba de magias: lista pela API, limites, equipar, troca (2024), coluna do level up | 9, 10 (parte) | |
+| Sprint 5a | Magias em jogo: espaços de magia, CD e ataque mágico, concentração, descanso | 9, 10 (parte) | concluída (ver seção 3.7) |
+| Sprint 5b | Aba de magias: lista pela API, limites, equipar, troca (2024), coluna do level up | 9, 10 (parte) | em andamento |
+| Sprint 5.5 | Ajustes de distribuição de atributos e aviso do wizard (IDEIA06, IDEIA07) | — | depois do 5b |
 | Sprint 6 | Recursos de classe | 11 | |
 | Sprint 7 | Combate | 12 | |
 | Sprint 8 | Inventário | 13 | |

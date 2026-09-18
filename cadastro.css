@@ -1212,3 +1212,136 @@ body {
     cursor: not-allowed;
     transform: none;
 }
+
+/* ---------- Aba de magias (Sprint 5b) ---------- */
+.magias-filtros {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.magias-filtros .campo { flex: 1; }
+
+#btn-tentar-de-novo {
+    display: block;
+    margin: 0 auto 10px;
+    padding: 8px 16px;
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--tinta);
+    background-color: rgba(255,255,255,0.5);
+    border: 2px solid var(--tinta);
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+#btn-tentar-de-novo:hover { background-color: var(--ouro); }
+
+.lista-magias {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 8px;
+}
+
+.magia {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+    padding: 8px;
+    text-align: left;
+    background: rgba(255,255,255,0.4);
+    border: 1px solid var(--borda-fina);
+    border-radius: 4px;
+}
+
+.magia-nome {
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
+    font-size: 0.85rem;
+}
+
+.magia-info {
+    font-size: 0.78rem;
+    color: #6a4f3a;
+}
+
+.etiqueta {
+    padding: 1px 6px;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border: 1px solid var(--borda-fina);
+    border-radius: 10px;
+}
+
+/* Equipar magias (Sprint 5b, passo 2) */
+.contadores-magias {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.contador {
+    padding: 4px 12px;
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
+    font-size: 0.85rem;
+    border: 2px solid var(--tinta);
+    border-radius: 14px;
+    background: rgba(255,255,255,0.4);
+}
+
+/* limite cheio: o jogador vê de longe que precisa remover antes de equipar */
+.contador-cheio { background: var(--ouro); }
+
+.filtro-equipadas {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    font-size: 0.85rem;
+}
+
+.filtro-equipadas input { width: auto; }
+
+.magia-equipada {
+    background: rgba(212, 175, 55, 0.35);
+    border: 2px solid var(--tinta);
+}
+
+.magia-botao {
+    margin-top: 4px;
+    padding: 4px 10px;
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
+    font-size: 0.72rem;
+    color: var(--tinta);
+    background-color: rgba(255,255,255,0.5);
+    border: 2px solid var(--tinta);
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.magia-botao:hover:not(:disabled) { background-color: var(--ouro); }
+
+.magia-botao:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* bloco da ficha: uma linha por círculo */
+.lista-magias-ficha { text-align: left; }
+
+.magias-grupo {
+    margin: 0 0 5px;
+    font-size: 0.82rem;
+    line-height: 1.45;
+}
+
+@media (max-width: 700px) {
+    .magias-filtros { flex-direction: column; }
+}
