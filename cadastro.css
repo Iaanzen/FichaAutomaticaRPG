@@ -1345,3 +1345,99 @@ body {
 @media (max-width: 700px) {
     .magias-filtros { flex-direction: column; }
 }
+
+/* Detalhe da magia (Sprint 5b, passo 3) */
+.detalhe-magia {
+    position: relative;
+    margin-bottom: 12px;
+    padding: 12px;
+    text-align: left;
+    border: 2px solid var(--tinta);
+    border-radius: 8px;
+    background: rgba(212, 175, 55, 0.18);
+}
+
+.detalhe-fechar {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    padding: 3px 8px;
+    font-family: 'Cinzel', serif;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--tinta);
+    background: rgba(255,255,255,0.5);
+    border: 2px solid var(--tinta);
+    border-radius: 4px;
+    cursor: pointer;
+    width: auto;
+}
+
+.detalhe-titulo {
+    display: block;
+    padding-right: 70px;
+    font-family: 'Cinzel', serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.detalhe-subtitulo {
+    margin: 2px 0 8px;
+    font-size: 0.8rem;
+    font-style: italic;
+    color: #6a4f3a;
+}
+
+.detalhe-linha {
+    margin: 0 0 3px;
+    font-size: 0.82rem;
+}
+
+.detalhe-descricao {
+    margin: 8px 0 0;
+    font-size: 0.82rem;
+    line-height: 1.5;
+}
+
+/* o nome vira botão para abrir a descrição, mas continua parecendo texto */
+.magia-abrir {
+    width: auto;
+    padding: 0;
+    text-align: left;
+    color: var(--tinta);
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-decoration: underline dotted;
+}
+
+.magia-abrir:hover { color: var(--sangue-dragao); }
+
+/* Troca de magias (Sprint 5b, passo 4) */
+.trocas-magias {
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.trocas-magias p { margin: 0 0 6px; }
+
+#btn-concluir-troca {
+    width: auto;
+    padding: 5px 14px;
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
+    font-size: 0.78rem;
+    color: var(--tinta);
+    background-color: rgba(255,255,255,0.5);
+    border: 2px solid var(--tinta);
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+#btn-concluir-troca:hover { background-color: var(--ouro); }
+
+/* Concentração escolhida entre as magias equipadas (Sprint 5b, passo 5) */
+.linha-concentracao select {
+    flex: 1;
+    min-width: 0;
+}

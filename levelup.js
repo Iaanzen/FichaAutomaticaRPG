@@ -174,6 +174,44 @@ function preencherListaSimples(listaEL, itens) {
     })
 }
 
+/* ---------- Magias do nível (RF09, RF30) ---------- */
+
+function circuloMaximoNoNivel(nivel) {
+    const espacos = espacosDeMagia(personagem.classe, nivel)
+    return espacos.length === 0 ? 0 : espacos[espacos.length - 1].circulo
+}
+
+// Aparece em todo nível de quem conjura, com ou sem escolha de ASI/talento.
+// As escolhas em si (vagas novas, trocas) são feitas na aba de magias.
+function montarMagiasDoNivel() {
+    if (conjuracaoDaClasse(personagem.classe) === null) {
+        return
+    }
+
+    const itens = []
+    const circuloAntes = circuloMaximoNoNivel(personagem.nivel)
+    const circuloDepois = circuloMaximoNoNivel(nivelNovo())
+
+    if (circuloDepois > circuloAntes) {
+        itens.push(`Novo círculo liberado: ${nomeDoCirculo(circuloDepois)}.`)
+    }
+
+    const troca = descreverTrocas(trocasLiberadas(personagem.classe, "nivel"))
+
+    if (troca) {
+        itens.push(`Ao confirmar, libera a troca de ${troca}.`)
+    } else {
+        itens.push(
+            `Este nível não libera troca de magias: sua classe ${explicarRegraDeTroca(personagem.classe)}.`
+        )
+    }
+
+    itens.push("Vagas novas de truques e magias podem ser preenchidas na aba Magias depois de confirmar.")
+
+    preencherListaSimples(document.getElementById("lista-magias-levelup"), itens)
+    document.getElementById("bloco-magias-levelup").hidden = false
+}
+
 /* ---------- Subclasse ---------- */
 
 function subclasseCompleta() {
@@ -414,6 +452,12 @@ function confirmarNivel() {
     const aplicarDadiva = dadivaAplicada()
     const escolheuSubclasse = precisaSubclasse()
 
+    // RF30: a troca do level up fica guardada até ser usada na aba de magias
+    personagem.trocasMagia = juntarTrocas(
+        personagem.trocasMagia,
+        trocasLiberadas(personagem.classe, "nivel")
+    )
+
     personagem.nivel = nivelNovo()
     personagem.talentos = talentos
 
@@ -478,6 +522,7 @@ if (!personagem) {
 
     montarGradeAsi()
     montarTalentos()
+    montarMagiasDoNivel()
 
     atributoDadivaEL.addEventListener("change", function () {
         atributoDadiva = atributoDadivaEL.value

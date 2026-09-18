@@ -160,8 +160,15 @@ function concluirDescansoLongo() {
 
     const espacos = conjura ? ", espaços de magia recuperados" : ""
 
+    // RF30: a troca liberada fica guardada até ser usada na aba de magias
+    const liberadas = trocasLiberadas(classeEL.value, "descansoLongo")
+    trocasMagia = juntarTrocas(trocasMagia, liberadas)
+
+    const troca = descreverTrocas(liberadas)
+    const textoTroca = troca ? ` Troca liberada: ${troca} (aba Magias).` : ""
+
     resultadoDescansoEL.textContent =
-        `PV no máximo, temporários zerados${espacos} e ${devolvidos} dado(s) de vida recuperado(s).`
+        `PV no máximo, temporários zerados${espacos} e ${devolvidos} dado(s) de vida recuperado(s).${textoTroca}`
 }
 
 // RF42, RF43: o modo destaca o que dá pra fazer naquele descanso
@@ -185,8 +192,10 @@ function entrarNoDescanso(tipo) {
     if (curto) {
         pendencias.push("Recursos de classe que voltam em descanso curto (Sprint 6).")
     } else {
-        if (conjuracaoDaClasse(classeEL.value) !== null) {
-            pendencias.push("Troca de magias preparadas (Sprint 5b).")
+        const troca = descreverTrocas(trocasLiberadas(classeEL.value, "descansoLongo"))
+
+        if (troca) {
+            pendencias.push(`Ao concluir, libera a troca de ${troca} na aba Magias.`)
         }
         pendencias.push("Recursos de classe são zerados (Sprint 6).")
     }
@@ -416,13 +425,46 @@ classeEL.addEventListener("change", atualizarEspacosDeMagia)
 
 const blocoConcentracaoEL = document.getElementById("bloco-concentracao")
 const magiaConcentracaoEL = document.getElementById("magia-concentracao")
+const outraConcentracaoEL = document.getElementById("magia-concentracao-outra")
+
+// valor da opção que libera o campo de texto
+const OUTRA_MAGIA = "__outra"
 const concentracaoAtivaEL = document.getElementById("concentracao-ativa")
 const statusConcentracaoEL = document.getElementById("status-concentracao")
 const btnConcentrarEL = document.getElementById("btn-concentrar")
 const btnEncerrarConcentracaoEL = document.getElementById("btn-encerrar-concentracao")
 
-// nome da magia; vazio = sem concentração. No 5b passa a ser uma das magias equipadas.
+// nome da magia; vazio = sem concentração
 let concentracaoAtual = ""
+
+// Sprint 5b: a lista traz as magias equipadas que pedem concentração.
+// "Outra magia..." cobre o que não vem da classe (raça, talento, item mágico).
+function montarOpcoesConcentracao() {
+    const deConcentracao = (personagem.magiasEquipadas || [])
+        .filter(function (magia) {
+            return magia.concentracao
+        })
+        .map(function (magia) {
+            return { valor: magia.nome, nome: magia.nome }
+        })
+        .sort(function (a, b) {
+            return a.nome.localeCompare(b.nome)
+        })
+
+    deConcentracao.push({ valor: OUTRA_MAGIA, nome: "Outra magia..." })
+
+    preencherSelect(magiaConcentracaoEL, deConcentracao, "")
+    outraConcentracaoEL.hidden = true
+}
+
+// o nome escolhido na lista, ou o digitado quando for "Outra magia..."
+function lerMagiaEscolhida() {
+    if (magiaConcentracaoEL.value === OUTRA_MAGIA) {
+        return outraConcentracaoEL.value.trim()
+    }
+
+    return magiaConcentracaoEL.value
+}
 
 function atualizarConcentracao(mensagem) {
     blocoConcentracaoEL.hidden = conjuracaoDaClasse(classeEL.value) === null
@@ -441,17 +483,22 @@ function atualizarConcentracao(mensagem) {
 
 // RF28: só uma por vez; começar outra encerra a anterior, com aviso
 function concentrar() {
-    const magia = magiaConcentracaoEL.value.trim()
+    const magia = lerMagiaEscolhida()
 
     if (magia === "") {
-        atualizarConcentracao("Digite o nome da magia.")
-        magiaConcentracaoEL.focus()
+        const digitando = magiaConcentracaoEL.value === OUTRA_MAGIA
+        atualizarConcentracao(digitando ? "Digite o nome da magia." : "Escolha a magia.")
+        ;(digitando ? outraConcentracaoEL : magiaConcentracaoEL).focus()
         return
     }
 
     const anterior = concentracaoAtual
     concentracaoAtual = magia
+
+    // volta ao estado inicial, pronto para a próxima escolha
     magiaConcentracaoEL.value = ""
+    outraConcentracaoEL.value = ""
+    outraConcentracaoEL.hidden = true
 
     if (anterior !== "" && anterior !== magia) {
         atualizarConcentracao(
@@ -510,8 +557,18 @@ btnEncerrarConcentracaoEL.addEventListener("click", function () {
     encerrarConcentracao()
 })
 
+// "Outra magia..." abre o campo de texto; as demais opções escondem
+magiaConcentracaoEL.addEventListener("change", function () {
+    const outra = magiaConcentracaoEL.value === OUTRA_MAGIA
+    outraConcentracaoEL.hidden = !outra
+
+    if (outra) {
+        outraConcentracaoEL.focus()
+    }
+})
+
 // Enter no campo concentra, em vez de enviar o formulário da ficha
-magiaConcentracaoEL.addEventListener("keydown", function (evento) {
+outraConcentracaoEL.addEventListener("keydown", function (evento) {
     if (evento.key === "Enter") {
         evento.preventDefault()
         concentrar()
@@ -526,7 +583,10 @@ classeEL.addEventListener("change", function () {
     atualizarConcentracao()
 })
 
-/* ---------- Sprint 5b: magias equipadas (RF26) ---------- */
+/* ---------- Sprint 5b: magias equipadas (RF26) e trocas (RF30) ---------- */
+
+// trocas liberadas e ainda não usadas; o descanso longo acrescenta, a aba gasta
+let trocasMagia = { magias: 0, truques: 0 }
 
 // A escolha é feita na aba de magias; a ficha só mostra, agrupado por círculo.
 // Usa o que foi salvo junto com a magia, então funciona sem internet.
@@ -661,9 +721,11 @@ if (!personagem) {
     atualizarEspacosDeMagia()
 
     concentracaoAtual = personagem.concentracao || ""
+    montarOpcoesConcentracao()
     atualizarConcentracao()
 
     mostrarMagiasEquipadas()
+    trocasMagia = juntarTrocas(personagem.trocasMagia, SEM_TROCAS)
 
     // ponto de partida para medir dano; os PV já foram carregados acima
     lembrarPv()
@@ -679,17 +741,16 @@ if (!personagem) {
     linkMagiasEL.href = `magias.html?id=${personagem.id}`
     linkMagiasEL.hidden = conjuracaoDaClasse(personagem.classe) === null
 
-    formFicha.addEventListener("submit", function (evento) {
-        evento.preventDefault()
-
+    // Grava a ficha no localStorage. Devolve false se algo impede salvar.
+    const salvarFicha = function () {
         if (!bonusValido()) {
             mostrarStatusBonus()
-            return
+            return false
         }
 
         if (!periciasCompletas()) {
             atualizarPericias()
-            return
+            return false
         }
 
         // Sobrescreve os campos do personagem, mantendo o mesmo id
@@ -734,9 +795,29 @@ if (!personagem) {
         // classe que não conjura não guarda concentração
         personagem.concentracao =
             conjuracaoDaClasse(personagem.classe) === null ? "" : concentracaoAtual
+        personagem.trocasMagia = trocasMagia
 
         localStorage.setItem("fichas", JSON.stringify(personagens))
+        return true
+    }
 
-        window.location.href = "index.html"
+    formFicha.addEventListener("submit", function (evento) {
+        evento.preventDefault()
+
+        if (salvarFicha()) {
+            window.location.href = "index.html"
+        }
+    })
+
+    // Magias e Subir de Nível salvam antes de sair: sem isso, o que foi feito
+    // na ficha (um descanso longo, por exemplo) se perdia na troca de página.
+    ;[linkMagiasEL, linkLevelupEL].forEach(function (link) {
+        link.addEventListener("click", function (evento) {
+            evento.preventDefault()
+
+            if (formFicha.reportValidity() && salvarFicha()) {
+                window.location.href = link.href
+            }
+        })
     })
 }

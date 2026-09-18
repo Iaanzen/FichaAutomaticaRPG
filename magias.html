@@ -32,9 +32,10 @@
 
       <p class="explicacao">
         Estas são as magias da sua classe até o círculo que o seu nível alcança.
-        Equipe as que o personagem tem preparadas: elas aparecem na ficha. A
-        lista vem da API do D&D 5e (regras de 2024), por isso precisa de
-        internet; o que você equipar fica salvo na hora.
+        Equipe as que o personagem tem preparadas: elas aparecem na ficha.
+        Clique no nome para ver a descrição. A lista vem da API do D&D 5e
+        (regras de 2024), por isso precisa de internet; o que você equipar fica
+        salvo na hora.
       </p>
 
       <div class="contadores-magias">
@@ -43,6 +44,13 @@
       </div>
 
       <p class="status-bonus status-erro" id="aviso-magias" hidden></p>
+
+      <div class="trocas-magias" id="trocas-magias">
+        <p id="texto-trocas"></p>
+        <button type="button" id="btn-concluir-troca" hidden>
+          Concluir troca
+        </button>
+      </div>
 
       <div class="magias-filtros">
         <div class="campo">
@@ -63,6 +71,8 @@
 
       <p class="status-bonus" id="status-magias"></p>
       <button type="button" id="btn-tentar-de-novo" hidden>Tentar de novo</button>
+
+      <div class="detalhe-magia" id="detalhe-magia" hidden></div>
 
       <div class="lista-magias" id="lista-magias"></div>
     </div>

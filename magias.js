@@ -1,5 +1,7 @@
 // Sprint 5b: aba de magias.
 // Passo 1: lista as magias da classe. Passo 2: equipar respeitando o limite.
+// Passo 3: descrição ao abrir a magia.
+// O conteúdo das magias aparece como vem da API, em inglês (decisão do 5b).
 // Magias e limites vêm da API do D&D 5e (dnd5eapi.co, regras de 2024), ao vivo.
 
 const API_BASE = "https://www.dnd5eapi.co"
@@ -16,6 +18,9 @@ const soEquipadasEL = document.getElementById("so-equipadas")
 const contadorTruquesEL = document.getElementById("contador-truques")
 const contadorMagiasEL = document.getElementById("contador-magias")
 const btnTentarEL = document.getElementById("btn-tentar-de-novo")
+const detalheEL = document.getElementById("detalhe-magia")
+const textoTrocasEL = document.getElementById("texto-trocas")
+const btnConcluirTrocaEL = document.getElementById("btn-concluir-troca")
 
 const parametros = new URLSearchParams(window.location.search)
 const idDaUrl = Number(parametros.get("id"))
@@ -36,6 +41,19 @@ let limites = { truques: 0, magias: 0 }
 // Guarda mais que o código para a ficha funcionar sem internet.
 let equipadas = []
 
+// RF30: trocas liberadas pelo descanso longo ou pelo level up ({ magias, truques })
+let trocas = { magias: 0, truques: 0 }
+
+// Equipada nesta visita à aba pode ser desfeita sem gastar troca:
+// é correção de engano, não troca de magia.
+const equipadasNestaVisita = []
+
+// descrições já buscadas, para não pedir a mesma magia duas vezes
+const detalhes = {}
+
+// qual magia está aberta no painel de detalhe
+let magiaAberta = null
+
 /* ---------- O que o personagem alcança ---------- */
 
 // maior círculo com espaço de magia; truques (círculo 0) valem sempre
@@ -51,22 +69,7 @@ function circuloMaximo() {
 
 /* ---------- API ---------- */
 
-async function buscarMagias() {
-    const classeApi = classeNaApi(personagem.classe)
-
-    // uma requisição só traz a lista inteira da classe; a descrição de cada
-    // magia é buscada depois, ao abrir (passo 3)
-    const consulta = `{
-        spells(class: "${classeApi}", limit: 400) {
-            index
-            name
-            level
-            concentration
-            ritual
-            school { name }
-        }
-    }`
-
+async function consultar(consulta) {
     const resposta = await fetch(API_MAGIAS, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -83,7 +86,26 @@ async function buscarMagias() {
         throw new Error(dados.errors[0].message)
     }
 
-    return dados.data.spells.slice().sort(function (a, b) {
+    return dados.data
+}
+
+async function buscarMagias() {
+    const classeApi = classeNaApi(personagem.classe)
+
+    // uma requisição só traz a lista inteira da classe, sem descrição:
+    // assim a aba abre rápido. A descrição vem depois, magia por magia.
+    const dados = await consultar(`{
+        spells(class: "${classeApi}", limit: 400) {
+            index
+            name
+            level
+            concentration
+            ritual
+            school { name }
+        }
+    }`)
+
+    return dados.spells.slice().sort(function (a, b) {
         return a.level - b.level || a.name.localeCompare(b.name)
     })
 }
@@ -105,6 +127,32 @@ async function buscarLimites() {
         truques: conjuracao.cantrips_known || 0,
         magias: conjuracao.prepared_spells || 0
     }
+}
+
+async function buscarDetalhe(valor) {
+    if (detalhes[valor]) {
+        return detalhes[valor]
+    }
+
+    const dados = await consultar(`{
+        spell(index: "${valor}") {
+            index
+            name
+            level
+            concentration
+            ritual
+            casting_time
+            range
+            duration
+            components
+            material
+            school { name }
+            description
+        }
+    }`)
+
+    detalhes[valor] = dados.spell
+    return dados.spell
 }
 
 /* ---------- Equipar (RF26, RF29) ---------- */
@@ -137,11 +185,74 @@ function limiteAtingido(circulo) {
 // grava direto no personagem: a aba não tem botão de salvar
 function salvar() {
     personagem.magiasEquipadas = equipadas
+    personagem.trocasMagia = trocas
     localStorage.setItem("fichas", JSON.stringify(personagens))
+}
+
+/* ---------- Troca de magias (RF30, regra 2024) ---------- */
+
+function categoria(circulo) {
+    return circulo === 0 ? "truques" : "magias"
+}
+
+// Tirar uma magia só vale com troca liberada; preencher vaga livre é sempre permitido.
+function podeRemover(magia) {
+    return (
+        equipadasNestaVisita.includes(magia.index) ||
+        trocas[categoria(magia.level)] !== 0
+    )
+}
+
+// troca de 1 é gasta ao tirar a magia; "todas" dura até o jogador concluir
+function gastarTroca(magia) {
+    const tipo = categoria(magia.level)
+
+    if (trocas[tipo] === 1) {
+        trocas[tipo] = 0
+    }
+}
+
+function concluirTroca() {
+    trocas.magias = 0
+    salvar()
+    renderizar()
+}
+
+function atualizarTrocas() {
+    const liberado = descreverTrocas(trocas)
+
+    btnConcluirTrocaEL.hidden = trocas.magias !== "todas"
+
+    if (liberado) {
+        textoTrocasEL.textContent =
+            `Troca liberada: ${liberado}. Remova uma magia e equipe outra no lugar.`
+        textoTrocasEL.className = "status-bonus status-ok"
+        return
+    }
+
+    const regra = explicarRegraDeTroca(personagem.classe)
+
+    textoTrocasEL.textContent =
+        `Nenhuma troca liberada agora: vagas livres podem ser preenchidas, mas ` +
+        `para tirar uma magia é preciso troca. Sua classe ${regra}.`
+    textoTrocasEL.className = "status-bonus"
 }
 
 function alternarMagia(magia) {
     if (estaEquipada(magia.index)) {
+        if (!podeRemover(magia)) {
+            return
+        }
+
+        const posicao = equipadasNestaVisita.indexOf(magia.index)
+
+        if (posicao >= 0) {
+            // desfazer o que acabou de equipar não gasta troca
+            equipadasNestaVisita.splice(posicao, 1)
+        } else {
+            gastarTroca(magia)
+        }
+
         equipadas = equipadas.filter(function (item) {
             return item.valor !== magia.index
         })
@@ -149,6 +260,8 @@ function alternarMagia(magia) {
         if (limiteAtingido(magia.level)) {
             return
         }
+
+        equipadasNestaVisita.push(magia.index)
 
         equipadas.push({
             valor: magia.index,
@@ -223,7 +336,107 @@ function magiasVisiveis() {
     })
 }
 
-/* ---------- Tela ---------- */
+/* ---------- Detalhe da magia ---------- */
+
+function criarLinhaDetalhe(rotulo, valor) {
+    const linha = document.createElement("p")
+    linha.className = "detalhe-linha"
+
+    const titulo = document.createElement("strong")
+    titulo.textContent = `${rotulo}: `
+
+    linha.appendChild(titulo)
+    linha.appendChild(document.createTextNode(valor))
+    return linha
+}
+
+function montarDetalhe(magia) {
+    detalheEL.innerHTML = ""
+
+    const fechar = document.createElement("button")
+    fechar.type = "button"
+    fechar.className = "detalhe-fechar"
+    fechar.textContent = "Fechar"
+    fechar.addEventListener("click", fecharDetalhe)
+
+    const titulo = document.createElement("span")
+    titulo.className = "detalhe-titulo"
+    titulo.textContent = magia.name
+
+    const subtitulo = document.createElement("p")
+    subtitulo.className = "detalhe-subtitulo"
+    subtitulo.textContent = `${nomeDoCirculo(magia.level)} · ${magia.school.name}`
+
+    detalheEL.appendChild(fechar)
+    detalheEL.appendChild(titulo)
+    detalheEL.appendChild(subtitulo)
+
+    // a API gruda "Component: V, S" no alcance de algumas magias; os
+    // componentes já aparecem na linha própria
+    const alcance = magia.range.replace(/\s*Component:.*$/i, "")
+
+    detalheEL.appendChild(criarLinhaDetalhe("Tempo", magia.casting_time))
+    detalheEL.appendChild(criarLinhaDetalhe("Alcance", alcance))
+    detalheEL.appendChild(criarLinhaDetalhe("Duração", magia.duration))
+    detalheEL.appendChild(
+        criarLinhaDetalhe("Componentes", (magia.components || []).join(", "))
+    )
+
+    if (magia.material) {
+        detalheEL.appendChild(criarLinhaDetalhe("Material", magia.material))
+    }
+
+    const partes = Array.isArray(magia.description)
+        ? magia.description
+        : [magia.description || ""]
+
+    partes.forEach(function (parte) {
+        const paragrafo = document.createElement("p")
+        paragrafo.className = "detalhe-descricao"
+        paragrafo.textContent = parte
+        detalheEL.appendChild(paragrafo)
+    })
+}
+
+function fecharDetalhe() {
+    magiaAberta = null
+    detalheEL.hidden = true
+    detalheEL.innerHTML = ""
+}
+
+async function abrirMagia(magia) {
+    // clicar de novo na mesma magia fecha o detalhe
+    if (magiaAberta === magia.index) {
+        fecharDetalhe()
+        return
+    }
+
+    magiaAberta = magia.index
+    detalheEL.hidden = false
+    detalheEL.innerHTML = ""
+
+    const carregando = document.createElement("p")
+    carregando.className = "detalhe-descricao"
+    carregando.textContent = "Buscando a descrição..."
+    detalheEL.appendChild(carregando)
+
+    try {
+        const completa = await buscarDetalhe(magia.index)
+
+        // o jogador pode ter clicado em outra magia enquanto isso
+        if (magiaAberta !== magia.index) {
+            return
+        }
+
+        montarDetalhe(completa)
+        detalheEL.scrollIntoView({ block: "nearest", behavior: "smooth" })
+    } catch (erro) {
+        carregando.textContent = "Não foi possível buscar a descrição. Tente de novo."
+        console.error(erro)
+    }
+}
+
+/* ---------- Lista ---------- */
 
 function criarEtiqueta(texto) {
     const etiqueta = document.createElement("span")
@@ -239,9 +452,13 @@ function criarCartao(magia) {
     cartao.className = "magia"
     cartao.classList.toggle("magia-equipada", equipada)
 
-    const nome = document.createElement("span")
-    nome.className = "magia-nome"
+    const nome = document.createElement("button")
+    nome.type = "button"
+    nome.className = "magia-nome magia-abrir"
     nome.textContent = magia.name
+    nome.addEventListener("click", function () {
+        abrirMagia(magia)
+    })
 
     const info = document.createElement("span")
     info.className = "magia-info"
@@ -262,8 +479,13 @@ function criarCartao(magia) {
     botao.type = "button"
     botao.className = "magia-botao"
 
-    if (equipada) {
+    if (equipada && podeRemover(magia)) {
         botao.textContent = "Remover"
+    } else if (equipada) {
+        // RF30: sem troca liberada a magia fica fixa na ficha
+        botao.textContent = "Sem troca"
+        botao.disabled = true
+        botao.title = "Tirar esta magia exige uma troca liberada pela regra da classe."
     } else if (limiteAtingido(magia.level)) {
         // o jogador vê por que não dá: tem que remover outra antes
         botao.textContent = "Limite atingido"
@@ -292,6 +514,8 @@ function renderizar() {
     // classe sem truques (Paladino, Patrulheiro) nem mostra o contador
     contadorTruquesEL.hidden = limites.truques === 0
 
+    atualizarTrocas()
+
     const visiveis = magiasVisiveis()
 
     listaEL.innerHTML = ""
@@ -318,6 +542,7 @@ async function carregar() {
     statusEL.textContent = "Buscando magias..."
     btnTentarEL.hidden = true
     listaEL.innerHTML = ""
+    fecharDetalhe()
 
     try {
         // as duas consultas são independentes, então vão juntas
@@ -351,6 +576,7 @@ if (!personagem) {
     document.title = `${personagem.nome} - Magias`
 
     equipadas = (personagem.magiasEquipadas || []).slice()
+    trocas = juntarTrocas(personagem.trocasMagia, SEM_TROCAS)
 
     document.getElementById("nome-personagem").textContent = personagem.nome
     document.getElementById("classe-personagem").textContent =
@@ -364,6 +590,7 @@ if (!personagem) {
     filtroCirculoEL.addEventListener("change", renderizar)
     soEquipadasEL.addEventListener("change", renderizar)
     btnTentarEL.addEventListener("click", carregar)
+    btnConcluirTrocaEL.addEventListener("click", concluirTroca)
 
     carregar()
 }

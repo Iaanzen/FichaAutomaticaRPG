@@ -23,7 +23,7 @@
   - Melhoria de Atributo (ASI);
   - Talento;
   - Para classes conjuradoras: aprender nova magia e/ou trocar uma magia já conhecida (quando a classe permitir essa troca no level up).
-  - *(ASI e Talento feitos no Sprint 4 — ver seção 3.4. A parte de magias fica para o Sprint 5.)*
+  - *(ASI e Talento feitos no Sprint 4 — ver seção 3.4. Magias feitas no Sprint 5b: o level up mostra o que muda nas magias e libera as trocas; a escolha em si é feita na aba de magias — ver seção 3.8.)*
 
 ### 1.3 Raça e Traços
 - RF10: ~~Aplicar automaticamente os bônus de atributo da raça/sub-raça escolhida.~~ **Revogado pela seção 3.1** — nas regras 2024 o bônus vem do antecedente. O que continua valendo: o select de sub-raça deve ser preenchido dinamicamente com as opções corretas conforme a raça escolhida (ex: Anão → Anão da Colina / Anão da Montanha). *(Feito.)*
@@ -212,15 +212,29 @@ O app é para as campanhas do próprio mestre, então não precisa seguir uma ed
 - A lista vem **sem descrição**, para abrir rápido; a descrição é buscada ao abrir uma magia.
 - Ao equipar, a ficha salva **código, nome, círculo e concentração** da magia, para funcionar sem internet ou com a API fora do ar. Só a aba de magias depende de conexão.
 
-**Idioma: a API é em inglês. Decidido traduzir em camadas:**
-1. **Campos fixos traduzidos no código** por dicionário: tempo de conjuração, duração e alcance (só 64 valores diferentes). Distâncias em pés viram metros (5 pés = 1,5 m). Valor fora do dicionário aparece em inglês.
-2. **Nomes em português** num arquivo de traduções próprio (código da magia → nome), com o nome em inglês como reserva enquanto não houver tradução.
-3. **Descrições começam em inglês** e são traduzidas aos poucos, conforme as magias forem usadas na campanha, no mesmo arquivo de traduções.
-- Descartado: tradutor automático ao vivo (chave de acesso exposta no navegador, custo, lentidão e erro em termos do jogo).
-- Não copiar descrições do livro oficial em português; traduzir o texto da API é permitido mantendo o crédito.
+**Idioma: as magias ficam em inglês, como vêm da API.**
+- **Revisto no passo 3 do 5b:** a tradução em camadas chegou a ser feita (campos fixos por dicionário, distâncias em metros, nomes num arquivo próprio), mas foi **retirada**. Com só parte das magias traduzida, a tela ficava misturada, e traduzir tudo seria trabalho demais para o ganho.
+- Nome, escola, tempo, alcance, duração e descrição aparecem em inglês, com as distâncias em pés. Os rótulos do app ("Tempo", "Alcance", "Magias Preparadas") continuam em português.
+- A única limpeza feita no dado: a API gruda "Component: V, S" no alcance de algumas magias, e isso é removido (os componentes têm linha própria).
+- Descartado também: tradutor automático ao vivo (chave de acesso exposta no navegador, custo, lentidão e erro em termos do jogo).
+- Se um dia a tradução voltar: não copiar descrições do livro oficial em português; traduzir o texto da API é permitido mantendo o crédito.
 
 **Decidido também:**
-- **Regra de troca de magias: 2024** (substitui o texto de 2014 do RF30). Conferir no livro os detalhes de cada classe, principalmente Paladino e Patrulheiro, antes de implementar no 5b.
+- **Regra de troca de magias: 2024** (substitui o texto de 2014 do RF30). Conferida no texto oficial de cada classe, pela API, em 18/09/2026:
+
+  | Classe | Troca de magias | Troca de truques |
+  |---|---|---|
+  | Clérigo, Druida | todas, no descanso longo | 1, ao subir de nível |
+  | Mago | todas, no descanso longo (do grimório) | 1, no descanso longo |
+  | Paladino, Patrulheiro | 1, no descanso longo | não têm truques |
+  | Bardo, Feiticeiro, Bruxo | 1, ao subir de nível | 1, ao subir de nível |
+
+  **Implementação (passo 4 do 5b), com a troca travada pela regra:**
+  - Descanso longo e level up **liberam** as trocas da classe, que ficam guardadas na ficha até serem usadas. Não acumulam: dois descansos seguidos continuam valendo 1 troca.
+  - Na aba de magias, **tirar** uma magia só é possível com troca liberada; **preencher vaga livre** é sempre permitido. Troca de 1 é gasta ao tirar a magia; "todas" dura até o jogador clicar em "Concluir troca".
+  - Magia equipada na mesma visita à aba pode ser desfeita sem gastar troca (correção de engano).
+  - Os botões "Magias" e "Subir de Nível" da ficha passaram a **salvar a ficha antes de sair**, senão a troca liberada pelo descanso se perdia.
+  - Limitação: o grimório do Mago não é controlado; ele troca entre todas as magias de Mago da API.
 - **Cavaleiro Arcano e Trapaceiro Arcano ficam para depois** (item registrado na seção 3).
 - **Sprint dividido em 5a e 5b** (ver tabela da seção 5), entregue em passos pequenos e testáveis.
 - **Sem internet:** a aba de magias mostra só o aviso "sem conexão, tente de novo"; a ficha continua funcionando com as magias já equipadas.
@@ -240,6 +254,21 @@ Decisões desta sprint:
 - O dano é medido quando o campo de PV perde o foco, e não a cada tecla, senão apagar o número para digitar outro contaria como cair a 0 PV.
 - A magia em concentração é digitada à mão por enquanto; no 5b passa a ser escolhida entre as magias equipadas.
 - **Limites de magias:** a API informa, por classe e nível, quantos truques e quantas magias preparadas o personagem tem (ex: Druida nível 5 = 3 truques e 9 preparadas). O app usa esses números em vez de manter mais uma tabela.
+
+## 3.8 Aba de magias (CONCLUÍDO — Sprint 5b)
+
+Entregue em cinco passos, cada um testado antes do seguinte (decisões na seção 3.6):
+1. **Lista (RF26):** aba `magias.html`, aberta pela ficha. Busca na API as magias da classe do personagem, até o círculo que o nível alcança, com busca por nome e filtro por círculo. Sem conexão, mostra aviso e botão "Tentar de novo".
+2. **Equipar (RF26, RF29):** limite de truques e de magias preparadas vindo da própria API, por classe e nível. A aba salva na hora. As magias equipadas aparecem na ficha, agrupadas por círculo, com (C) na concentração, e funcionam sem internet.
+3. **Descrição:** clicar no nome abre tempo, alcance, duração, componentes, material e descrição. A tradução chegou a ser feita e foi retirada: as magias ficam em inglês (seção 3.6).
+4. **Troca (RF30, regra 2024):** descanso longo e level up liberam as trocas de cada classe; a aba trava a remoção sem troca. O level up ganhou um bloco "Magias" em todo nível de classe conjuradora. Os botões "Magias" e "Subir de Nível" da ficha salvam antes de sair.
+5. **Concentração ligada às magias:** o campo de concentração da ficha virou uma lista com as magias equipadas que pedem concentração, mais "Outra magia..." para o que não vem da classe (raça, talento, item mágico).
+
+Limitações conhecidas:
+- Magias sempre preparadas das subclasses (Domínio do Clérigo, Juramento do Paladino etc.) não entram na lista nem no limite.
+- O grimório do Mago não é controlado.
+- Só as 339 magias do SRD estão na API.
+- Arcanas Místicas do Bruxo (6º ao 9º círculo) não são tratadas.
 
 ---
 
@@ -277,8 +306,8 @@ Escrito como histórias de usuário, do jeito Scrum — cada uma vira uma entreg
 | Sprint 3 | Vida e descanso | 5, 6, 7 | concluída |
 | Sprint 4 | Level up dedicado (seção 3.4) | 8 | concluída (magias no level up vão para o Sprint 5) |
 | Sprint 5a | Magias em jogo: espaços de magia, CD e ataque mágico, concentração, descanso | 9, 10 (parte) | concluída (ver seção 3.7) |
-| Sprint 5b | Aba de magias: lista pela API, limites, equipar, troca (2024), coluna do level up | 9, 10 (parte) | em andamento |
-| Sprint 5.5 | Ajustes de distribuição de atributos e aviso do wizard (IDEIA06, IDEIA07) | — | depois do 5b |
+| Sprint 5b | Aba de magias: lista pela API, limites, equipar, troca (2024), coluna do level up | 9, 10 (parte) | concluída (ver seção 3.8) |
+| Sprint 5.5 | Ajustes de distribuição de atributos e aviso do wizard (IDEIA06, IDEIA07) | — | próxima |
 | Sprint 6 | Recursos de classe | 11 | |
 | Sprint 7 | Combate | 12 | |
 | Sprint 8 | Inventário | 13 | |

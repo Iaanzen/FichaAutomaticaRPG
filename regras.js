@@ -937,6 +937,93 @@ function espacosDeMagia(classe, nivel) {
     })
 }
 
+/* ---------- Sprint 5b: troca de magias (RF30) ---------- */
+
+// Regra 2024, conferida no texto oficial de cada classe (API do D&D 5e).
+// Para cada momento, quantas trocas a classe ganha: 1 ou "todas".
+const TROCA_DE_MAGIAS = {
+    bardo: { descansoLongo: {}, nivel: { magias: 1, truques: 1 } },
+    bruxo: { descansoLongo: {}, nivel: { magias: 1, truques: 1 } },
+    clerigo: { descansoLongo: { magias: "todas" }, nivel: { truques: 1 } },
+    druida: { descansoLongo: { magias: "todas" }, nivel: { truques: 1 } },
+    feiticeiro: { descansoLongo: {}, nivel: { magias: 1, truques: 1 } },
+    // o Mago troca truque no descanso longo, e não ao subir de nível
+    mago: { descansoLongo: { magias: "todas", truques: 1 }, nivel: {} },
+    paladino: { descansoLongo: { magias: 1 }, nivel: {} },
+    patrulheiro: { descansoLongo: { magias: 1 }, nivel: {} }
+}
+
+const SEM_TROCAS = { magias: 0, truques: 0 }
+
+// momento: "descansoLongo" ou "nivel"; classe que não conjura não ganha nada
+function trocasLiberadas(classe, momento) {
+    const regra = TROCA_DE_MAGIAS[classe]
+    const liberadas = (regra && regra[momento]) || {}
+
+    return {
+        magias: liberadas.magias || 0,
+        truques: liberadas.truques || 0
+    }
+}
+
+// "todas" vence 1, que vence 0
+function maiorTroca(a, b) {
+    if (a === "todas" || b === "todas") {
+        return "todas"
+    }
+
+    return Math.max(a || 0, b || 0)
+}
+
+// Não acumula: dois descansos seguidos continuam valendo 1 troca, não 2.
+function juntarTrocas(atuais, novas) {
+    const base = atuais || SEM_TROCAS
+
+    return {
+        magias: maiorTroca(base.magias, novas.magias),
+        truques: maiorTroca(base.truques, novas.truques)
+    }
+}
+
+function descreverUmaTroca(valor, singular, plural) {
+    if (valor === "todas") {
+        return `todas as ${plural}`
+    }
+
+    if (valor > 0) {
+        return `${valor} ${singular}`
+    }
+
+    return null
+}
+
+// "todas as magias preparadas e 1 truque"; vazio quando não há troca
+function descreverTrocas(trocas) {
+    return [
+        descreverUmaTroca(trocas.magias, "magia", "magias preparadas"),
+        descreverUmaTroca(trocas.truques, "truque", "truques")
+    ]
+        .filter(Boolean)
+        .join(" e ")
+}
+
+// "troca todas as magias preparadas no descanso longo e 1 truque ao subir de nível"
+function explicarRegraDeTroca(classe) {
+    const partes = []
+    const noDescanso = descreverTrocas(trocasLiberadas(classe, "descansoLongo"))
+    const aoSubir = descreverTrocas(trocasLiberadas(classe, "nivel"))
+
+    if (noDescanso) {
+        partes.push(`${noDescanso} no descanso longo`)
+    }
+
+    if (aoSubir) {
+        partes.push(`${aoSubir} ao subir de nível`)
+    }
+
+    return partes.length === 0 ? "" : `troca ${partes.join(" e ")}`
+}
+
 // usado na ficha e na aba de magias: círculo 0 é truque
 function nomeDoCirculo(circulo) {
     return circulo === 0 ? "Truque" : `${circulo}º círculo`
