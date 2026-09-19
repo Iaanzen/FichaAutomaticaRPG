@@ -98,8 +98,39 @@ a[href="cadastro.html"]:active {
     box-shadow: 0 10px 20px rgba(0,0,0,0.8);
 }
 
-/* Botão excluir dentro do card */
+/* O cartão inteiro abre a ficha: o link do nome estica uma área invisível
+   por cima do cartão. Continua sendo link de verdade (Tab + Enter, abrir em
+   outra aba). O cartão precisa ser a referência dessa área. */
+#lista-personagens li {
+    position: relative;
+    cursor: pointer;
+}
+
+/* nome com a cor do cartão, sem o azul/roxo padrão de link visitado */
+#lista-personagens li a {
+    color: inherit;
+    text-decoration: none;
+}
+
+#lista-personagens li a::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+}
+
+/* foco do teclado visível no cartão todo */
+#lista-personagens li:has(a:focus-visible) {
+    outline: 3px solid var(--ouro);
+    outline-offset: 2px;
+}
+
+#lista-personagens li a:focus-visible { outline: none; }
+
+/* Botão excluir dentro do card: fica por cima da área do link,
+   então clicar nele não abre a ficha */
 #lista-personagens button {
+    position: relative;
+    z-index: 1;
     background-color: transparent;
     color: var(--sangue-dragao);
     font-family: 'Lora', serif;
