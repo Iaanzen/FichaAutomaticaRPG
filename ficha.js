@@ -584,6 +584,144 @@ formFicha.addEventListener("input", function (evento) {
     }
 })
 
+/* ---------- Sprint 6.5: habilidades por nível (RF13) ---------- */
+
+const API_HABILIDADES = "https://www.dnd5eapi.co/api/2024/features"
+const listaHabilidadesEL = document.getElementById("lista-habilidades")
+const detalheHabilidadeEL = document.getElementById("detalhe-habilidade")
+
+// descrições já buscadas, para não pedir a mesma habilidade duas vezes
+const descricoesDeHabilidades = {}
+let habilidadeAberta = null
+
+function fecharHabilidade() {
+    habilidadeAberta = null
+    detalheHabilidadeEL.hidden = true
+    detalheHabilidadeEL.innerHTML = ""
+}
+
+// a lista funciona sem internet; só a descrição vem da API, ao clicar
+async function abrirHabilidade(habilidade, rotulo) {
+    if (habilidadeAberta === habilidade.api) {
+        fecharHabilidade()
+        return
+    }
+
+    habilidadeAberta = habilidade.api
+    detalheHabilidadeEL.hidden = false
+    detalheHabilidadeEL.innerHTML = ""
+
+    const fechar = document.createElement("button")
+    fechar.type = "button"
+    fechar.className = "detalhe-fechar"
+    fechar.textContent = "Fechar"
+    fechar.addEventListener("click", fecharHabilidade)
+
+    const titulo = document.createElement("span")
+    titulo.className = "detalhe-titulo"
+    titulo.textContent = rotulo
+
+    const texto = document.createElement("p")
+    texto.className = "detalhe-descricao"
+    texto.textContent = "Buscando a descrição..."
+
+    detalheHabilidadeEL.appendChild(fechar)
+    detalheHabilidadeEL.appendChild(titulo)
+    detalheHabilidadeEL.appendChild(texto)
+
+    try {
+        if (!descricoesDeHabilidades[habilidade.api]) {
+            const resposta = await fetch(`${API_HABILIDADES}/${habilidade.api}`)
+
+            if (!resposta.ok) {
+                throw new Error(`A API respondeu ${resposta.status}`)
+            }
+
+            const dados = await resposta.json()
+            const descricao = dados.description || dados.desc || "Sem descrição."
+
+            descricoesDeHabilidades[habilidade.api] = Array.isArray(descricao)
+                ? descricao.join("\n\n")
+                : descricao
+        }
+
+        // o jogador pode ter clicado em outra habilidade enquanto isso
+        if (habilidadeAberta === habilidade.api) {
+            texto.textContent = descricoesDeHabilidades[habilidade.api]
+        }
+    } catch (erro) {
+        texto.textContent = "Sem conexão para buscar a descrição. Tente de novo."
+        console.error(erro)
+    }
+}
+
+// uma linha por nível, do 1 até o nível atual, com as da subclasse escolhida
+function atualizarHabilidades() {
+    const classe = classeEL.value
+    const habilidades = habilidadesParaMostrar(classe, subclasseEL.value, Number(nivelEL.value))
+
+    listaHabilidadesEL.innerHTML = ""
+    fecharHabilidade()
+
+    if (habilidades.length === 0) {
+        const vazio = document.createElement("p")
+        vazio.className = "vazio-texto"
+        vazio.textContent = classe === ""
+            ? "Escolha uma classe."
+            : "Nenhuma habilidade registrada para esta classe."
+        listaHabilidadesEL.appendChild(vazio)
+        return
+    }
+
+    const niveis = []
+
+    habilidades.forEach(function (habilidade) {
+        if (!niveis.includes(habilidade.nivel)) {
+            niveis.push(habilidade.nivel)
+        }
+    })
+
+    niveis.forEach(function (nivel) {
+        const linha = document.createElement("p")
+        linha.className = "habilidades-nivel"
+
+        const titulo = document.createElement("strong")
+        titulo.textContent = `Nível ${nivel}: `
+        linha.appendChild(titulo)
+
+        habilidades
+            .filter(function (habilidade) {
+                return habilidade.nivel === nivel
+            })
+            .forEach(function (habilidade, posicao) {
+                if (posicao > 0) {
+                    linha.appendChild(document.createTextNode(", "))
+                }
+
+                // sem código da API (conteúdo extra, marca de subclasse) não há descrição
+                if (!habilidade.api) {
+                    linha.appendChild(document.createTextNode(habilidade.rotulo))
+                    return
+                }
+
+                const botao = document.createElement("button")
+                botao.type = "button"
+                botao.className = "magia-abrir"
+                botao.textContent = habilidade.rotulo
+                botao.addEventListener("click", function () {
+                    abrirHabilidade(habilidade, habilidade.rotulo)
+                })
+                linha.appendChild(botao)
+            })
+
+        listaHabilidadesEL.appendChild(linha)
+    })
+}
+
+// classe e subclasse mudam a lista (o nível só muda pelo level up)
+classeEL.addEventListener("change", atualizarHabilidades)
+subclasseEL.addEventListener("change", atualizarHabilidades)
+
 /* ---------- Sprint 5a: concentração (RF28) ---------- */
 
 const blocoConcentracaoEL = document.getElementById("bloco-concentracao")
@@ -603,7 +741,8 @@ let concentracaoAtual = ""
 // Sprint 5b: a lista traz as magias equipadas que pedem concentração.
 // "Outra magia..." cobre o que não vem da classe (raça, talento, item mágico).
 function montarOpcoesConcentracao() {
-    const deConcentracao = (personagem.magiasEquipadas || [])
+    // equipadas e as da subclasse (Bless do Domínio da Vida, por exemplo)
+    const deConcentracao = magiasParaMostrar()
         .filter(function (magia) {
             return magia.concentracao
         })
@@ -753,19 +892,74 @@ let trocasMagia = { magias: 0, truques: 0 }
 
 // A escolha é feita na aba de magias; a ficha só mostra, agrupado por círculo.
 // Usa o que foi salvo junto com a magia, então funciona sem internet.
+// Sprint 6.5: escolha que decide as magias da subclasse (Círculo da Terra)
+let opcaoMagiasSubclasse = ""
+const selectEscolhaMagiasEL = document.getElementById("opcao-magias-subclasse")
+
+// equipadas + as sempre preparadas da subclasse, sem repetir
+function magiasParaMostrar() {
+    const daSubclasse = magiasDaSubclasse(
+        classeEL.value,
+        subclasseEL.value,
+        Number(nivelEL.value),
+        opcaoMagiasSubclasse
+    ).map(function (magia) {
+        return Object.assign({}, magia, { daSubclasse: true })
+    })
+
+    const equipadas = (personagem.magiasEquipadas || []).filter(function (equipada) {
+        return !daSubclasse.some(function (magia) {
+            return magia.valor === equipada.valor
+        })
+    })
+
+    return equipadas.concat(daSubclasse)
+}
+
+function montarEscolhaDeMagias(escolha) {
+    document.getElementById("escolha-magias-subclasse").hidden = escolha === null
+
+    if (escolha === null) {
+        return
+    }
+
+    document.getElementById("rotulo-escolha-magias").textContent = escolha.rotulo
+    preencherSelect(
+        selectEscolhaMagiasEL,
+        escolha.opcoes.map(function (opcao) {
+            return { valor: opcao.valor, nome: opcao.nome }
+        }),
+        opcaoMagiasSubclasse
+    )
+}
+
 function mostrarMagiasEquipadas() {
     const blocoEL = document.getElementById("bloco-magias-equipadas")
     const listaEL = document.getElementById("lista-magias-equipadas")
+    const notaEL = document.getElementById("nota-magias-subclasse")
 
-    blocoEL.hidden = conjuracaoDaClasse(classeEL.value) === null
+    const conjura = conjuracaoDaClasse(classeEL.value) !== null
+    const escolha = escolhaDeMagiasDaSubclasse(classeEL.value, subclasseEL.value)
+    const atributo = atributoDasMagiasDaSubclasse(classeEL.value, subclasseEL.value)
+    const equipadas = magiasParaMostrar()
+
+    // quem não conjura (Pugilista) só vê o bloco se a subclasse der magias
+    blocoEL.hidden = !conjura && equipadas.length === 0 && escolha === null
     listaEL.innerHTML = ""
 
-    const equipadas = personagem.magiasEquipadas || []
+    montarEscolhaDeMagias(escolha)
+
+    notaEL.hidden = atributo === null
+    notaEL.textContent = atributo
+        ? `As magias de ${nomeDaSubclasse(classeEL.value, subclasseEL.value)} usam ${NOME_ATRIBUTO[atributo]}.`
+        : ""
 
     if (equipadas.length === 0) {
         const vazio = document.createElement("p")
         vazio.className = "vazio-texto"
-        vazio.textContent = "Nenhuma magia equipada. Escolha na aba Magias."
+        vazio.textContent = escolha && !opcaoMagiasSubclasse
+            ? "Escolha acima para ver as magias da subclasse."
+            : "Nenhuma magia equipada. Escolha na aba Magias."
         listaEL.appendChild(vazio)
         return
     }
@@ -795,7 +989,17 @@ function mostrarMagiasEquipadas() {
             })
             .map(function (magia) {
                 // (C) marca concentração, como nas fichas de papel
-                return magia.concentracao ? `${magia.nome} (C)` : magia.nome
+                const marcas = []
+
+                if (magia.concentracao) {
+                    marcas.push("C")
+                }
+
+                if (magia.daSubclasse) {
+                    marcas.push("subclasse")
+                }
+
+                return marcas.length ? `${magia.nome} (${marcas.join(", ")})` : magia.nome
             })
             .sort()
 
@@ -804,6 +1008,20 @@ function mostrarMagiasEquipadas() {
         listaEL.appendChild(grupo)
     })
 }
+
+// classe, subclasse e tipo de terra mudam o que aparece (e a lista de concentração)
+subclasseEL.addEventListener("change", function () {
+    if (personagem) {
+        mostrarMagiasEquipadas()
+        montarOpcoesConcentracao()
+    }
+})
+
+selectEscolhaMagiasEL.addEventListener("change", function () {
+    opcaoMagiasSubclasse = selectEscolhaMagiasEL.value
+    mostrarMagiasEquipadas()
+    montarOpcoesConcentracao()
+})
 
 // classe que não conjura esconde o bloco
 classeEL.addEventListener("change", function () {
@@ -893,6 +1111,11 @@ if (!personagem) {
     recursosGastos = personagem.recursosGastos || {}
     atualizarRecursos()
 
+    atualizarHabilidades()
+
+    // antes da concentração: o tipo de terra decide magias da subclasse
+    opcaoMagiasSubclasse = personagem.opcaoMagiasSubclasse || ""
+
     concentracaoAtual = personagem.concentracao || ""
     montarOpcoesConcentracao()
     atualizarConcentracao()
@@ -948,7 +1171,7 @@ if (!personagem) {
         personagem.pericias = lerPericias()
         personagem.bonusProficiencia = bonusDeProficiencia(personagem.nivel)
         // derivado da classe, mas salvo pra ficha poder ser lida sem recalcular
-        personagem.salvaguardas = salvaguardasDaClasse(personagem.classe)
+        personagem.salvaguardas = salvaguardasDaClasse(personagem.classe, personagem.nivel)
 
         const dadosRaca = dadosDaRaca(personagem.raca, personagem.subraca)
         personagem.deslocamento = dadosRaca ? dadosRaca.deslocamento : null
@@ -966,6 +1189,7 @@ if (!personagem) {
         // guarda só o que ainda existe na tabela da classe e do nível atuais
         personagem.espacosGastos = espacosGastosValidos()
         personagem.recursosGastos = recursosGastosValidos()
+        personagem.opcaoMagiasSubclasse = opcaoMagiasSubclasse
         // classe que não conjura não guarda concentração
         personagem.concentracao =
             conjuracaoDaClasse(personagem.classe) === null ? "" : concentracaoAtual

@@ -300,7 +300,7 @@ formFicha.addEventListener('submit', function (evento) {
         pericias: lerPericias(),
         bonusProficiencia: bonusDeProficiencia(nivel),
         // derivados de classe e raça, mas salvos pra ficha ser lida sem recalcular
-        salvaguardas: salvaguardasDaClasse(classe),
+        salvaguardas: salvaguardasDaClasse(classe, nivel),
         deslocamento: dadosRaca ? dadosRaca.deslocamento : null,
         tracos: dadosRaca ? dadosRaca.tracos : [],
         idiomas: dadosRaca ? dadosRaca.idiomas : [],

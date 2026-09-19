@@ -265,7 +265,7 @@ Entregue em cinco passos, cada um testado antes do seguinte (decisões na seçã
 5. **Concentração ligada às magias:** o campo de concentração da ficha virou uma lista com as magias equipadas que pedem concentração, mais "Outra magia..." para o que não vem da classe (raça, talento, item mágico).
 
 Limitações conhecidas:
-- Magias sempre preparadas das subclasses (Domínio do Clérigo, Juramento do Paladino etc.) não entram na lista nem no limite.
+- ~~Magias sempre preparadas das subclasses não entram na lista nem no limite~~ — resolvido no Sprint 6.5, passo 5 (seção 3.13).
 - O grimório do Mago não é controlado.
 - Só as 339 magias do SRD estão na API.
 - Arcanas Místicas do Bruxo (6º ao 9º círculo) não são tratadas.
@@ -329,9 +329,9 @@ Limitações conhecidas:
 - Classe que conjura e não existe na API de magias mostra um aviso na aba de magias, até ganhar lista local.
 
 **Pugilista (feito, só em `conteudo-extra.js`):** dado de vida, salvaguardas, perícias, os 7 Fight Clubs e Melhoria de Atributo no padrão; não conjura. O arquivo também guarda, em formato provisório, o que os próximos sprints vão usar: Moxie por nível (Sprint 6), dado de Fisticuffs e CA do Iron Chin (Sprint 7) e habilidades por nível (RF13). Regras que mexem no que já existe, para tratar quando chegar a hora:
-- Fancy Footwork (nível 7): salvaguarda de Destreza extra, e hoje as salvaguardas são fixas desde o nível 1;
-- Peak Physical Condition (nível 20): Força e Constituição +2 com teto 22;
-- Hand of Dread: truques usando Constituição, e hoje subclasse não dá magias.
+- ~~Fancy Footwork (nível 7): salvaguarda de Destreza extra~~ — feito no Sprint 6.5, passo 3;
+- ~~Peak Physical Condition (nível 20): Força e Constituição +2 com teto 22~~ — feito no Sprint 6.5, passo 4;
+- ~~Hand of Dread: truques usando Constituição~~ — feito no Sprint 6.5, passo 5.
 
 **Artífice (feito, só em `conteudo-extra.js`), versão 2014 / Tasha's Cauldron of Everything:**
 - d8, salvaguardas de Constituição e Inteligência, 2 perícias, os 4 especialistas (Alquimista, Armeiro, Artilheiro, Ferreiro de Batalha), Melhoria de Atributo no padrão.
@@ -376,6 +376,39 @@ Limitações conhecidas:
 
 **Fora deste sprint:** o que o recurso *faz* (ex: Restauração Feiticeira devolver pontos, Recuperação Arcana devolver espaços) é marcado à mão; o app só conta os usos.
 
+## 3.13 Habilidades por nível (CONCLUÍDO — Sprint 6.5, RF13)
+
+**Passos:**
+1. **Habilidades de classe por nível** — *feito*.
+2. **Habilidades das subclasses** — *feito* (detalhes abaixo).
+3. **Salvaguarda ganha por nível** — *feito*: campo `salvaguardasPorNivel` no bloco da classe. Monge no 14 ganha todas (Disciplined Survivor), Ladino no 15 ganha Sabedoria e Carisma (Slippery Mind) — ambos conferidos no texto oficial da API —, Pugilista no 7 ganha Destreza (Fancy Footwork). A ficha marca a proficiência a partir do nível, e o level up mostra "Proficiência nova em salvaguardas: ...".
+4. **Atributo com teto maior** — *feito*: campo `aumentoDeAtributoPorNivel` no bloco da classe. Bárbaro no 20 (Primal Champion, conferido no texto oficial): Força e Constituição +4, até 25. Pugilista no 20 (Peak Physical Condition): +2, até 22.
+   - Aplicado **automaticamente ao confirmar o nível**, entrando no valor base (como a Melhoria de Atributo e a Dádiva); nunca passa do teto (ex: Força 23 só ganha +2).
+   - O level up avisa antes: "Primal Champion: Força +4 (fica 24), Constituição +4 (fica 20); teto 25." A prévia de PV já conta a Constituição nova.
+   - Na ficha, o teto do atributo passa a ser o maior entre 20, o da Dádiva Épica (30) e o que a classe liberou.
+5. **Magias concedidas pela subclasse** — *feito*: campo `magias` na subclasse, sempre preparadas (não contam no limite e não saem na troca).
+   - **Extraídas do texto da API** (a API não traz lista, só o texto da habilidade; as linhas quebradas da tabela foram juntadas): Patrono Corruptor, Domínio da Vida, Feitiçaria Dracônica e Círculo da Terra.
+   - **Círculo da Terra:** o Druida escolhe o tipo de terra (árida, polar, temperada, tropical) na ficha, no bloco "Magias Preparadas"; cada tipo tem sua lista. A escolha é salva com a ficha.
+   - **À mão, para conferir no livro:** Juramento da Devoção (o texto da API veio embaralhado com a lista do Paladino), Hand of Dread do Pugilista (3 truques, usando Constituição) e os 4 especialistas do Artífice (Tasha's, de memória).
+   - **Fora:** Colégio do Conhecimento (o jogador escolhe 2 magias quaisquer, não é lista fixa). As outras 6 subclasses da API não dão magias.
+   - 6 magias não existem na API e ficam locais, sem descrição: Blade Ward, Branding Smite, Aura of Vitality, Conjure Barrage, Aura of Purity, Banishing Smite.
+   - **Ficha:** as magias da subclasse aparecem em "Magias Preparadas" com "(subclasse)"; as de concentração entram na lista de concentração. Classe que não conjura (Pugilista com Hand of Dread) passa a ver o bloco, com o aviso de que as magias usam Constituição.
+   - **Aba de magias:** aparecem com a etiqueta "Da subclasse" e o botão "Sempre preparada"; magia de fora da lista da classe também entra (ex: Burning Hands no Bruxo do Patrono Corruptor).
+   - **Level up:** "Magias da subclasse (sempre preparadas): ...".
+
+**Passo 1 (feito):**
+- As habilidades das 12 classes, nível a nível, vêm da API 2024 (conferido: iguais à API nas 12). Ficam em inglês, como as magias. Pugilista e Artífice usam os nomes da tabela do material deles (as Melhorias de Atributo da tabela foram acrescentadas).
+- Os níveis marcados como "subclasse" (ex: "Barbarian Subclass" no 3, 6, 10 e 14) aparecem com o nome da subclasse escolhida: no nível da escolha, "Subclasse: Caminho do Berserker"; nos outros, "Habilidade de Caminho do Berserker". O conteúdo delas é o passo 2.
+- **Ficha:** bloco "Habilidades de Classe", uma linha por nível até o atual. A lista funciona sem internet; clicar no nome busca a descrição na API (em inglês).
+- **Level up:** a linha provisória do RF13 virou "Habilidades novas: ..." com o que o nível traz (Melhoria de Atributo e Dádiva Épica ficam de fora porque já aparecem como escolha).
+- Classes do conteúdo extra mostram os nomes sem descrição (não estão na API).
+
+**Passo 2 (feito) — decisão: opção A agora, B aos poucos:**
+- **A:** a API 2024 tem **uma subclasse por classe** (a do conteúdo gratuito). As 12 ganharam as habilidades por nível, ligadas às subclasses que já existiam no app (conferido: iguais à API nas 12; nenhuma subclasse mudou de valor ou nome):
+  Caminho do Berserker, Colégio do Conhecimento, Patrono Corruptor, Domínio da Vida, Círculo da Terra, Feitiçaria Dracônica, Campeão, Ladrão, Evocador, Guerreiro da Mão Aberta, Juramento da Devoção, Caçador.
+- **B (aos poucos):** subclasses fora da API recebem as habilidades à mão no `conteudo-extra.js`, só as que a mesa usar. Já feito: os 7 Fight Clubs do Pugilista (nomes, do material do usuário).
+- **Na tela:** no nível de uma habilidade de subclasse aparecem as habilidades da subclasse escolhida (com descrição ao clicar, quando vêm da API). Subclasse sem dados continua como "Habilidade de ...". Isso vale também para níveis de subclasse fora das marcas da classe (ex: Campeão no 7).
+
 ---
 
 ## 4. Backlog do Produto (ordenado por prioridade e dependência)
@@ -416,7 +449,7 @@ Escrito como histórias de usuário, do jeito Scrum — cada uma vira uma entreg
 | Sprint 5.5 | Ajustes de distribuição de atributos e aviso do wizard (IDEIA06, IDEIA07) | — | concluída (ver seção 3.9) |
 | Sprint 5.6 | Um bloco por classe e conteúdo extra local, fora do git (Artífice, Pugilista) | — | em andamento (ver seção 3.11) |
 | Sprint 6 | Recursos de classe | 11 | concluída (ver seção 3.12) |
-| Sprint 6.5 | Habilidades por nível (RF13): o que cada nível e subclasse traz, salvaguarda ganha por nível, atributo com teto maior, magias concedidas pela subclasse | — | |
+| Sprint 6.5 | Habilidades por nível (RF13): o que cada nível e subclasse traz, salvaguarda ganha por nível, atributo com teto maior, magias concedidas pela subclasse | — | concluída (ver seção 3.13) |
 | Sprint 7 | Combate | 12 | |
 | Sprint 8 | Inventário | 13 | |
 | ~~Sprint 9~~ | ~~Gestão avançada de fichas~~ — juntado à Fase 2 (seção 3.10) | 14, 15 | |

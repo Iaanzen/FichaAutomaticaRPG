@@ -471,10 +471,47 @@ function melhoriaAtributoValida(melhoria) {
 }
 
 // teto do total (base + bônus): 20, ou 30 no atributo que ganhou a Dádiva Épica
-function tetoDoAtributo(atributo, atributosAte30) {
-    return (atributosAte30 || []).includes(atributo)
+// tetosDaClasse (opcional): o que a classe já liberou acima de 20, ex: { forca: 25 }
+function tetoDoAtributo(atributo, atributosAte30, tetosDaClasse) {
+    const daDadiva = (atributosAte30 || []).includes(atributo)
         ? ATRIBUTO_MAXIMO_DADIVA
         : ATRIBUTO_MAXIMO
+
+    return Math.max(daDadiva, (tetosDaClasse || {})[atributo] || 0)
+}
+
+/* ---------- Sprint 6.5: aumento de atributo da classe, com teto próprio ---------- */
+
+// Campo aumentoDeAtributoPorNivel do bloco da classe:
+//   { 20: { nome, atributos: [...], valor, teto } }
+// Ex: Bárbaro no 20 (Primal Champion): Força e Constituição +4, até 25.
+function aumentoDeAtributoDoNivel(classe, nivel) {
+    const bloco = CLASSES[classe]
+    return ((bloco && bloco.aumentoDeAtributoPorNivel) || {})[nivel] || null
+}
+
+// tetos acima de 20 que a classe já liberou até este nível: { forca: 25, ... }
+function tetosDaClasse(classe, nivel) {
+    const bloco = CLASSES[classe]
+    const porNivel = (bloco && bloco.aumentoDeAtributoPorNivel) || {}
+    const tetos = {}
+
+    Object.keys(porNivel).forEach(function(nivelDoAumento) {
+        if (nivel >= Number(nivelDoAumento)) {
+            const aumento = porNivel[nivelDoAumento]
+
+            aumento.atributos.forEach(function(atributo) {
+                tetos[atributo] = Math.max(tetos[atributo] || 0, aumento.teto)
+            })
+        }
+    })
+
+    return tetos
+}
+
+// quanto o aumento soma de fato: nunca passa do teto dele
+function valorDoAumento(aumento, totalAntes) {
+    return Math.max(0, Math.min(aumento.valor, aumento.teto - totalAntes))
 }
 
 // Robusto ja entra na conta de PV (pontosDeVida). Os demais sao texto por
@@ -652,8 +689,25 @@ function resultadoTesteDeMorte(rolagem) {
 // preenchida por registrarClasse, no fim do arquivo (um bloco por classe)
 const salvaguardasPorClasse = {}
 
-function salvaguardasDaClasse(classe) {
-    return salvaguardasPorClasse[classe] || []
+// Sprint 6.5: algumas classes ganham mais salvaguardas em certos níveis
+// (campo salvaguardasPorNivel do bloco: Monge no 14, Ladino no 15, Pugilista no 7).
+// Sem nível, devolve só as da base.
+function salvaguardasDaClasse(classe, nivel) {
+    const todas = (salvaguardasPorClasse[classe] || []).slice()
+    const bloco = CLASSES[classe]
+    const porNivel = (bloco && bloco.salvaguardasPorNivel) || {}
+
+    Object.keys(porNivel).forEach(function(nivelDoGanho) {
+        if (nivel >= Number(nivelDoGanho)) {
+            porNivel[nivelDoGanho].forEach(function(atributo) {
+                if (!todas.includes(atributo)) {
+                    todas.push(atributo)
+                }
+            })
+        }
+    })
+
+    return todas
 }
 
 function periciaPorValor(valor) {
@@ -997,6 +1051,189 @@ function recuperarRecursos(gastos, recursos, descanso) {
     return depois
 }
 
+/* ---------- Sprint 6.5: habilidades por nível (RF13) ---------- */
+
+// Cada classe traz "habilidadesPorNivel": { 1: [...], 2: [...] }. Um item pode ser
+// só o nome (texto) ou { nome, api, subclasse }:
+//   api: código da habilidade na API (para buscar a descrição);
+//   subclasse: true marca o nível em que entra uma habilidade da subclasse.
+// Nas classes oficiais os nomes vêm da API 2024, em inglês, como as magias.
+function habilidadesDaClasse(classe, nivelMaximo, nivelMinimo) {
+    const bloco = CLASSES[classe]
+    const porNivel = (bloco && bloco.habilidadesPorNivel) || {}
+    const lista = []
+
+    for (let nivel = nivelMinimo || 1; nivel <= nivelMaximo; nivel++) {
+        ;(porNivel[nivel] || []).forEach(function(item) {
+            const habilidade = typeof item === "string" ? { nome: item } : item
+
+            lista.push({
+                nivel: nivel,
+                nome: habilidade.nome,
+                api: habilidade.api || null,
+                subclasse: habilidade.subclasse === true
+            })
+        })
+    }
+
+    return lista
+}
+
+// nome de exibição da subclasse escolhida (ou null se ainda não escolheu)
+function nomeDaSubclasse(classe, valor) {
+    const achada = (subclassesPorClasse[classe] || []).find(function(subclasse) {
+        return subclasse.valor === valor
+    })
+
+    return achada ? achada.nome : null
+}
+
+// nível em que a classe escolhe a subclasse: a primeira marca de subclasse dela
+function nivelDaEscolhaDeSubclasse(classe) {
+    const marcas = habilidadesDaClasse(classe, NIVEL_MAXIMO).filter(function(habilidade) {
+        return habilidade.subclasse
+    })
+
+    return marcas.length ? marcas[0].nivel : NIVEL_SUBCLASSE
+}
+
+// Como mostrar cada habilidade: a marcação de subclasse vira o nome dela.
+// No nível da escolha é a própria subclasse; nos outros, uma habilidade dela.
+function rotuloDaHabilidade(habilidade, classe, subclasse) {
+    if (!habilidade.subclasse) {
+        return habilidade.nome
+    }
+
+    const nome = nomeDaSubclasse(classe, subclasse)
+
+    if (habilidade.nivel === nivelDaEscolhaDeSubclasse(classe)) {
+        return nome ? `Subclasse: ${nome}` : "Subclasse (a escolher)"
+    }
+
+    return nome ? `Habilidade de ${nome}` : "Habilidade da subclasse"
+}
+
+// Habilidades de uma subclasse num nível. Só existem para as subclasses com
+// dados: as 12 da API (conteúdo gratuito) e as cadastradas no conteúdo extra.
+function habilidadesDaSubclasse(classe, subclasse, nivel) {
+    const achada = (subclassesPorClasse[classe] || []).find(function(item) {
+        return item.valor === subclasse
+    })
+
+    const lista = (achada && achada.habilidadesPorNivel && achada.habilidadesPorNivel[nivel]) || []
+
+    return lista.map(function(item) {
+        return typeof item === "string"
+            ? { nome: item, api: null }
+            : { nome: item.nome, api: item.api || null }
+    })
+}
+
+// O que mostrar, nível a nível: [{ nivel, rotulo, api }].
+// Nos níveis de subclasse entram as habilidades da subclasse escolhida, quando
+// o app tem os dados dela; senão, a marca de sempre ("Habilidade de ...").
+function habilidadesParaMostrar(classe, subclasse, nivelMaximo, nivelMinimo) {
+    const daClasse = habilidadesDaClasse(classe, nivelMaximo, nivelMinimo)
+    const nome = nomeDaSubclasse(classe, subclasse)
+    const escolha = nivelDaEscolhaDeSubclasse(classe)
+    const lista = []
+
+    for (let nivel = nivelMinimo || 1; nivel <= nivelMaximo; nivel++) {
+        const doNivel = daClasse.filter(function(habilidade) {
+            return habilidade.nivel === nivel
+        })
+        const marcas = doNivel.filter(function(habilidade) {
+            return habilidade.subclasse
+        })
+        const daSubclasse = nome ? habilidadesDaSubclasse(classe, subclasse, nivel) : []
+        const ehNivelDaEscolha = nome && nivel === escolha
+
+        if (ehNivelDaEscolha) {
+            lista.push({ nivel: nivel, rotulo: `Subclasse: ${nome}`, api: null })
+        }
+
+        if (daSubclasse.length) {
+            daSubclasse.forEach(function(habilidade) {
+                lista.push({ nivel: nivel, rotulo: habilidade.nome, api: habilidade.api })
+            })
+        } else if (marcas.length && !ehNivelDaEscolha) {
+            lista.push({ nivel: nivel, rotulo: rotuloDaHabilidade(marcas[0], classe, subclasse), api: null })
+        }
+
+        doNivel
+            .filter(function(habilidade) {
+                return !habilidade.subclasse
+            })
+            .forEach(function(habilidade) {
+                lista.push({ nivel: nivel, rotulo: habilidade.nome, api: habilidade.api })
+            })
+    }
+
+    return lista
+}
+
+/* ---------- Sprint 6.5: magias concedidas pela subclasse ---------- */
+
+// Campo "magias" da subclasse:
+//   { atributo (opcional), porNivel: { 3: [magia, ...], 5: [...] } }
+// ou, quando o jogador escolhe uma variante (Círculo da Terra),
+//   { escolha: { rotulo, opcoes: [{ valor, nome, porNivel }] } }
+// Cada magia: { valor, nome, circulo, concentracao, ritual, escola, foraDaApi? }.
+// São sempre preparadas: não contam no limite e não saem na troca.
+function configuracaoDasMagiasDaSubclasse(classe, subclasse) {
+    const achada = (subclassesPorClasse[classe] || []).find(function(item) {
+        return item.valor === subclasse
+    })
+
+    return (achada && achada.magias) || null
+}
+
+function escolhaDeMagiasDaSubclasse(classe, subclasse) {
+    const configuracao = configuracaoDasMagiasDaSubclasse(classe, subclasse)
+    return (configuracao && configuracao.escolha) || null
+}
+
+// atributo próprio das magias da subclasse (Hand of Dread usa Constituição)
+function atributoDasMagiasDaSubclasse(classe, subclasse) {
+    const configuracao = configuracaoDasMagiasDaSubclasse(classe, subclasse)
+    return (configuracao && configuracao.atributo) || null
+}
+
+// as magias liberadas até o nível, cada uma com o nível em que chegou
+function magiasDaSubclasse(classe, subclasse, nivel, opcao) {
+    const configuracao = configuracaoDasMagiasDaSubclasse(classe, subclasse)
+
+    if (!configuracao) {
+        return []
+    }
+
+    let porNivel = configuracao.porNivel || {}
+
+    if (configuracao.escolha) {
+        const escolhida = configuracao.escolha.opcoes.find(function(item) {
+            return item.valor === opcao
+        })
+        porNivel = escolhida ? escolhida.porNivel : {}
+    }
+
+    const lista = []
+
+    Object.keys(porNivel)
+        .map(Number)
+        .sort(function(a, b) {
+            return a - b
+        })
+        .forEach(function(nivelDaMagia) {
+            if (nivelDaMagia <= nivel) {
+                porNivel[nivelDaMagia].forEach(function(magia) {
+                    lista.push(Object.assign({ nivel: nivelDaMagia }, magia))
+                })
+            }
+        })
+
+    return lista
+}
+
 /* ---------- Magias locais (classe fora da API de magias) ---------- */
 
 // Classe que não existe na API (ex: Artífice, no conteudo-extra.js) traz no
@@ -1178,6 +1415,10 @@ function nomeDaClasse(valor) {
 registrarClasse("barbaro", {
     nome: "Bárbaro",
     dadoDeVida: 12,
+    // Primal Champion (nível 20), conferido no texto oficial da API
+    aumentoDeAtributoPorNivel: {
+        20: { nome: "Primal Champion", atributos: ["forca", "constituicao"], valor: 4, teto: 25 }
+    },
     salvaguardas: [
         "forca",
         "constituicao"
@@ -1196,7 +1437,14 @@ registrarClasse("barbaro", {
     subclasses: [
         {
             valor: "berserker",
-            nome: "Caminho do Berserker"
+            nome: "Caminho do Berserker",
+            api: "path-of-the-berserker",
+            habilidadesPorNivel: {
+                3: [{ nome: "Frenzy", api: "berserker-frenzy" }],
+                6: [{ nome: "Mindless Rage", api: "berserker-mindless-rage" }],
+                10: [{ nome: "Retaliation", api: "berserker-retaliation" }],
+                14: [{ nome: "Intimidating Presence", api: "berserker-intimidating-presence" }]
+            }
         },
         {
             valor: "guerreiroTotemico",
@@ -1218,7 +1466,75 @@ registrarClasse("barbaro", {
             quantidade: [2, 2, 3, 3, 3, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 6, 6, 6, 6],
             recupera: "umNoCurto"
         }
-    ]
+    ],
+    habilidadesPorNivel: {
+        1: [
+            { nome: "Rage", api: "barbarian-rage" },
+            { nome: "Unarmored Defense", api: "barbarian-unarmored-defense" },
+            { nome: "Weapon Mastery", api: "barbarian-weapon-mastery" }
+        ],
+        2: [
+            { nome: "Danger Sense", api: "barbarian-danger-sense" },
+            { nome: "Reckless Attack", api: "barbarian-reckless-attack" }
+        ],
+        3: [
+            { nome: "Barbarian Subclass", api: "barbarian-subclass", subclasse: true },
+            { nome: "Primal Knowledge", api: "barbarian-primal-knowledge" }
+        ],
+        4: [
+            { nome: "Ability Score Improvement", api: "barbarian-ability-score-improvement" }
+        ],
+        5: [
+            { nome: "Extra Attack", api: "barbarian-extra-attack" },
+            { nome: "Fast Movement", api: "barbarian-fast-movement" }
+        ],
+        6: [
+            { nome: "Barbarian Subclass", api: "barbarian-subclass", subclasse: true }
+        ],
+        7: [
+            { nome: "Feral Instinct", api: "barbarian-feral-instinct" },
+            { nome: "Instinctive Pounce", api: "barbarian-instinctive-pounce" }
+        ],
+        8: [
+            { nome: "Ability Score Improvement", api: "barbarian-ability-score-improvement" }
+        ],
+        9: [
+            { nome: "Brutal Strike", api: "barbarian-brutal-strike" }
+        ],
+        10: [
+            { nome: "Barbarian Subclass", api: "barbarian-subclass", subclasse: true }
+        ],
+        11: [
+            { nome: "Relentless Rage", api: "barbarian-relentless-rage" }
+        ],
+        12: [
+            { nome: "Ability Score Improvement", api: "barbarian-ability-score-improvement" }
+        ],
+        13: [
+            { nome: "Improved Brutal Strike", api: "barbarian-improved-brutal-strike-1" }
+        ],
+        14: [
+            { nome: "Barbarian Subclass", api: "barbarian-subclass", subclasse: true }
+        ],
+        15: [
+            { nome: "Persistent Rage", api: "barbarian-persistent-rage" }
+        ],
+        16: [
+            { nome: "Ability Score Improvement", api: "barbarian-ability-score-improvement" }
+        ],
+        17: [
+            { nome: "Improved Brutal Strike", api: "barbarian-improved-brutal-strike-2" }
+        ],
+        18: [
+            { nome: "Indomitable Might", api: "barbarian-indomitable-might" }
+        ],
+        19: [
+            { nome: "Epic Boon", api: "barbarian-epic-boon" }
+        ],
+        20: [
+            { nome: "Primal Champion", api: "barbarian-primal-champion" }
+        ]
+    }
 })
 
 registrarClasse("bardo", {
@@ -1235,7 +1551,13 @@ registrarClasse("bardo", {
     subclasses: [
         {
             valor: "colegioConhecimento",
-            nome: "Colégio do Conhecimento"
+            nome: "Colégio do Conhecimento",
+            api: "college-of-lore",
+            habilidadesPorNivel: {
+                3: [{ nome: "Bonus Proficiencies", api: "lore-bonus-proficiencies" }, { nome: "Cutting Words", api: "lore-cutting-words" }],
+                6: [{ nome: "Magical Discoveries", api: "lore-magical-discoveries" }],
+                14: [{ nome: "Peerless Skill", api: "lore-peerless-skill" }]
+            }
         },
         {
             valor: "colegioBravura",
@@ -1273,7 +1595,59 @@ registrarClasse("bardo", {
             recupera: "longo",
             recuperaCurtoAPartirDoNivel: 5
         }
-    ]
+    ],
+    habilidadesPorNivel: {
+        1: [
+            { nome: "Bardic Inspiration", api: "bard-bardic-inspiration" },
+            { nome: "Spellcasting", api: "bard-spellcasting" }
+        ],
+        2: [
+            { nome: "Expertise", api: "bard-expertise" },
+            { nome: "Jack of All Trades", api: "bard-jack-of-all-trades" }
+        ],
+        3: [
+            { nome: "Bard Subclass", api: "bard-subclass", subclasse: true }
+        ],
+        4: [
+            { nome: "Ability Score Improvement", api: "bard-ability-score-improvement" }
+        ],
+        5: [
+            { nome: "Font of Inspiration", api: "bard-font-of-inspiration" }
+        ],
+        6: [
+            { nome: "Bard Subclass", api: "bard-subclass", subclasse: true }
+        ],
+        7: [
+            { nome: "Countercharm", api: "bard-countercharm" }
+        ],
+        8: [
+            { nome: "Ability Score Improvement", api: "bard-ability-score-improvement" }
+        ],
+        9: [
+            { nome: "Expertise", api: "bard-expertise" }
+        ],
+        10: [
+            { nome: "Magical Secrets", api: "bard-magical-secrets" }
+        ],
+        12: [
+            { nome: "Ability Score Improvement", api: "bard-ability-score-improvement" }
+        ],
+        14: [
+            { nome: "Bard Subclass", api: "bard-subclass", subclasse: true }
+        ],
+        16: [
+            { nome: "Ability Score Improvement", api: "bard-ability-score-improvement" }
+        ],
+        18: [
+            { nome: "Superior Inspiration", api: "bard-superior-inspiration" }
+        ],
+        19: [
+            { nome: "Epic Boon", api: "bard-epic-boon" }
+        ],
+        20: [
+            { nome: "Words of Creation", api: "bard-words-of-creation" }
+        ]
+    }
 })
 
 registrarClasse("bruxo", {
@@ -1302,7 +1676,36 @@ registrarClasse("bruxo", {
         },
         {
             valor: "corruptor",
-            nome: "Patrono Corruptor"
+            nome: "Patrono Corruptor",
+            magias: {
+                porNivel: {
+                    "3": [
+                        { valor: "burning-hands", nome: "Burning Hands", circulo: 1, concentracao: false, ritual: false, escola: "Evocation" },
+                        { valor: "command", nome: "Command", circulo: 1, concentracao: false, ritual: false, escola: "Enchantment" },
+                        { valor: "scorching-ray", nome: "Scorching Ray", circulo: 2, concentracao: false, ritual: false, escola: "Evocation" },
+                        { valor: "suggestion", nome: "Suggestion", circulo: 2, concentracao: true, ritual: false, escola: "Enchantment" }
+                    ],
+                    "5": [
+                        { valor: "fireball", nome: "Fireball", circulo: 3, concentracao: false, ritual: false, escola: "Evocation" },
+                        { valor: "stinking-cloud", nome: "Stinking Cloud", circulo: 3, concentracao: true, ritual: false, escola: "Conjuration" }
+                    ],
+                    "7": [
+                        { valor: "fire-shield", nome: "Fire Shield", circulo: 4, concentracao: false, ritual: false, escola: "Evocation" },
+                        { valor: "wall-of-fire", nome: "Wall of Fire", circulo: 4, concentracao: true, ritual: false, escola: "Evocation" }
+                    ],
+                    "9": [
+                        { valor: "geas", nome: "Geas", circulo: 5, concentracao: false, ritual: false, escola: "Enchantment" },
+                        { valor: "insect-plague", nome: "Insect Plague", circulo: 5, concentracao: true, ritual: false, escola: "Conjuration" }
+                    ]
+                }
+            },
+            api: "fiend-patron",
+            habilidadesPorNivel: {
+                3: [{ nome: "Dark One's Blessing", api: "fiend-patron-dark-ones-blessing" }, { nome: "Fiend Spells", api: "fiend-patron-fiend-spells" }],
+                6: [{ nome: "Dark One's Own Luck", api: "fiend-patron-dark-ones-own-luck" }],
+                10: [{ nome: "Fiendish Resilience", api: "fiend-patron-fiendish-resilience" }],
+                14: [{ nome: "Hurl Through Hell", api: "fiend-patron-hurl-through-hell" }]
+            }
         },
         {
             valor: "grandeAntigo",
@@ -1334,7 +1737,61 @@ registrarClasse("bruxo", {
             aPartirDoNivel: 2,
             recupera: "longo"
         }
-    ]
+    ],
+    habilidadesPorNivel: {
+        1: [
+            { nome: "Eldritch Invocations", api: "warlock-eldritch-invocations" },
+            { nome: "Pact Magic", api: "warlock-pact-magic" }
+        ],
+        2: [
+            { nome: "Magical Cunning", api: "warlock-magical-cunning" }
+        ],
+        3: [
+            { nome: "Warlock Subclass", api: "warlock-subclass", subclasse: true }
+        ],
+        4: [
+            { nome: "Ability Score Improvement", api: "warlock-ability-score-improvement" }
+        ],
+        6: [
+            { nome: "Warlock Subclass", api: "warlock-subclass", subclasse: true }
+        ],
+        8: [
+            { nome: "Ability Score Improvement", api: "warlock-ability-score-improvement" }
+        ],
+        9: [
+            { nome: "Contact Patron", api: "warlock-contact-patron" }
+        ],
+        10: [
+            { nome: "Warlock Subclass", api: "warlock-subclass", subclasse: true }
+        ],
+        11: [
+            { nome: "Mystic Arcanum", api: "warlock-mystic-arcanum" }
+        ],
+        12: [
+            { nome: "Ability Score Improvement", api: "warlock-ability-score-improvement" }
+        ],
+        13: [
+            { nome: "Mystic Arcanum", api: "warlock-mystic-arcanum" }
+        ],
+        14: [
+            { nome: "Warlock Subclass", api: "warlock-subclass", subclasse: true }
+        ],
+        15: [
+            { nome: "Mystic Arcanum", api: "warlock-mystic-arcanum" }
+        ],
+        16: [
+            { nome: "Ability Score Improvement", api: "warlock-ability-score-improvement" }
+        ],
+        17: [
+            { nome: "Mystic Arcanum", api: "warlock-mystic-arcanum" }
+        ],
+        19: [
+            { nome: "Epic Boon", api: "warlock-epic-boon" }
+        ],
+        20: [
+            { nome: "Eldritch Master", api: "warlock-eldritch-master" }
+        ]
+    }
 })
 
 registrarClasse("clerigo", {
@@ -1357,7 +1814,35 @@ registrarClasse("clerigo", {
     subclasses: [
         {
             valor: "dominioVida",
-            nome: "Domínio da Vida"
+            nome: "Domínio da Vida",
+            magias: {
+                porNivel: {
+                    "3": [
+                        { valor: "aid", nome: "Aid", circulo: 2, concentracao: false, ritual: false, escola: "Abjuration" },
+                        { valor: "bless", nome: "Bless", circulo: 1, concentracao: true, ritual: false, escola: "Enchantment" },
+                        { valor: "cure-wounds", nome: "Cure Wounds", circulo: 1, concentracao: false, ritual: false, escola: "Abjuration" },
+                        { valor: "lesser-restoration", nome: "Lesser Restoration", circulo: 2, concentracao: false, ritual: false, escola: "Abjuration" }
+                    ],
+                    "5": [
+                        { valor: "mass-healing-word", nome: "Mass Healing Word", circulo: 3, concentracao: false, ritual: false, escola: "Abjuration" },
+                        { valor: "revivify", nome: "Revivify", circulo: 3, concentracao: false, ritual: false, escola: "Necromancy" }
+                    ],
+                    "7": [
+                        { valor: "aura-of-life", nome: "Aura of Life", circulo: 4, concentracao: true, ritual: false, escola: "Abjuration" },
+                        { valor: "death-ward", nome: "Death Ward", circulo: 4, concentracao: false, ritual: false, escola: "Abjuration" }
+                    ],
+                    "9": [
+                        { valor: "greater-restoration", nome: "Greater Restoration", circulo: 5, concentracao: false, ritual: false, escola: "Abjuration" },
+                        { valor: "mass-cure-wounds", nome: "Mass Cure Wounds", circulo: 5, concentracao: false, ritual: false, escola: "Abjuration" }
+                    ]
+                }
+            },
+            api: "life-domain",
+            habilidadesPorNivel: {
+                3: [{ nome: "Disciple of Life", api: "life-disciple-of-life" }, { nome: "Life Domain Spells", api: "life-domain-spells" }, { nome: "Preserve Life", api: "life-preserve-life" }],
+                6: [{ nome: "Blessed Healer", api: "life-blessed-healer" }],
+                17: [{ nome: "Supreme Healing", api: "life-supreme-healing" }]
+            }
         },
         {
             valor: "dominioLuz",
@@ -1392,7 +1877,55 @@ registrarClasse("clerigo", {
             quantidade: [0, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4],
             recupera: "umNoCurto"
         }
-    ]
+    ],
+    habilidadesPorNivel: {
+        1: [
+            { nome: "Divine Order", api: "cleric-divine-order" },
+            { nome: "Spellcasting", api: "cleric-spellcasting" }
+        ],
+        2: [
+            { nome: "Channel Divinity", api: "cleric-channel-divinity" }
+        ],
+        3: [
+            { nome: "Cleric Subclass", api: "cleric-subclass", subclasse: true }
+        ],
+        4: [
+            { nome: "Ability Score Improvement", api: "cleric-ability-score-improvement" }
+        ],
+        5: [
+            { nome: "Sear Undead", api: "cleric-sear-undead" }
+        ],
+        6: [
+            { nome: "Cleric Subclass", api: "cleric-subclass", subclasse: true }
+        ],
+        7: [
+            { nome: "Blessed Strikes", api: "cleric-blessed-strikes" }
+        ],
+        8: [
+            { nome: "Ability Score Improvement", api: "cleric-ability-score-improvement" }
+        ],
+        10: [
+            { nome: "Divine Intervention", api: "cleric-divine-intervention" }
+        ],
+        12: [
+            { nome: "Ability Score Improvement", api: "cleric-ability-score-improvement" }
+        ],
+        14: [
+            { nome: "Improved Blessed Strikes", api: "cleric-improved-blessed-strikes" }
+        ],
+        16: [
+            { nome: "Ability Score Improvement", api: "cleric-ability-score-improvement" }
+        ],
+        17: [
+            { nome: "Cleric Subclass", api: "cleric-subclass", subclasse: true }
+        ],
+        19: [
+            { nome: "Epic Boon", api: "cleric-epic-boon" }
+        ],
+        20: [
+            { nome: "Greater Divine Intervention", api: "cleric-greater-divine-intervention" }
+        ]
+    }
 })
 
 registrarClasse("druida", {
@@ -1418,7 +1951,101 @@ registrarClasse("druida", {
     subclasses: [
         {
             valor: "circuloTerra",
-            nome: "Círculo da Terra"
+            nome: "Círculo da Terra",
+            magias: {
+                escolha: {
+                    rotulo: "Tipo de terra (troca no descanso longo)",
+                    opcoes: [
+                        {
+                            valor: "arida",
+                            nome: "Árida",
+                            porNivel: {
+                                "3": [
+                                    { valor: "blur", nome: "Blur", circulo: 2, concentracao: true, ritual: false, escola: "Illusion" },
+                                    { valor: "burning-hands", nome: "Burning Hands", circulo: 1, concentracao: false, ritual: false, escola: "Evocation" },
+                                    { valor: "fire-bolt", nome: "Fire Bolt", circulo: 0, concentracao: false, ritual: false, escola: "Evocation" }
+                                ],
+                                "5": [
+                                    { valor: "fireball", nome: "Fireball", circulo: 3, concentracao: false, ritual: false, escola: "Evocation" }
+                                ],
+                                "7": [
+                                    { valor: "blight", nome: "Blight", circulo: 4, concentracao: false, ritual: false, escola: "Necromancy" }
+                                ],
+                                "9": [
+                                    { valor: "wall-of-stone", nome: "Wall of Stone", circulo: 5, concentracao: true, ritual: false, escola: "Evocation" }
+                                ]
+                            }
+                        },
+                        {
+                            valor: "polar",
+                            nome: "Polar",
+                            porNivel: {
+                                "3": [
+                                    { valor: "fog-cloud", nome: "Fog Cloud", circulo: 1, concentracao: true, ritual: false, escola: "Conjuration" },
+                                    { valor: "hold-person", nome: "Hold Person", circulo: 2, concentracao: true, ritual: false, escola: "Enchantment" },
+                                    { valor: "ray-of-frost", nome: "Ray of Frost", circulo: 0, concentracao: false, ritual: false, escola: "Evocation" }
+                                ],
+                                "5": [
+                                    { valor: "sleet-storm", nome: "Sleet Storm", circulo: 3, concentracao: true, ritual: false, escola: "Conjuration" }
+                                ],
+                                "7": [
+                                    { valor: "ice-storm", nome: "Ice Storm", circulo: 4, concentracao: false, ritual: false, escola: "Evocation" }
+                                ],
+                                "9": [
+                                    { valor: "cone-of-cold", nome: "Cone of Cold", circulo: 5, concentracao: false, ritual: false, escola: "Evocation" }
+                                ]
+                            }
+                        },
+                        {
+                            valor: "temperada",
+                            nome: "Temperada",
+                            porNivel: {
+                                "3": [
+                                    { valor: "misty-step", nome: "Misty Step", circulo: 2, concentracao: false, ritual: false, escola: "Conjuration" },
+                                    { valor: "shocking-grasp", nome: "Shocking Grasp", circulo: 0, concentracao: false, ritual: false, escola: "Evocation" },
+                                    { valor: "sleep", nome: "Sleep", circulo: 1, concentracao: true, ritual: false, escola: "Enchantment" }
+                                ],
+                                "5": [
+                                    { valor: "lightning-bolt", nome: "Lightning Bolt", circulo: 3, concentracao: false, ritual: false, escola: "Evocation" }
+                                ],
+                                "7": [
+                                    { valor: "freedom-of-movement", nome: "Freedom of Movement", circulo: 4, concentracao: false, ritual: false, escola: "Abjuration" }
+                                ],
+                                "9": [
+                                    { valor: "tree-stride", nome: "Tree Stride", circulo: 5, concentracao: true, ritual: false, escola: "Conjuration" }
+                                ]
+                            }
+                        },
+                        {
+                            valor: "tropical",
+                            nome: "Tropical",
+                            porNivel: {
+                                "3": [
+                                    { valor: "acid-splash", nome: "Acid Splash", circulo: 0, concentracao: false, ritual: false, escola: "Evocation" },
+                                    { valor: "ray-of-sickness", nome: "Ray of Sickness", circulo: 1, concentracao: false, ritual: false, escola: "Necromancy" },
+                                    { valor: "web", nome: "Web", circulo: 2, concentracao: true, ritual: false, escola: "Conjuration" }
+                                ],
+                                "5": [
+                                    { valor: "stinking-cloud", nome: "Stinking Cloud", circulo: 3, concentracao: true, ritual: false, escola: "Conjuration" }
+                                ],
+                                "7": [
+                                    { valor: "polymorph", nome: "Polymorph", circulo: 4, concentracao: true, ritual: false, escola: "Transmutation" }
+                                ],
+                                "9": [
+                                    { valor: "insect-plague", nome: "Insect Plague", circulo: 5, concentracao: true, ritual: false, escola: "Conjuration" }
+                                ]
+                            }
+                        }
+                    ]
+                }
+            },
+            api: "circle-of-the-land",
+            habilidadesPorNivel: {
+                3: [{ nome: "Circle of the Land Spells", api: "land-circle-of-the-land-spells" }, { nome: "Land's Aid", api: "land-lands-aid" }],
+                6: [{ nome: "Natural Recovery", api: "land-natural-recovery" }],
+                10: [{ nome: "Nature's Ward", api: "land-natures-ward" }],
+                14: [{ nome: "Nature's Sanctuary", api: "land-natures-sanctuary" }]
+            }
         },
         {
             valor: "circuloLua",
@@ -1453,7 +2080,60 @@ registrarClasse("druida", {
             quantidade: [0, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4],
             recupera: "umNoCurto"
         }
-    ]
+    ],
+    habilidadesPorNivel: {
+        1: [
+            { nome: "Druidic", api: "druid-druidic" },
+            { nome: "Primal Order", api: "druid-primal-order" },
+            { nome: "Spellcasting", api: "druid-spellcasting" }
+        ],
+        2: [
+            { nome: "Wild Shape", api: "druid-wild-shape" },
+            { nome: "Wild Companion", api: "druid-wild-companion" }
+        ],
+        3: [
+            { nome: "Druid Subclass", api: "druid-subclass", subclasse: true }
+        ],
+        4: [
+            { nome: "Ability Score Improvement", api: "druid-ability-score-improvement" }
+        ],
+        5: [
+            { nome: "Wild Resurgence", api: "druid-wild-resurgence" }
+        ],
+        6: [
+            { nome: "Druid Subclass", api: "druid-subclass", subclasse: true }
+        ],
+        7: [
+            { nome: "Elemental Fury", api: "druid-elemental-fury" }
+        ],
+        8: [
+            { nome: "Ability Score Improvement", api: "druid-ability-score-improvement" }
+        ],
+        10: [
+            { nome: "Druid Subclass", api: "druid-subclass", subclasse: true }
+        ],
+        12: [
+            { nome: "Ability Score Improvement", api: "druid-ability-score-improvement" }
+        ],
+        14: [
+            { nome: "Druid Subclass", api: "druid-subclass", subclasse: true }
+        ],
+        15: [
+            { nome: "Improved Elemental Fury", api: "druid-improved-elemental-fury" }
+        ],
+        16: [
+            { nome: "Ability Score Improvement", api: "druid-ability-score-improvement" }
+        ],
+        18: [
+            { nome: "Beast Spells", api: "druid-beast-spells" }
+        ],
+        19: [
+            { nome: "Epic Boon", api: "druid-epic-boon" }
+        ],
+        20: [
+            { nome: "Archdruid", api: "druid-archdruid" }
+        ]
+    }
 })
 
 registrarClasse("feiticeiro", {
@@ -1477,7 +2157,36 @@ registrarClasse("feiticeiro", {
     subclasses: [
         {
             valor: "linhagemDraconica",
-            nome: "Feitiçaria Dracônica"
+            nome: "Feitiçaria Dracônica",
+            magias: {
+                porNivel: {
+                    "3": [
+                        { valor: "alter-self", nome: "Alter Self", circulo: 2, concentracao: true, ritual: false, escola: "Transmutation" },
+                        { valor: "chromatic-orb", nome: "Chromatic Orb", circulo: 1, concentracao: false, ritual: false, escola: "Evocation" },
+                        { valor: "command", nome: "Command", circulo: 1, concentracao: false, ritual: false, escola: "Enchantment" },
+                        { valor: "dragons-breath", nome: "Dragon's Breath", circulo: 2, concentracao: true, ritual: false, escola: "Transmutation" }
+                    ],
+                    "5": [
+                        { valor: "fear", nome: "Fear", circulo: 3, concentracao: true, ritual: false, escola: "Illusion" },
+                        { valor: "fly", nome: "Fly", circulo: 3, concentracao: true, ritual: false, escola: "Transmutation" }
+                    ],
+                    "7": [
+                        { valor: "arcane-eye", nome: "Arcane Eye", circulo: 4, concentracao: true, ritual: false, escola: "Divination" },
+                        { valor: "charm-monster", nome: "Charm Monster", circulo: 4, concentracao: false, ritual: false, escola: "Enchantment" }
+                    ],
+                    "9": [
+                        { valor: "legend-lore", nome: "Legend Lore", circulo: 5, concentracao: false, ritual: false, escola: "Divination" },
+                        { valor: "summon-dragon", nome: "Summon Dragon", circulo: 5, concentracao: true, ritual: false, escola: "Conjuration" }
+                    ]
+                }
+            },
+            api: "draconic-sorcery",
+            habilidadesPorNivel: {
+                3: [{ nome: "Draconic Resilience", api: "draconic-sorcery-draconic-resilience" }, { nome: "Draconic Spells", api: "draconic-sorcery-draconic-spells" }],
+                6: [{ nome: "Elemental Affinity", api: "draconic-sorcery-elemental-affinity" }],
+                14: [{ nome: "Dragon Wings", api: "draconic-sorcery-dragon-wings" }],
+                18: [{ nome: "Dragon Companion", api: "draconic-sorcery-dragon-companion" }]
+            }
         },
         {
             valor: "magiaSelvagem",
@@ -1519,7 +2228,59 @@ registrarClasse("feiticeiro", {
             aPartirDoNivel: 5,
             recupera: "longo"
         }
-    ]
+    ],
+    habilidadesPorNivel: {
+        1: [
+            { nome: "Innate Sorcery", api: "sorcerer-innate-sorcery" },
+            { nome: "Spellcasting", api: "sorcerer-spellcasting" }
+        ],
+        2: [
+            { nome: "Font of Magic", api: "sorcerer-font-of-magic" },
+            { nome: "Metamagic", api: "sorcerer-metamagic" }
+        ],
+        3: [
+            { nome: "Sorcerer Subclass", api: "sorcerer-subclass", subclasse: true }
+        ],
+        4: [
+            { nome: "Ability Score Improvement", api: "sorcerer-ability-score-improvement" }
+        ],
+        5: [
+            { nome: "Sorcerous Restoration", api: "sorcerer-sorcerous-restoration" }
+        ],
+        6: [
+            { nome: "Sorcerer Subclass", api: "sorcerer-subclass", subclasse: true }
+        ],
+        7: [
+            { nome: "Sorcery Incarnate", api: "sorcerer-sorcery-incarnate" }
+        ],
+        8: [
+            { nome: "Ability Score Improvement", api: "sorcerer-ability-score-improvement" }
+        ],
+        10: [
+            { nome: "Metamagic", api: "sorcerer-metamagic" }
+        ],
+        12: [
+            { nome: "Ability Score Improvement", api: "sorcerer-ability-score-improvement" }
+        ],
+        14: [
+            { nome: "Sorcerer Subclass", api: "sorcerer-subclass", subclasse: true }
+        ],
+        16: [
+            { nome: "Ability Score Improvement", api: "sorcerer-ability-score-improvement" }
+        ],
+        17: [
+            { nome: "Metamagic", api: "sorcerer-metamagic" }
+        ],
+        18: [
+            { nome: "Sorcerer Subclass", api: "sorcerer-subclass", subclasse: true }
+        ],
+        19: [
+            { nome: "Epic Boon", api: "sorcerer-epic-boon" }
+        ],
+        20: [
+            { nome: "Arcane Apotheosis", api: "sorcerer-arcane-apotheosis" }
+        ]
+    }
 })
 
 registrarClasse("guerreiro", {
@@ -1545,7 +2306,15 @@ registrarClasse("guerreiro", {
     subclasses: [
         {
             valor: "campeao",
-            nome: "Campeão"
+            nome: "Campeão",
+            api: "champion",
+            habilidadesPorNivel: {
+                3: [{ nome: "Improved Critical", api: "champion-improved-critical" }, { nome: "Remarkable Athlete", api: "champion-remarkable-athlete" }],
+                7: [{ nome: "Additional Fighting Style", api: "champion-additional-fighting-style" }],
+                10: [{ nome: "Heroic Warrior", api: "champion-heroic-warrior" }],
+                15: [{ nome: "Superior Critical", api: "champion-superior-critical" }],
+                18: [{ nome: "Survivor", api: "champion-survivor" }]
+            }
         },
         {
             valor: "mestreBatalha",
@@ -1588,7 +2357,76 @@ registrarClasse("guerreiro", {
             quantidade: [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3],
             recupera: "longo"
         }
-    ]
+    ],
+    habilidadesPorNivel: {
+        1: [
+            { nome: "Fighting Style", api: "fighter-fighting-style" },
+            { nome: "Second Wind", api: "fighter-second-wind" },
+            { nome: "Weapon Mastery", api: "fighter-weapon-mastery" }
+        ],
+        2: [
+            { nome: "Action Surge", api: "fighter-action-surge" },
+            { nome: "Tactical Mind", api: "fighter-tactical-mind" }
+        ],
+        3: [
+            { nome: "Fighter Subclass", api: "fighter-subclass", subclasse: true }
+        ],
+        4: [
+            { nome: "Ability Score Improvement", api: "fighter-ability-score-improvement" }
+        ],
+        5: [
+            { nome: "Extra Attack", api: "fighter-extra-attack" },
+            { nome: "Tactical Shift", api: "fighter-tactical-shift" }
+        ],
+        6: [
+            { nome: "Ability Score Improvement", api: "fighter-ability-score-improvement" }
+        ],
+        7: [
+            { nome: "Fighter Subclass", api: "fighter-subclass", subclasse: true }
+        ],
+        8: [
+            { nome: "Ability Score Improvement", api: "fighter-ability-score-improvement" }
+        ],
+        9: [
+            { nome: "Indomitable", api: "fighter-indomitable" },
+            { nome: "Tactical Master", api: "fighter-tactical-master" }
+        ],
+        10: [
+            { nome: "Fighter Subclass", api: "fighter-subclass", subclasse: true }
+        ],
+        11: [
+            { nome: "Two Extra Attacks", api: "fighter-two-extra-attacks" }
+        ],
+        12: [
+            { nome: "Ability Score Improvement", api: "fighter-ability-score-improvement" }
+        ],
+        13: [
+            { nome: "Indomitable", api: "fighter-indomitable" },
+            { nome: "Studied Attacks", api: "fighter-studied-attacks" }
+        ],
+        14: [
+            { nome: "Ability Score Improvement", api: "fighter-ability-score-improvement" }
+        ],
+        15: [
+            { nome: "Fighter Subclass", api: "fighter-subclass", subclasse: true }
+        ],
+        16: [
+            { nome: "Ability Score Improvement", api: "fighter-ability-score-improvement" }
+        ],
+        17: [
+            { nome: "Action Surge", api: "fighter-action-surge" },
+            { nome: "Indomitable", api: "fighter-indomitable" }
+        ],
+        18: [
+            { nome: "Fighter Subclass", api: "fighter-subclass", subclasse: true }
+        ],
+        19: [
+            { nome: "Epic Boon", api: "fighter-epic-boon" }
+        ],
+        20: [
+            { nome: "Three Extra Attacks", api: "fighter-three-extra-attacks" }
+        ]
+    }
 })
 
 registrarClasse("ladino", {
@@ -1598,6 +2436,10 @@ registrarClasse("ladino", {
         "destreza",
         "inteligencia"
     ],
+    // Slippery Mind (nível 15): proficiência em Sabedoria e Carisma
+    salvaguardasPorNivel: {
+        15: ["sabedoria", "carisma"]
+    },
     pericias: {
         limite: 4,
         opcoes: [
@@ -1617,7 +2459,14 @@ registrarClasse("ladino", {
     subclasses: [
         {
             valor: "trapaceiro",
-            nome: "Ladrão"
+            nome: "Ladrão",
+            api: "thief",
+            habilidadesPorNivel: {
+                3: [{ nome: "Fast Hands", api: "thief-fast-hands" }, { nome: "Second-Story Work", api: "thief-second-story-work" }],
+                9: [{ nome: "Supreme Sneak", api: "thief-supreme-sneak" }],
+                13: [{ nome: "Use Magic Device", api: "thief-use-magic-device" }],
+                17: [{ nome: "Thief's Reflexes", api: "thief-thiefs-reflexes" }]
+            }
         },
         {
             valor: "assassino",
@@ -1648,7 +2497,75 @@ registrarClasse("ladino", {
             aPartirDoNivel: 20,
             recupera: "curto"
         }
-    ]
+    ],
+    habilidadesPorNivel: {
+        1: [
+            { nome: "Expertise", api: "rogue-expertise" },
+            { nome: "Sneak Attack", api: "rogue-sneak-attack" },
+            { nome: "Thieves' Cant", api: "rogue-thieves-cant" },
+            { nome: "Weapon Mastery", api: "rogue-weapon-mastery" }
+        ],
+        2: [
+            { nome: "Cunning Action", api: "rogue-cunning-action" }
+        ],
+        3: [
+            { nome: "Rogue Subclass", api: "rogue-subclass", subclasse: true },
+            { nome: "Steady Aim", api: "rogue-steady-aim" }
+        ],
+        4: [
+            { nome: "Ability Score Improvement", api: "rogue-ability-score-improvement" }
+        ],
+        5: [
+            { nome: "Cunning Strike", api: "rogue-cunning-strike" },
+            { nome: "Uncanny Dodge", api: "rogue-uncanny-dodge" }
+        ],
+        6: [
+            { nome: "Expertise", api: "rogue-expertise" }
+        ],
+        7: [
+            { nome: "Evasion", api: "rogue-evasion" },
+            { nome: "Reliable Talent", api: "rogue-reliable-talent" }
+        ],
+        8: [
+            { nome: "Ability Score Improvement", api: "rogue-ability-score-improvement" }
+        ],
+        9: [
+            { nome: "Rogue Subclass", api: "rogue-subclass", subclasse: true }
+        ],
+        10: [
+            { nome: "Ability Score Improvement", api: "rogue-ability-score-improvement" }
+        ],
+        11: [
+            { nome: "Improved Cunning Strike", api: "rogue-improved-cunning-strike" }
+        ],
+        12: [
+            { nome: "Ability Score Improvement", api: "rogue-ability-score-improvement" }
+        ],
+        13: [
+            { nome: "Rogue Subclass", api: "rogue-subclass", subclasse: true }
+        ],
+        14: [
+            { nome: "Devious Strikes", api: "rogue-devious-strikes" }
+        ],
+        15: [
+            { nome: "Slippery Mind", api: "rogue-slippery-mind" }
+        ],
+        16: [
+            { nome: "Ability Score Improvement", api: "rogue-ability-score-improvement" }
+        ],
+        17: [
+            { nome: "Rogue Subclass", api: "rogue-subclass", subclasse: true }
+        ],
+        18: [
+            { nome: "Elusive", api: "rogue-elusive" }
+        ],
+        19: [
+            { nome: "Epic Boon", api: "rogue-epic-boon" }
+        ],
+        20: [
+            { nome: "Stroke of Luck", api: "rogue-stroke-of-luck" }
+        ]
+    }
 })
 
 registrarClasse("mago", {
@@ -1672,7 +2589,14 @@ registrarClasse("mago", {
     subclasses: [
         {
             valor: "evocacao",
-            nome: "Evocador"
+            nome: "Evocador",
+            api: "evoker",
+            habilidadesPorNivel: {
+                3: [{ nome: "Evocation Savant", api: "evoker-evocation-savant" }, { nome: "Potent Cantrip", api: "evoker-potent-cantrip" }],
+                6: [{ nome: "Sculpt Spells", api: "evoker-sculpt-spells" }],
+                10: [{ nome: "Empowered Evocation", api: "evoker-empowered-evocation" }],
+                14: [{ nome: "Overchannel", api: "evoker-overchannel" }]
+            }
         },
         {
             valor: "abjuracao",
@@ -1707,7 +2631,53 @@ registrarClasse("mago", {
             quantidade: 1,
             recupera: "longo"
         }
-    ]
+    ],
+    habilidadesPorNivel: {
+        1: [
+            { nome: "Arcane Recovery", api: "wizard-arcane-recovery" },
+            { nome: "Ritual Adept", api: "wizard-ritual-adept" },
+            { nome: "Spellcasting", api: "wizard-spellcasting" }
+        ],
+        2: [
+            { nome: "Scholar", api: "wizard-scholar" }
+        ],
+        3: [
+            { nome: "Wizard Subclass", api: "wizard-subclass", subclasse: true }
+        ],
+        4: [
+            { nome: "Ability Score Improvement", api: "wizard-ability-score-improvement" }
+        ],
+        5: [
+            { nome: "Memorize Spell", api: "wizard-memorize-spell" }
+        ],
+        6: [
+            { nome: "Wizard Subclass", api: "wizard-subclass", subclasse: true }
+        ],
+        8: [
+            { nome: "Ability Score Improvement", api: "wizard-ability-score-improvement" }
+        ],
+        10: [
+            { nome: "Wizard Subclass", api: "wizard-subclass", subclasse: true }
+        ],
+        12: [
+            { nome: "Ability Score Improvement", api: "wizard-ability-score-improvement" }
+        ],
+        14: [
+            { nome: "Wizard Subclass", api: "wizard-subclass", subclasse: true }
+        ],
+        16: [
+            { nome: "Ability Score Improvement", api: "wizard-ability-score-improvement" }
+        ],
+        18: [
+            { nome: "Spell Mastery", api: "wizard-spell-mastery" }
+        ],
+        19: [
+            { nome: "Epic Boon", api: "wizard-epic-boon" }
+        ],
+        20: [
+            { nome: "Signature Spells", api: "wizard-signature-spells" }
+        ]
+    }
 })
 
 registrarClasse("monge", {
@@ -1717,6 +2687,10 @@ registrarClasse("monge", {
         "forca",
         "destreza"
     ],
+    // Disciplined Survivor (nível 14): proficiência em todas as salvaguardas
+    salvaguardasPorNivel: {
+        14: ["forca", "destreza", "constituicao", "inteligencia", "sabedoria", "carisma"]
+    },
     pericias: {
         limite: 2,
         opcoes: [
@@ -1731,7 +2705,14 @@ registrarClasse("monge", {
     subclasses: [
         {
             valor: "maoAberta",
-            nome: "Guerreiro da Mão Aberta"
+            nome: "Guerreiro da Mão Aberta",
+            api: "warrior-of-the-open-hand",
+            habilidadesPorNivel: {
+                3: [{ nome: "Open Hand Technique", api: "open-hand-technique" }],
+                6: [{ nome: "Wholeness of Body", api: "open-hand-wholeness-of-body" }],
+                11: [{ nome: "Fleet Step", api: "open-hand-fleet-step" }],
+                17: [{ nome: "Quivering Palm", api: "open-hand-quivering-palm" }]
+            }
         },
         {
             valor: "sombras",
@@ -1761,7 +2742,77 @@ registrarClasse("monge", {
             aPartirDoNivel: 2,
             recupera: "longo"
         }
-    ]
+    ],
+    habilidadesPorNivel: {
+        1: [
+            { nome: "Martial Arts", api: "monk-martial-arts" },
+            { nome: "Unarmored Defense", api: "monk-unarmored-defense" }
+        ],
+        2: [
+            { nome: "Monk's Focus", api: "monk-monks-focus" },
+            { nome: "Unarmored Movement", api: "monk-unarmored-movement" },
+            { nome: "Uncanny Metabolism", api: "monk-uncanny-metabolism" }
+        ],
+        3: [
+            { nome: "Monk Subclass", api: "monk-subclass", subclasse: true },
+            { nome: "Deflect Attacks", api: "monk-deflect-attacks" }
+        ],
+        4: [
+            { nome: "Ability Score Improvement", api: "monk-ability-score-improvement" },
+            { nome: "Slow Fall", api: "monk-slow-fall" }
+        ],
+        5: [
+            { nome: "Extra Attack", api: "monk-extra-attack" },
+            { nome: "Stunning Strike", api: "monk-stunning-strike" }
+        ],
+        6: [
+            { nome: "Monk Subclass", api: "monk-subclass", subclasse: true },
+            { nome: "Empowered Strikes", api: "monk-empowered-strikes" }
+        ],
+        7: [
+            { nome: "Evasion", api: "monk-evasion" }
+        ],
+        8: [
+            { nome: "Ability Score Improvement", api: "monk-ability-score-improvement" }
+        ],
+        9: [
+            { nome: "Acrobatic Movement", api: "monk-acrobatic-movement" }
+        ],
+        10: [
+            { nome: "Heightened Focus", api: "monk-heightened-focus" },
+            { nome: "Self-Restoration", api: "monk-self-restoration" }
+        ],
+        11: [
+            { nome: "Monk Subclass", api: "monk-subclass", subclasse: true }
+        ],
+        12: [
+            { nome: "Ability Score Improvement", api: "monk-ability-score-improvement" }
+        ],
+        13: [
+            { nome: "Deflect Energy", api: "monk-deflect-energy" }
+        ],
+        14: [
+            { nome: "Disciplined Survivor", api: "monk-disciplined-survivor" }
+        ],
+        15: [
+            { nome: "Perfect Focus", api: "monk-perfect-focus" }
+        ],
+        16: [
+            { nome: "Ability Score Improvement", api: "monk-ability-score-improvement" }
+        ],
+        17: [
+            { nome: "Monk Subclass", api: "monk-subclass", subclasse: true }
+        ],
+        18: [
+            { nome: "Superior Defense", api: "monk-superior-defense" }
+        ],
+        19: [
+            { nome: "Epic Boon", api: "monk-epic-boon" }
+        ],
+        20: [
+            { nome: "Body and Mind", api: "monk-body-and-mind" }
+        ]
+    }
 })
 
 registrarClasse("paladino", {
@@ -1785,7 +2836,38 @@ registrarClasse("paladino", {
     subclasses: [
         {
             valor: "juramentoDevocao",
-            nome: "Juramento da Devoção"
+            nome: "Juramento da Devoção",
+            magias: {
+                porNivel: {
+                    "3": [
+                        { valor: "protection-from-evil-and-good", nome: "Protection from Evil and Good", circulo: 1, concentracao: false, ritual: false, escola: "Abjuration" },
+                        { valor: "shield-of-faith", nome: "Shield of Faith", circulo: 1, concentracao: true, ritual: false, escola: "Abjuration" }
+                    ],
+                    "5": [
+                        { valor: "aid", nome: "Aid", circulo: 2, concentracao: false, ritual: false, escola: "Abjuration" },
+                        { valor: "zone-of-truth", nome: "Zone of Truth", circulo: 2, concentracao: false, ritual: false, escola: "Enchantment" }
+                    ],
+                    "9": [
+                        { valor: "beacon-of-hope", nome: "Beacon of Hope", circulo: 3, concentracao: true, ritual: false, escola: "Abjuration" },
+                        { valor: "dispel-magic", nome: "Dispel Magic", circulo: 3, concentracao: false, ritual: false, escola: "Abjuration" }
+                    ],
+                    "13": [
+                        { valor: "freedom-of-movement", nome: "Freedom of Movement", circulo: 4, concentracao: false, ritual: false, escola: "Abjuration" },
+                        { valor: "guardian-of-faith", nome: "Guardian of Faith", circulo: 4, concentracao: false, ritual: false, escola: "Conjuration" }
+                    ],
+                    "17": [
+                        { valor: "commune", nome: "Commune", circulo: 5, concentracao: false, ritual: true, escola: "Divination" },
+                        { valor: "flame-strike", nome: "Flame Strike", circulo: 5, concentracao: false, ritual: false, escola: "Evocation" }
+                    ]
+                }
+            },
+            api: "oath-of-devotion",
+            habilidadesPorNivel: {
+                3: [{ nome: "Oath of Devotion Spells", api: "devotion-oath-of-devotion-spells" }, { nome: "Sacred Weapon", api: "devotion-sacred-weapon" }],
+                7: [{ nome: "Aura of Devotion", api: "devotion-aura-of-devotion" }],
+                15: [{ nome: "Smite of Protection", api: "devotion-smite-of-protection" }],
+                20: [{ nome: "Holy Nimbus", api: "devotion-holy-nimbus" }]
+            }
         },
         {
             valor: "juramentoAnciaos",
@@ -1827,7 +2909,68 @@ registrarClasse("paladino", {
             quantidade: [0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
             recupera: "umNoCurto"
         }
-    ]
+    ],
+    habilidadesPorNivel: {
+        1: [
+            { nome: "Lay On Hands", api: "paladin-lay-on-hands" },
+            { nome: "Spellcasting", api: "paladin-spellcasting" },
+            { nome: "Weapon Mastery", api: "paladin-weapon-mastery" }
+        ],
+        2: [
+            { nome: "Fighting Style", api: "paladin-fighting-style" },
+            { nome: "Paladin's Smite", api: "paladin-paladins-smite" }
+        ],
+        3: [
+            { nome: "Channel Divinity", api: "paladin-channel-divinity" },
+            { nome: "Paladin Subclass", api: "paladin-subclass", subclasse: true }
+        ],
+        4: [
+            { nome: "Ability Score Improvement", api: "paladin-ability-score-improvement" }
+        ],
+        5: [
+            { nome: "Extra Attack", api: "paladin-extra-attack" },
+            { nome: "Faithful Steed", api: "paladin-faithful-steed" }
+        ],
+        6: [
+            { nome: "Aura of Protection", api: "paladin-aura-of-protection" }
+        ],
+        7: [
+            { nome: "Paladin Subclass", api: "paladin-subclass", subclasse: true }
+        ],
+        8: [
+            { nome: "Ability Score Improvement", api: "paladin-ability-score-improvement" }
+        ],
+        9: [
+            { nome: "Abjure Foes", api: "paladin-abjure-foes" }
+        ],
+        10: [
+            { nome: "Aura of Courage", api: "paladin-aura-of-courage" }
+        ],
+        11: [
+            { nome: "Radiant Strikes", api: "paladin-radiant-strikes" }
+        ],
+        12: [
+            { nome: "Ability Score Improvement", api: "paladin-ability-score-improvement" }
+        ],
+        14: [
+            { nome: "Restoring Touch", api: "paladin-restoring-touch" }
+        ],
+        15: [
+            { nome: "Paladin Subclass", api: "paladin-subclass", subclasse: true }
+        ],
+        16: [
+            { nome: "Ability Score Improvement", api: "paladin-ability-score-improvement" }
+        ],
+        18: [
+            { nome: "Aura Expansion", api: "paladin-aura-expansion" }
+        ],
+        19: [
+            { nome: "Epic Boon", api: "paladin-epic-boon" }
+        ],
+        20: [
+            { nome: "Paladin Subclass", api: "paladin-subclass", subclasse: true }
+        ]
+    }
 })
 
 registrarClasse("patrulheiro", {
@@ -1853,7 +2996,14 @@ registrarClasse("patrulheiro", {
     subclasses: [
         {
             valor: "cacador",
-            nome: "Caçador"
+            nome: "Caçador",
+            api: "hunter",
+            habilidadesPorNivel: {
+                3: [{ nome: "Hunter's Lore", api: "hunter-hunters-lore" }, { nome: "Hunter's Prey", api: "hunter-hunters-prey" }],
+                7: [{ nome: "Defensive Tactics", api: "hunter-defensive-tactics" }],
+                11: [{ nome: "Superior Hunter's Prey", api: "hunter-superior-hunters-prey" }],
+                15: [{ nome: "Superior Hunter's Defense", api: "hunter-superior-hunters-defense" }]
+            }
         },
         {
             valor: "senhorFeras",
@@ -1887,5 +3037,70 @@ registrarClasse("patrulheiro", {
             quantidade: [2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 6, 6, 6, 6],
             recupera: "longo"
         }
-    ]
+    ],
+    habilidadesPorNivel: {
+        1: [
+            { nome: "Favored Enemy", api: "ranger-favored-enemy" },
+            { nome: "Spellcasting", api: "ranger-spellcasting" },
+            { nome: "Weapon Mastery", api: "ranger-weapon-mastery" }
+        ],
+        2: [
+            { nome: "Deft Explorer", api: "ranger-deft-explorer" },
+            { nome: "Fighting Style", api: "ranger-fighting-style" }
+        ],
+        3: [
+            { nome: "Ranger Subclass", api: "ranger-subclass", subclasse: true }
+        ],
+        4: [
+            { nome: "Ability Score Improvement", api: "ranger-ability-score-improvement" }
+        ],
+        5: [
+            { nome: "Extra Attack", api: "ranger-extra-attack" }
+        ],
+        6: [
+            { nome: "Roving", api: "ranger-roving" }
+        ],
+        7: [
+            { nome: "Ranger Subclass", api: "ranger-subclass", subclasse: true }
+        ],
+        8: [
+            { nome: "Ability Score Improvement", api: "ranger-ability-score-improvement" }
+        ],
+        9: [
+            { nome: "Expertise", api: "ranger-expertise" }
+        ],
+        10: [
+            { nome: "Tireless", api: "ranger-tireless" }
+        ],
+        11: [
+            { nome: "Ranger Subclass", api: "ranger-subclass", subclasse: true }
+        ],
+        12: [
+            { nome: "Ability Score Improvement", api: "ranger-ability-score-improvement" }
+        ],
+        13: [
+            { nome: "Relentless Hunter", api: "ranger-relentless-hunter" }
+        ],
+        14: [
+            { nome: "Nature's Veil", api: "ranger-natures-veil" }
+        ],
+        15: [
+            { nome: "Ranger Subclass", api: "ranger-subclass", subclasse: true }
+        ],
+        16: [
+            { nome: "Ability Score Improvement", api: "ranger-ability-score-improvement" }
+        ],
+        17: [
+            { nome: "Precise Hunter", api: "ranger-precise-hunter" }
+        ],
+        18: [
+            { nome: "Feral Senses", api: "ranger-feral-senses" }
+        ],
+        19: [
+            { nome: "Epic Boon", api: "ranger-epic-boon" }
+        ],
+        20: [
+            { nome: "Foe Slayer", api: "ranger-foe-slayer" }
+        ]
+    }
 })

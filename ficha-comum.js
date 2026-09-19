@@ -69,7 +69,12 @@ function atualizarOpcoesBonus() {
     ATRIBUTOS.forEach(function(atributo) {
         const selectEL = document.getElementById(`bonus-${atributo}`)
         const campoBaseEL = document.getElementById(atributo)
-        const teto = tetoDoAtributo(atributo, atributosAte30)
+        // Sprint 6.5: a classe pode liberar teto maior (ex: Bárbaro no 20, até 25)
+        const teto = tetoDoAtributo(
+            atributo,
+            atributosAte30,
+            tetosDaClasse(classeEL.value, Number(nivelEL.value))
+        )
 
         // no wizard o valor base pode estar vazio: ainda não há o que limitar
         const base = campoBaseEL.value === "" ? 0 : Number(campoBaseEL.value)
@@ -248,7 +253,7 @@ function atualizarSalvaguardas() {
 
     const calculo = calcularAtributos()
     const proficiencia = bonusDeProficiencia(Number(nivelEL.value))
-    const proficientes = salvaguardasDaClasse(classeEL.value)
+    const proficientes = salvaguardasDaClasse(classeEL.value, Number(nivelEL.value))
 
     listaSalvaguardasEL.innerHTML = ""
 

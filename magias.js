@@ -134,6 +134,50 @@ async function buscarMagias() {
     })
 }
 
+/* ---------- Sprint 6.5: magias da subclasse ---------- */
+
+// Sempre preparadas: não contam no limite e não saem na troca.
+function magiasDaSubclasseDoPersonagem() {
+    return magiasDaSubclasse(
+        personagem.classe,
+        personagem.subclasse,
+        personagem.nivel,
+        personagem.opcaoMagiasSubclasse
+    )
+}
+
+function ehDaSubclasse(valor) {
+    return magiasDaSubclasseDoPersonagem().some(function (magia) {
+        return magia.valor === valor
+    })
+}
+
+// A subclasse pode dar magia de fora da lista da classe (o Patrono Corruptor dá
+// Burning Hands ao Bruxo): essas entram na lista com os dados salvos no app.
+function misturarMagiasDaSubclasse(lista) {
+    const extras = magiasDaSubclasseDoPersonagem()
+        .filter(function (magia) {
+            return !lista.some(function (item) {
+                return item.index === magia.valor
+            })
+        })
+        .map(function (magia) {
+            return {
+                index: magia.valor,
+                name: magia.nome,
+                level: magia.circulo,
+                concentration: magia.concentracao,
+                ritual: magia.ritual === true,
+                school: { name: magia.escola || "—" },
+                foraDaApi: magia.foraDaApi === true
+            }
+        })
+
+    return lista.concat(extras).sort(function (a, b) {
+        return a.level - b.level || a.name.localeCompare(b.name)
+    })
+}
+
 // total do atributo, já contando o bônus do antecedente
 function totalDoAtributo(atributo) {
     const bonus = (personagem.bonusAntecedente || {})[atributo] || 0
@@ -379,7 +423,7 @@ function magiasVisiveis() {
 
     return magias.filter(function (magia) {
         // magia de círculo alto demais nem aparece: o personagem não pode usar
-        if (magia.level > circuloMaximo()) {
+        if (magia.level > circuloMaximo() && !ehDaSubclasse(magia.index)) {
             return false
         }
 
@@ -387,7 +431,7 @@ function magiasVisiveis() {
             return false
         }
 
-        if (soEquipadasEL.checked && !estaEquipada(magia.index)) {
+        if (soEquipadasEL.checked && !estaEquipada(magia.index) && !ehDaSubclasse(magia.index)) {
             return false
         }
 
@@ -506,10 +550,11 @@ function criarEtiqueta(texto) {
 
 function criarCartao(magia) {
     const equipada = estaEquipada(magia.index)
+    const daSubclasse = ehDaSubclasse(magia.index)
 
     const cartao = document.createElement("div")
     cartao.className = "magia"
-    cartao.classList.toggle("magia-equipada", equipada)
+    cartao.classList.toggle("magia-equipada", equipada || daSubclasse)
 
     const nome = document.createElement("button")
     nome.type = "button"
@@ -534,11 +579,20 @@ function criarCartao(magia) {
         cartao.appendChild(criarEtiqueta("Ritual"))
     }
 
+    if (daSubclasse) {
+        cartao.appendChild(criarEtiqueta("Da subclasse"))
+    }
+
     const botao = document.createElement("button")
     botao.type = "button"
     botao.className = "magia-botao"
 
-    if (equipada && podeRemover(magia)) {
+    if (daSubclasse && !equipada) {
+        // Sprint 6.5: vem da subclasse; não ocupa vaga e não sai
+        botao.textContent = "Sempre preparada"
+        botao.disabled = true
+        botao.title = "Magia dada pela subclasse: não conta no limite."
+    } else if (equipada && podeRemover(magia)) {
         botao.textContent = "Remover"
     } else if (equipada) {
         // RF30: sem troca liberada a magia fica fixa na ficha
@@ -606,7 +660,7 @@ async function carregar() {
     try {
         // as duas consultas são independentes, então vão juntas
         const resultados = await Promise.all([buscarMagias(), buscarLimites()])
-        magias = resultados[0]
+        magias = misturarMagiasDaSubclasse(resultados[0])
         limites = resultados[1]
 
         removerForaDaLista()

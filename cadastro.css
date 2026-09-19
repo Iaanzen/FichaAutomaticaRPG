@@ -1486,3 +1486,18 @@ body {
     padding: 2px 4px;
     text-align: center;
 }
+
+/* Habilidades de classe (Sprint 6.5) */
+.lista-habilidades { text-align: left; }
+
+.habilidades-nivel {
+    margin: 0 0 5px;
+    font-size: 0.82rem;
+    line-height: 1.45;
+}
+
+/* a descrição da API vem em parágrafos separados por linha em branco */
+#detalhe-habilidade .detalhe-descricao { white-space: pre-line; }
+
+/* Escolha que decide as magias da subclasse (Círculo da Terra) */
+.escolha-magias { margin-bottom: 8px; }

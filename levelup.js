@@ -85,7 +85,29 @@ function totalDepois(atributo) {
         total += 1
     }
 
-    return total
+    return total + aumentoDeClasse(atributo)
+}
+
+// Sprint 6.5: aumento automático do nível (Primal Champion, Peak Physical
+// Condition). Conta depois da melhoria e da dádiva, e nunca passa do teto dele.
+function aumentoDeClasse(atributo) {
+    const aumento = aumentoDeAtributoDoNivel(personagem.classe, nivelNovo())
+
+    if (!aumento || !aumento.atributos.includes(atributo)) {
+        return 0
+    }
+
+    let antes = totalAtual(atributo)
+
+    if (melhoriaAplicada()) {
+        antes += melhoria[atributo]
+    }
+
+    if (dadivaAplicada() && atributoDadiva === atributo) {
+        antes += 1
+    }
+
+    return valorDoAumento(aumento, antes)
 }
 
 function talentosDepois() {
@@ -149,6 +171,58 @@ function montarGanhos() {
         ganhos.push(`Espaços de magia por círculo: ${espacosDepois}.`)
     }
 
+    // Sprint 6.5: aumento de atributo da classe (ex: Bárbaro no 20)
+    const aumento = aumentoDeAtributoDoNivel(personagem.classe, nivelNovo())
+
+    if (aumento) {
+        const detalhes = aumento.atributos.map(function (atributo) {
+            return `${NOME_ATRIBUTO[atributo]} +${aumentoDeClasse(atributo)} (fica ${totalDepois(atributo)})`
+        })
+
+        ganhos.push(`${aumento.nome}: ${detalhes.join(", ")}; teto ${aumento.teto}.`)
+    }
+
+    // Sprint 6.5: magias que a subclasse dá neste nível (sempre preparadas)
+    const subclasseDasMagias = precisaSubclasse() ? subclasseEL.value : personagem.subclasse
+    const escolhaDeMagias = escolhaDeMagiasDaSubclasse(personagem.classe, subclasseDasMagias)
+    const magiasNovas = magiasDaSubclasse(
+        personagem.classe,
+        subclasseDasMagias,
+        nivelNovo(),
+        personagem.opcaoMagiasSubclasse
+    ).filter(function (magia) {
+        return magia.nivel === nivelNovo()
+    })
+
+    if (magiasNovas.length) {
+        const nomes = magiasNovas.map(function (magia) {
+            return magia.nome
+        })
+        ganhos.push(`Magias da subclasse (sempre preparadas): ${nomes.join(", ")}.`)
+    } else if (
+        escolhaDeMagias &&
+        !personagem.opcaoMagiasSubclasse &&
+        escolhaDeMagias.opcoes.some(function (opcao) {
+            return opcao.porNivel[nivelNovo()]
+        })
+    ) {
+        ganhos.push(`Magias da subclasse: escolha na ficha (${escolhaDeMagias.rotulo.toLowerCase()}).`)
+    }
+
+    // Sprint 6.5: proficiência nova em salvaguarda (ex: Monge no 14)
+    const salvaguardasAntes = salvaguardasDaClasse(personagem.classe, personagem.nivel)
+    const salvaguardasNovas = salvaguardasDaClasse(personagem.classe, nivelNovo())
+        .filter(function (atributo) {
+            return !salvaguardasAntes.includes(atributo)
+        })
+        .map(function (atributo) {
+            return NOME_ATRIBUTO[atributo]
+        })
+
+    if (salvaguardasNovas.length) {
+        ganhos.push(`Proficiência nova em salvaguardas: ${salvaguardasNovas.join(", ")}.`)
+    }
+
     // RF31: recursos novos ou que mudam neste nível
     const modificadores = {}
 
@@ -182,7 +256,20 @@ function montarGanhos() {
         ganhos.push("Melhoria de Atributo ou Talento.")
     }
 
-    ganhos.push("Habilidades de classe deste nível entram com o RF13.")
+    // RF13: habilidades que o nível novo traz. Melhoria de Atributo e Dádiva
+    // Épica ficam de fora porque já aparecem como escolha logo abaixo.
+    const subclasseDepois = precisaSubclasse() ? subclasseEL.value : personagem.subclasse
+    const novas = habilidadesParaMostrar(personagem.classe, subclasseDepois, nivelNovo(), nivelNovo())
+        .map(function (habilidade) {
+            return habilidade.rotulo
+        })
+        .filter(function (rotulo) {
+            return !["Ability Score Improvement", "Epic Boon"].includes(rotulo)
+        })
+
+    if (novas.length) {
+        ganhos.push(`Habilidades novas: ${novas.join(", ")}.`)
+    }
 
     preencherListaSimples(document.getElementById("lista-ganhos"), ganhos)
 }
@@ -499,6 +586,13 @@ function confirmarNivel() {
     const aplicarDadiva = dadivaAplicada()
     const escolheuSubclasse = precisaSubclasse()
 
+    // Sprint 6.5: aumento automático do nível, calculado antes de mexer nos valores
+    const aumentos = {}
+
+    ATRIBUTOS.forEach(function (atributo) {
+        aumentos[atributo] = aumentoDeClasse(atributo)
+    })
+
     // RF30: a troca do level up fica guardada até ser usada na aba de magias
     personagem.trocasMagia = juntarTrocas(
         personagem.trocasMagia,
@@ -526,6 +620,11 @@ function confirmarNivel() {
         }
     }
 
+    // entra no valor base, como a melhoria e a dádiva
+    ATRIBUTOS.forEach(function (atributo) {
+        personagem[atributo] += aumentos[atributo]
+    })
+
     if (escolheuSubclasse) {
         personagem.subclasse = subclasseEL.value
     }
@@ -542,6 +641,7 @@ function confirmarNivel() {
     personagem.atributosTotais = totais
     personagem.modificadores = modificadores
     personagem.bonusProficiencia = bonusDeProficiencia(personagem.nivel)
+    personagem.salvaguardas = salvaguardasDaClasse(personagem.classe, personagem.nivel)
     personagem.pvMaximo = pvDepois
 
     // subir de nível só aumenta o máximo; o PV atual fica como estava

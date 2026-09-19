@@ -417,7 +417,13 @@
 
           <div class="bloco-ficha" id="bloco-magias-equipadas" hidden>
             <span class="rotulo-bloco">Magias Preparadas</span>
+            <!-- Círculo da Terra: o tipo de terra decide as magias da subclasse -->
+            <div class="campo escolha-magias" id="escolha-magias-subclasse" hidden>
+              <select id="opcao-magias-subclasse"></select>
+              <span class="rotulo" id="rotulo-escolha-magias"></span>
+            </div>
             <div class="lista-magias-ficha" id="lista-magias-equipadas"></div>
+            <p class="descanso-ajuda" id="nota-magias-subclasse" hidden></p>
           </div>
 
           <div class="bloco-ficha" id="bloco-recursos" hidden>
@@ -463,12 +469,19 @@
             <ul class="lista-texto" id="lista-talentos"></ul>
           </div>
 
+          <div class="bloco-ficha" id="bloco-habilidades">
+            <span class="rotulo-bloco">Habilidades de Classe</span>
+            <div class="lista-habilidades" id="lista-habilidades"></div>
+            <div class="detalhe-magia" id="detalhe-habilidade" hidden></div>
+            <p class="descanso-ajuda">
+              Clique no nome para ver a descrição (em inglês; precisa de
+              internet).
+            </p>
+          </div>
+
           <div class="bloco-ficha bloco-alto">
             <span class="rotulo-bloco">Características e Traços</span>
             <ul class="lista-texto" id="lista-tracos"></ul>
-            <p class="vazio-texto">
-              As habilidades de classe por nível entram no RF13.
-            </p>
           </div>
         </div>
       </div>
