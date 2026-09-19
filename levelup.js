@@ -149,6 +149,29 @@ function montarGanhos() {
         ganhos.push(`Espaços de magia por círculo: ${espacosDepois}.`)
     }
 
+    // RF31: recursos novos ou que mudam neste nível
+    const modificadores = {}
+
+    ATRIBUTOS.forEach(function (atributo) {
+        modificadores[atributo] = modificadorDe(totalDepois(atributo))
+    })
+
+    const recursosAntes = recursosDaClasse(personagem.classe, personagem.nivel, modificadores)
+
+    recursosDaClasse(personagem.classe, nivelNovo(), modificadores).forEach(function (recurso) {
+        const antes = recursosAntes.find(function (item) {
+            return item.valor === recurso.valor
+        })
+
+        if (!antes) {
+            ganhos.push(`Novo recurso: ${recurso.nome} (${recurso.total}).`)
+        } else if (recurso.total !== antes.total) {
+            ganhos.push(`${recurso.nome}: ${antes.total} → ${recurso.total}.`)
+        } else if (recurso.recupera !== antes.recupera) {
+            ganhos.push(`${recurso.nome} agora ${COMO_RECUPERA[recurso.recupera]}.`)
+        }
+    })
+
     if (precisaSubclasse()) {
         ganhos.push("Escolha de subclasse.")
     }

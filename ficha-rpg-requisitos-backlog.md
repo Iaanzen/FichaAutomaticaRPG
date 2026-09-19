@@ -343,6 +343,39 @@ Limitações conhecidas:
 - Guardado para os próximos sprints: Flash of Genius (Sprint 6), infusões conhecidas e itens infundidos por nível, habilidades por nível (RF13).
 - Não incluídos: os especialistas de Unearthed Arcana (Archivist e o Armorer antigo), que eram material de teste.
 
+## 3.12 Recursos de classe (CONCLUÍDO — Sprint 6, RF31)
+
+**Fonte:** quantidades por nível da API 2024 (Fúria, Canalizar Divindade do Clérigo e do Paladino, Forma Selvagem, Retomar o Fôlego, Pontos de Foco, Inimigo Favorito, Pontos de Feitiçaria) e regras de recuperação do texto oficial de cada habilidade, conferidos em 19/09/2026. Surto de Ação e Indomável pela tabela e pelo texto do Guerreiro.
+
+| Classe | Recursos |
+|---|---|
+| Bárbaro | Fúria (1 no curto, todas no longo) |
+| Bardo | Inspiração de Bardo = Carisma, mín. 1 (longo; a partir do 5, curto ou longo) |
+| Bruxo | Astúcia Mágica, a partir do 2 (longo) |
+| Clérigo | Canalizar Divindade (1 no curto, todos no longo) |
+| Druida | Forma Selvagem (1 no curto, todas no longo) |
+| Feiticeiro | Pontos de Feitiçaria (longo); Restauração Feiticeira, a partir do 5 (longo) |
+| Guerreiro | Retomar o Fôlego (1 no curto, todos no longo); Surto de Ação (curto); Indomável, a partir do 9 (longo) |
+| Ladino | Golpe de Sorte, no 20 (curto) |
+| Mago | Recuperação Arcana (longo) |
+| Monge | Pontos de Foco (curto); Metabolismo Sobrenatural, a partir do 2 (longo) |
+| Paladino | Cura pelas Mãos = 5 × nível, em PV (longo); Canalizar Divindade, a partir do 3 (1 no curto, todos no longo) |
+| Patrulheiro | Inimigo Favorito: Marca do Caçador sem gastar espaço (longo) |
+| Pugilista | Moxie (curto); Bloodied but Unbowed (curto); Down but Not Out e Fighting Spirit (longo) |
+| Artífice | Flash of Genius = Inteligência, mín. 1, a partir do 7 (longo) |
+
+**Como funciona na ficha:**
+- Bloco **"Recursos de Classe"**: até 8 usos viram bolinhas (cheia = gasta, igual aos espaços de magia); acima disso (Pontos de Foco, Pontos de Feitiçaria, Cura pelas Mãos, Moxie alto) o jogador digita quanto resta. Cada recurso mostra como recupera.
+- **Descanso curto** ganhou o botão **"Concluir descanso curto"**: devolve os recursos que voltam no curto (1 uso dos "1 no curto") e, no Bruxo, os espaços de Pacto. Substituiu o botão só de Pacto do 5a.
+- **Descanso longo** devolve todos os recursos.
+- O modo descanso lista, antes de concluir, o que vai voltar.
+- O **level up** mostra recursos novos e os que aumentam ("Fúria: 3 → 4").
+- Os gastos são salvos com a ficha, como os espaços de magia.
+
+**Nomes em português** são tradução própria (não necessariamente os do livro em português); Pugilista e Artífice mantêm os nomes do material original.
+
+**Fora deste sprint:** o que o recurso *faz* (ex: Restauração Feiticeira devolver pontos, Recuperação Arcana devolver espaços) é marcado à mão; o app só conta os usos.
+
 ---
 
 ## 4. Backlog do Produto (ordenado por prioridade e dependência)
@@ -382,7 +415,7 @@ Escrito como histórias de usuário, do jeito Scrum — cada uma vira uma entreg
 | Sprint 5b | Aba de magias: lista pela API, limites, equipar, troca (2024), coluna do level up | 9, 10 (parte) | concluída (ver seção 3.8) |
 | Sprint 5.5 | Ajustes de distribuição de atributos e aviso do wizard (IDEIA06, IDEIA07) | — | concluída (ver seção 3.9) |
 | Sprint 5.6 | Um bloco por classe e conteúdo extra local, fora do git (Artífice, Pugilista) | — | em andamento (ver seção 3.11) |
-| Sprint 6 | Recursos de classe | 11 | |
+| Sprint 6 | Recursos de classe | 11 | concluída (ver seção 3.12) |
 | Sprint 6.5 | Habilidades por nível (RF13): o que cada nível e subclasse traz, salvaguarda ganha por nível, atributo com teto maior, magias concedidas pela subclasse | — | |
 | Sprint 7 | Combate | 12 | |
 | Sprint 8 | Inventário | 13 | |

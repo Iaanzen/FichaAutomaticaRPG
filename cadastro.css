@@ -1467,3 +1467,22 @@ body {
     from { opacity: 0; transform: translate(-50%, 10px); }
     to { opacity: 1; transform: translate(-50%, 0); }
 }
+
+/* Recursos de classe (Sprint 6) */
+.lista-recursos { text-align: left; }
+
+.recurso { margin-bottom: 8px; }
+
+.recurso-ajuda {
+    margin: 0;
+    font-size: 0.72rem;
+    font-style: italic;
+    color: #6a4f3a;
+}
+
+/* recursos grandes (Pontos de Foco, Cura pelas Mãos): digita quanto resta */
+.recurso-restante {
+    width: 64px;
+    padding: 2px 4px;
+    text-align: center;
+}

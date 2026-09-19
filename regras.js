@@ -905,6 +905,98 @@ function explicarRegraDeTroca(classe) {
     return partes.length === 0 ? "" : `troca ${partes.join(" e ")}`
 }
 
+/* ---------- Sprint 6: recursos de classe (RF31) ---------- */
+
+// Cada classe lista os recursos no bloco dela (campo "recursos"). Formato:
+//   valor, nome, detalhe (opcional, texto curto)
+//   quantidade: lista por nível (20 valores) | número fixo |
+//               { atributo, minimo } (modificador do atributo) |
+//               { multiplicadorDoNivel } (ex: Cura pelas Mãos = 5 x nível)
+//   aPartirDoNivel (opcional)
+//   recupera: "longo" (tudo no descanso longo),
+//             "curto" (tudo no descanso curto ou longo),
+//             "umNoCurto" (1 uso no curto, todos no longo)
+//   recuperaCurtoAPartirDoNivel (opcional): passa a recuperar tudo no curto
+// Números e regras de recuperação conferidos na API 2024 (backlog, seção 3.12).
+
+const COMO_RECUPERA = {
+    longo: "recupera no descanso longo",
+    curto: "recupera no descanso curto ou longo",
+    umNoCurto: "1 no descanso curto, todos no longo"
+}
+
+function totalDoRecurso(recurso, nivel, modificadores) {
+    if (nivel < (recurso.aPartirDoNivel || 1)) {
+        return 0
+    }
+
+    const quantidade = recurso.quantidade
+
+    if (Array.isArray(quantidade)) {
+        return quantidade[nivel - 1] || 0
+    }
+
+    if (typeof quantidade === "number") {
+        return quantidade
+    }
+
+    if (quantidade.multiplicadorDoNivel) {
+        return quantidade.multiplicadorDoNivel * nivel
+    }
+
+    if (quantidade.atributo) {
+        return Math.max(quantidade.minimo || 0, (modificadores || {})[quantidade.atributo] || 0)
+    }
+
+    return 0
+}
+
+function comoRecupera(recurso, nivel) {
+    if (recurso.recuperaCurtoAPartirDoNivel && nivel >= recurso.recuperaCurtoAPartirDoNivel) {
+        return "curto"
+    }
+
+    return recurso.recupera
+}
+
+// os recursos que a classe tem neste nível, já com o total calculado
+function recursosDaClasse(classe, nivel, modificadores) {
+    const bloco = CLASSES[classe]
+
+    return ((bloco && bloco.recursos) || [])
+        .map(function(recurso) {
+            return {
+                valor: recurso.valor,
+                nome: recurso.nome,
+                detalhe: recurso.detalhe || "",
+                total: totalDoRecurso(recurso, nivel, modificadores),
+                recupera: comoRecupera(recurso, nivel)
+            }
+        })
+        .filter(function(recurso) {
+            return recurso.total > 0
+        })
+}
+
+// devolve os gastos depois do descanso: { furia: 1, ... }
+function recuperarRecursos(gastos, recursos, descanso) {
+    const depois = {}
+
+    recursos.forEach(function(recurso) {
+        const gasto = Math.min(gastos[recurso.valor] || 0, recurso.total)
+
+        if (descanso === "longo" || recurso.recupera === "curto") {
+            depois[recurso.valor] = 0
+        } else if (recurso.recupera === "umNoCurto") {
+            depois[recurso.valor] = Math.max(0, gasto - 1)
+        } else {
+            depois[recurso.valor] = gasto
+        }
+    })
+
+    return depois
+}
+
 /* ---------- Magias locais (classe fora da API de magias) ---------- */
 
 // Classe que não existe na API (ex: Artífice, no conteudo-extra.js) traz no
@@ -1118,6 +1210,14 @@ registrarClasse("barbaro", {
             valor: "zelote",
             nome: "Caminho do Zelote"
         }
+    ],
+    recursos: [
+        {
+            valor: "furia",
+            nome: "Fúria",
+            quantidade: [2, 2, 3, 3, 3, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 6, 6, 6, 6],
+            recupera: "umNoCurto"
+        }
     ]
 })
 
@@ -1161,7 +1261,19 @@ registrarClasse("bardo", {
             magias: 1,
             truques: 1
         }
-    }
+    },
+    recursos: [
+        {
+            valor: "inspiracaoDeBardo",
+            nome: "Inspiração de Bardo",
+            quantidade: {
+                atributo: "carisma",
+                minimo: 1
+            },
+            recupera: "longo",
+            recuperaCurtoAPartirDoNivel: 5
+        }
+    ]
 })
 
 registrarClasse("bruxo", {
@@ -1212,7 +1324,17 @@ registrarClasse("bruxo", {
             magias: 1,
             truques: 1
         }
-    }
+    },
+    recursos: [
+        {
+            valor: "astuciaMagica",
+            nome: "Astúcia Mágica",
+            detalhe: "recupera espaços de Pacto (até a metade)",
+            quantidade: 1,
+            aPartirDoNivel: 2,
+            recupera: "longo"
+        }
+    ]
 })
 
 registrarClasse("clerigo", {
@@ -1262,7 +1384,15 @@ registrarClasse("clerigo", {
         nivel: {
             truques: 1
         }
-    }
+    },
+    recursos: [
+        {
+            valor: "canalizarDivindade",
+            nome: "Canalizar Divindade",
+            quantidade: [0, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4],
+            recupera: "umNoCurto"
+        }
+    ]
 })
 
 registrarClasse("druida", {
@@ -1315,7 +1445,15 @@ registrarClasse("druida", {
         nivel: {
             truques: 1
         }
-    }
+    },
+    recursos: [
+        {
+            valor: "formaSelvagem",
+            nome: "Forma Selvagem",
+            quantidade: [0, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4],
+            recupera: "umNoCurto"
+        }
+    ]
 })
 
 registrarClasse("feiticeiro", {
@@ -1365,7 +1503,23 @@ registrarClasse("feiticeiro", {
             magias: 1,
             truques: 1
         }
-    }
+    },
+    recursos: [
+        {
+            valor: "pontosDeFeiticaria",
+            nome: "Pontos de Feitiçaria",
+            quantidade: [0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
+            recupera: "longo"
+        },
+        {
+            valor: "restauracaoFeiticeira",
+            nome: "Restauração Feiticeira",
+            detalhe: "no descanso curto, recupera até metade do nível em pontos",
+            quantidade: 1,
+            aPartirDoNivel: 5,
+            recupera: "longo"
+        }
+    ]
 })
 
 registrarClasse("guerreiro", {
@@ -1414,6 +1568,26 @@ registrarClasse("guerreiro", {
         14,
         16,
         19
+    ],
+    recursos: [
+        {
+            valor: "retomarOFolego",
+            nome: "Retomar o Fôlego",
+            quantidade: [2, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+            recupera: "umNoCurto"
+        },
+        {
+            valor: "surtoDeAcao",
+            nome: "Surto de Ação",
+            quantidade: [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2],
+            recupera: "curto"
+        },
+        {
+            valor: "indomavel",
+            nome: "Indomável",
+            quantidade: [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3],
+            recupera: "longo"
+        }
     ]
 })
 
@@ -1465,6 +1639,15 @@ registrarClasse("ladino", {
         12,
         16,
         19
+    ],
+    recursos: [
+        {
+            valor: "golpeDeSorte",
+            nome: "Golpe de Sorte",
+            quantidade: 1,
+            aPartirDoNivel: 20,
+            recupera: "curto"
+        }
     ]
 })
 
@@ -1515,7 +1698,16 @@ registrarClasse("mago", {
             truques: 1
         },
         nivel: {}
-    }
+    },
+    recursos: [
+        {
+            valor: "recuperacaoArcana",
+            nome: "Recuperação Arcana",
+            detalhe: "no descanso curto, recupera espaços até metade do nível",
+            quantidade: 1,
+            recupera: "longo"
+        }
+    ]
 })
 
 registrarClasse("monge", {
@@ -1552,6 +1744,22 @@ registrarClasse("monge", {
         {
             valor: "misericordia",
             nome: "Guerreiro da Misericórdia"
+        }
+    ],
+    recursos: [
+        {
+            valor: "pontosDeFoco",
+            nome: "Pontos de Foco",
+            quantidade: [0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
+            recupera: "curto"
+        },
+        {
+            valor: "metabolismoSobrenatural",
+            nome: "Metabolismo Sobrenatural",
+            detalhe: "ao rolar iniciativa, recupera os Pontos de Foco",
+            quantidade: 1,
+            aPartirDoNivel: 2,
+            recupera: "longo"
         }
     ]
 })
@@ -1602,7 +1810,24 @@ registrarClasse("paladino", {
             magias: 1
         },
         nivel: {}
-    }
+    },
+    recursos: [
+        {
+            valor: "curaPelasMaos",
+            nome: "Cura pelas Mãos",
+            detalhe: "pontos de vida para curar",
+            quantidade: {
+                multiplicadorDoNivel: 5
+            },
+            recupera: "longo"
+        },
+        {
+            valor: "canalizarDivindade",
+            nome: "Canalizar Divindade",
+            quantidade: [0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+            recupera: "umNoCurto"
+        }
+    ]
 })
 
 registrarClasse("patrulheiro", {
@@ -1653,5 +1878,14 @@ registrarClasse("patrulheiro", {
             magias: 1
         },
         nivel: {}
-    }
+    },
+    recursos: [
+        {
+            valor: "inimigoFavorito",
+            nome: "Inimigo Favorito",
+            detalhe: "Marca do Caçador sem gastar espaço",
+            quantidade: [2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 6, 6, 6, 6],
+            recupera: "longo"
+        }
+    ]
 })

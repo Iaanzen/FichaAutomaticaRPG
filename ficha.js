@@ -76,7 +76,7 @@ const acaoDadosVidaEL = document.getElementById("acao-dados-vida")
 const acaoDescansoLongoEL = document.getElementById("acao-descanso-longo")
 const dadosDisponiveisEL = document.getElementById("dados-disponiveis")
 const btnGastarDadoEL = document.getElementById("btn-gastar-dado")
-const acaoPactoEL = document.getElementById("acao-pacto")
+const acaoConcluirCurtoEL = document.getElementById("acao-concluir-curto")
 
 // quantos dados de vida ja foram gastos desde o ultimo descanso longo
 let dadosVidaGastos = 0
@@ -135,10 +135,33 @@ function recuperarEspacosDeMagia() {
     atualizarEspacosDeMagia()
 }
 
-// RF27: Bruxo recupera a Magia de Pacto ao fim do descanso curto
-function recuperarEspacosDePacto() {
-    recuperarEspacosDeMagia()
-    resultadoDescansoEL.textContent = "Espaços de Pacto recuperados."
+// RF23, RF27, RF31: fim do descanso curto. Voltam os recursos que recuperam no
+// curto e, no Bruxo, a Magia de Pacto. atualizarRecursos fica mais abaixo.
+function concluirDescansoCurto() {
+    const recursos = recursosAtuais()
+    const antes = recursosGastosValidos()
+
+    recursosGastos = recuperarRecursos(antes, recursos, "curto")
+    atualizarRecursos()
+
+    const recuperados = []
+
+    if (recuperaMagiaEmDescansoCurto(classeEL.value)) {
+        recuperarEspacosDeMagia()
+        recuperados.push("espaços de Pacto")
+    }
+
+    recursos.forEach(function (recurso) {
+        const devolvidos = (antes[recurso.valor] || 0) - recursosGastos[recurso.valor]
+
+        if (devolvidos > 0) {
+            recuperados.push(`${recurso.nome} (+${devolvidos})`)
+        }
+    })
+
+    resultadoDescansoEL.textContent = recuperados.length
+        ? `Recuperado: ${recuperados.join(", ")}.`
+        : "Nada para recuperar neste descanso curto."
 }
 
 // RF23: descanso longo devolve tudo, inclusive todos os dados de vida (regra 2024)
@@ -158,7 +181,17 @@ function concluirDescansoLongo() {
         recuperarEspacosDeMagia()
     }
 
-    const espacos = conjura ? ", espaços de magia recuperados" : ""
+    // RF31: e todo recurso de classe volta ao total
+    const temRecursos = recursosAtuais().length > 0
+    recursosGastos = {}
+    atualizarRecursos()
+
+    const extras = [
+        conjura ? "espaços de magia recuperados" : null,
+        temRecursos ? "recursos de classe recuperados" : null
+    ].filter(Boolean)
+
+    const espacos = extras.length ? `, ${extras.join(", ")}` : ""
 
     // RF30: a troca liberada fica guardada até ser usada na aba de magias
     const liberadas = trocasLiberadas(classeEL.value, "descansoLongo")
@@ -184,20 +217,38 @@ function entrarNoDescanso(tipo) {
 
     acaoDadosVidaEL.hidden = !curto
     acaoDescansoLongoEL.hidden = curto
-    acaoPactoEL.hidden = !(curto && recuperaMagiaEmDescansoCurto(classeEL.value))
+    acaoConcluirCurtoEL.hidden = !curto
 
-    // o que ainda não existe no app, mas o jogador precisa lembrar na mesa
+    // o que o descanso vai trazer, para o jogador saber antes de concluir
     const pendencias = []
+    const recursos = recursosAtuais()
 
     if (curto) {
-        pendencias.push("Recursos de classe que voltam em descanso curto (Sprint 6).")
+        const voltam = recursos
+            .filter(function (recurso) {
+                return recurso.recupera !== "longo"
+            })
+            .map(function (recurso) {
+                return recurso.recupera === "umNoCurto" ? `${recurso.nome} (1 uso)` : recurso.nome
+            })
+
+        if (recuperaMagiaEmDescansoCurto(classeEL.value)) {
+            voltam.unshift("espaços de Pacto")
+        }
+
+        if (voltam.length) {
+            pendencias.push(`Ao concluir, recupera: ${voltam.join(", ")}.`)
+        }
     } else {
         const troca = descreverTrocas(trocasLiberadas(classeEL.value, "descansoLongo"))
 
         if (troca) {
             pendencias.push(`Ao concluir, libera a troca de ${troca} na aba Magias.`)
         }
-        pendencias.push("Recursos de classe são zerados (Sprint 6).")
+
+        if (recursos.length) {
+            pendencias.push("Ao concluir, todos os recursos de classe voltam ao total.")
+        }
     }
 
     preencherLista(pendenciasDescansoEL, pendencias, "")
@@ -225,8 +276,8 @@ document
 btnGastarDadoEL.addEventListener("click", gastarDadoDeVida)
 
 document
-    .getElementById("btn-recuperar-pacto")
-    .addEventListener("click", recuperarEspacosDePacto)
+    .getElementById("btn-concluir-curto")
+    .addEventListener("click", concluirDescansoCurto)
 
 document
     .getElementById("btn-concluir-longo")
@@ -420,6 +471,118 @@ function atualizarEspacosDeMagia() {
 
 // trocar de classe muda a tabela de espacos (ou tira ela)
 classeEL.addEventListener("change", atualizarEspacosDeMagia)
+
+/* ---------- Sprint 6: recursos de classe (RF31) ---------- */
+
+const listaRecursosEL = document.getElementById("lista-recursos")
+
+// quanto de cada recurso já foi gasto: { furia: 1, curaPelasMaos: 15, ... }
+let recursosGastos = {}
+
+// até este total os usos viram bolinhas; acima (Pontos de Foco, Cura pelas Mãos)
+// o jogador digita quanto resta
+const MAXIMO_DE_BOLINHAS = 8
+
+function recursosAtuais() {
+    return recursosDaClasse(
+        classeEL.value,
+        Number(nivelEL.value),
+        calcularAtributos().modificadores
+    )
+}
+
+// o que foi marcado, limitado ao total que a classe e o nível atuais dão
+function recursosGastosValidos() {
+    const validos = {}
+
+    recursosAtuais().forEach(function (recurso) {
+        validos[recurso.valor] = Math.min(recursosGastos[recurso.valor] || 0, recurso.total)
+    })
+
+    return validos
+}
+
+function criarContadorDeRecurso(recurso, gasto) {
+    const campo = document.createElement("input")
+    campo.type = "number"
+    campo.min = 0
+    campo.max = recurso.total
+    campo.value = recurso.total - gasto
+    campo.className = "recurso-restante"
+    campo.title = "Quanto ainda resta"
+
+    campo.addEventListener("change", function () {
+        const restante = Math.min(recurso.total, Math.max(0, Number(campo.value) || 0))
+        recursosGastos[recurso.valor] = recurso.total - restante
+        atualizarRecursos()
+    })
+
+    return campo
+}
+
+function atualizarRecursos() {
+    const recursos = recursosAtuais()
+    const gastos = recursosGastosValidos()
+
+    document.getElementById("bloco-recursos").hidden = recursos.length === 0
+    listaRecursosEL.innerHTML = ""
+
+    recursos.forEach(function (recurso) {
+        const gasto = gastos[recurso.valor]
+
+        const item = document.createElement("div")
+        item.className = "recurso"
+
+        const linha = document.createElement("div")
+        linha.className = "linha-espaco"
+
+        const nome = document.createElement("span")
+        nome.className = "espaco-rotulo"
+        nome.textContent = recurso.nome
+        linha.appendChild(nome)
+
+        if (recurso.total <= MAXIMO_DE_BOLINHAS) {
+            // bolinha cheia = uso gasto, igual aos espaços de magia
+            const circulosEL = document.createElement("div")
+            circulosEL.className = "espaco-circulos"
+
+            montarCirculos(circulosEL, recurso.total, gasto, false, function (novo) {
+                recursosGastos[recurso.valor] = novo
+                atualizarRecursos()
+            })
+
+            linha.appendChild(circulosEL)
+        } else {
+            linha.appendChild(criarContadorDeRecurso(recurso, gasto))
+        }
+
+        const restantes = document.createElement("span")
+        restantes.className = "espaco-restantes"
+        restantes.textContent = `${recurso.total - gasto} de ${recurso.total}`
+        linha.appendChild(restantes)
+
+        const ajuda = document.createElement("p")
+        ajuda.className = "recurso-ajuda"
+        ajuda.textContent = recurso.detalhe
+            ? `${recurso.detalhe} · ${COMO_RECUPERA[recurso.recupera]}`
+            : COMO_RECUPERA[recurso.recupera]
+
+        item.appendChild(linha)
+        item.appendChild(ajuda)
+        listaRecursosEL.appendChild(item)
+    })
+}
+
+// classe e atributos mudam os totais (a Inspiração de Bardo usa o Carisma)
+classeEL.addEventListener("change", atualizarRecursos)
+
+formFicha.addEventListener("input", function (evento) {
+    const id = evento.target.id
+
+    if (ATRIBUTOS.includes(id) || id.startsWith("bonus-")) {
+        atualizarRecursos()
+    }
+})
 
 /* ---------- Sprint 5a: concentração (RF28) ---------- */
 
@@ -727,6 +890,9 @@ if (!personagem) {
     espacosGastos = personagem.espacosGastos || {}
     atualizarEspacosDeMagia()
 
+    recursosGastos = personagem.recursosGastos || {}
+    atualizarRecursos()
+
     concentracaoAtual = personagem.concentracao || ""
     montarOpcoesConcentracao()
     atualizarConcentracao()
@@ -799,6 +965,7 @@ if (!personagem) {
         personagem.falhasMorte = falhasMorte
         // guarda só o que ainda existe na tabela da classe e do nível atuais
         personagem.espacosGastos = espacosGastosValidos()
+        personagem.recursosGastos = recursosGastosValidos()
         // classe que não conjura não guarda concentração
         personagem.concentracao =
             conjuracaoDaClasse(personagem.classe) === null ? "" : concentracaoAtual
