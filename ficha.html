@@ -39,18 +39,7 @@
           <div class="campo">
             <select id="classe" name="classe" required>
               <option value="">Selecione...</option>
-              <option value="barbaro">Bárbaro</option>
-              <option value="bardo">Bardo</option>
-              <option value="bruxo">Bruxo</option>
-              <option value="clerigo">Clérigo</option>
-              <option value="druida">Druida</option>
-              <option value="feiticeiro">Feiticeiro</option>
-              <option value="guerreiro">Guerreiro</option>
-              <option value="ladino">Ladino</option>
-              <option value="mago">Mago</option>
-              <option value="monge">Monge</option>
-              <option value="paladino">Paladino</option>
-              <option value="patrulheiro">Patrulheiro</option>
+              <!-- as classes são montadas por ficha-comum.js a partir de regras.js -->
             </select>
             <span class="rotulo">Classe</span>
           </div>
@@ -483,6 +472,8 @@
     </form>
 
     <script src="regras.js"></script>
+    <!-- conteúdo fora do SRD, só local (fora do git); se não existir, o navegador só registra um aviso -->
+    <script src="conteudo-extra.js"></script>
     <script src="ficha-comum.js"></script>
     <script src="ficha.js"></script>
   </body>

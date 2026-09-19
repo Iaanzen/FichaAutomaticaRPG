@@ -687,9 +687,16 @@ if (!personagem) {
     atualizarSubracas(personagem.subraca)
     atualizarSubclasse(personagem.subclasse)
 
+    // IDEIA06: teto de 20, menos no atributo que ganhou a Dádiva Épica (até 30).
+    // Ficha antiga com dádiva e sem esse registro: libera todos, para não travar.
+    const temDadiva = (personagem.talentos || []).some(function (talento) {
+        return dadivaPorValor(talento) !== undefined
+    })
+    atributosAte30 = personagem.atributosAte30 || (temDadiva ? ATRIBUTOS.slice() : [])
+
     escreverBonus(personagem.bonusAntecedente)
     mostrarStatusBonus()
-    atualizarTravaBonus()
+    atualizarOpcoesBonus()
     atualizarModificadores()
     atualizarProficiencia()
 

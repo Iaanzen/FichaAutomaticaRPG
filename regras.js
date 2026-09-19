@@ -274,86 +274,8 @@ function dadosDaRaca(raca, subraca) {
 // Mistura consciente de 2014 e 2024: as subclasses que saíram continuam aqui,
 // as renomeadas usam o nome de 2024 e as novas foram acrescentadas.
 // Renomear mexe só no "nome": o "valor" fica igual para as fichas salvas não quebrarem.
-const subclassesPorClasse = {
-    barbaro: [
-        { valor: "berserker", nome: "Caminho do Berserker" },
-        // 2014: Caminho do Guerreiro Totêmico
-        { valor: "guerreiroTotemico", nome: "Caminho do Coração Selvagem" },
-        { valor: "arvoreMundo", nome: "Caminho da Árvore do Mundo" },
-        { valor: "zelote", nome: "Caminho do Zelote" }
-    ],
-    bardo: [
-        { valor: "colegioConhecimento", nome: "Colégio do Conhecimento" },
-        { valor: "colegioBravura", nome: "Colégio da Bravura" },
-        { valor: "colegioDanca", nome: "Colégio da Dança" },
-        { valor: "colegioGlamour", nome: "Colégio do Glamour" }
-    ],
-    bruxo: [
-        // 2014: O Arquifada, O Corruptor, O Grande Antigo
-        { valor: "arquifada", nome: "Patrono Arquifada" },
-        { valor: "corruptor", nome: "Patrono Corruptor" },
-        { valor: "grandeAntigo", nome: "Patrono Grande Antigo" },
-        { valor: "celestial", nome: "Patrono Celestial" }
-    ],
-    clerigo: [
-        { valor: "dominioVida", nome: "Domínio da Vida" },
-        { valor: "dominioLuz", nome: "Domínio da Luz" },
-        { valor: "dominioGuerra", nome: "Domínio da Guerra" },
-        { valor: "dominioTrapaca", nome: "Domínio da Trapaça" }
-    ],
-    druida: [
-        { valor: "circuloTerra", nome: "Círculo da Terra" },
-        { valor: "circuloLua", nome: "Círculo da Lua" },
-        { valor: "circuloMar", nome: "Círculo do Mar" },
-        { valor: "circuloEstrelas", nome: "Círculo das Estrelas" }
-    ],
-    feiticeiro: [
-        // 2014: Linhagem Dracônica, Magia Selvagem
-        { valor: "linhagemDraconica", nome: "Feitiçaria Dracônica" },
-        { valor: "magiaSelvagem", nome: "Feitiçaria Selvagem" },
-        { valor: "feiticariaAberrante", nome: "Feitiçaria Aberrante" },
-        { valor: "feiticariaMecanica", nome: "Feitiçaria Mecânica" }
-    ],
-    guerreiro: [
-        { valor: "campeao", nome: "Campeão" },
-        { valor: "mestreBatalha", nome: "Mestre de Batalha" },
-        { valor: "cavaleiroArcano", nome: "Cavaleiro Arcano" },
-        { valor: "guerreiroPsiquico", nome: "Guerreiro Psíquico" }
-    ],
-    ladino: [
-        // "Thief" do livro; antes aparecia como Trapaceiro
-        { valor: "trapaceiro", nome: "Ladrão" },
-        { valor: "assassino", nome: "Assassino" },
-        { valor: "trapaceiroArcano", nome: "Trapaceiro Arcano" },
-        { valor: "laminaAlma", nome: "Lâmina da Alma" }
-    ],
-    mago: [
-        // 2014: Escola de Evocação, Abjuração e Ilusão
-        { valor: "evocacao", nome: "Evocador" },
-        { valor: "abjuracao", nome: "Abjurador" },
-        { valor: "ilusao", nome: "Ilusionista" },
-        { valor: "adivinho", nome: "Adivinho" }
-    ],
-    monge: [
-        // 2014: Caminho da Mão Aberta, das Sombras e dos Quatro Elementos
-        { valor: "maoAberta", nome: "Guerreiro da Mão Aberta" },
-        { valor: "sombras", nome: "Guerreiro das Sombras" },
-        { valor: "quatroElementos", nome: "Guerreiro dos Elementos" },
-        { valor: "misericordia", nome: "Guerreiro da Misericórdia" }
-    ],
-    paladino: [
-        { valor: "juramentoDevocao", nome: "Juramento da Devoção" },
-        { valor: "juramentoAnciaos", nome: "Juramento dos Anciãos" },
-        { valor: "juramentoVinganca", nome: "Juramento da Vingança" },
-        { valor: "juramentoGloria", nome: "Juramento da Glória" }
-    ],
-    patrulheiro: [
-        { valor: "cacador", nome: "Caçador" },
-        { valor: "senhorFeras", nome: "Senhor das Feras" },
-        { valor: "andarilhoFeerico", nome: "Andarilho Feérico" },
-        { valor: "perseguidorSombrio", nome: "Perseguidor Sombrio" }
-    ]
-};
+// preenchida por registrarClasse, no fim do arquivo (um bloco por classe)
+const subclassesPorClasse = {}
 
 /* ---------- RF16 a RF20: pericias ---------- */
 
@@ -381,56 +303,8 @@ const PERICIAS = [
 
 // quantas pericias cada classe escolhe, e de qual lista.
 // opcoes "todas" = o Bardo escolhe de qualquer pericia.
-const periciasPorClasse = {
-    barbaro: {
-        limite: 2,
-        opcoes: ["adestrarAnimais", "atletismo", "intimidacao", "natureza", "percepcao", "sobrevivencia"]
-    },
-    bardo: {
-        limite: 3,
-        opcoes: "todas"
-    },
-    bruxo: {
-        limite: 2,
-        opcoes: ["arcanismo", "enganacao", "historia", "intimidacao", "investigacao", "natureza", "religiao"]
-    },
-    clerigo: {
-        limite: 2,
-        opcoes: ["historia", "intuicao", "medicina", "persuasao", "religiao"]
-    },
-    druida: {
-        limite: 2,
-        opcoes: ["arcanismo", "adestrarAnimais", "intuicao", "medicina", "natureza", "percepcao", "religiao", "sobrevivencia"]
-    },
-    feiticeiro: {
-        limite: 2,
-        opcoes: ["arcanismo", "enganacao", "intuicao", "intimidacao", "persuasao", "religiao"]
-    },
-    guerreiro: {
-        limite: 2,
-        opcoes: ["acrobacia", "adestrarAnimais", "atletismo", "historia", "intuicao", "intimidacao", "percepcao", "sobrevivencia"]
-    },
-    ladino: {
-        limite: 4,
-        opcoes: ["acrobacia", "atletismo", "atuacao", "enganacao", "furtividade", "intimidacao", "intuicao", "investigacao", "percepcao", "persuasao", "prestidigitacao"]
-    },
-    mago: {
-        limite: 2,
-        opcoes: ["arcanismo", "historia", "intuicao", "investigacao", "medicina", "religiao"]
-    },
-    monge: {
-        limite: 2,
-        opcoes: ["acrobacia", "atletismo", "furtividade", "historia", "intuicao", "religiao"]
-    },
-    paladino: {
-        limite: 2,
-        opcoes: ["atletismo", "intimidacao", "intuicao", "medicina", "persuasao", "religiao"]
-    },
-    patrulheiro: {
-        limite: 3,
-        opcoes: ["adestrarAnimais", "atletismo", "furtividade", "intuicao", "investigacao", "natureza", "percepcao", "sobrevivencia"]
-    }
-}
+// preenchida por registrarClasse, no fim do arquivo (um bloco por classe)
+const periciasPorClasse = {}
 
 // abreviacao mostrada ao lado da pericia, como na folha oficial
 const ABREVIACAO_ATRIBUTO = {
@@ -457,20 +331,8 @@ const NOME_ATRIBUTO = {
 /* ---------- RF21, RF22: pontos de vida ---------- */
 
 // dado de vida de cada classe
-const dadoDeVidaPorClasse = {
-    barbaro: 12,
-    bardo: 8,
-    bruxo: 8,
-    clerigo: 8,
-    druida: 8,
-    feiticeiro: 6,
-    guerreiro: 10,
-    ladino: 8,
-    mago: 6,
-    monge: 8,
-    paladino: 10,
-    patrulheiro: 10
-}
+// preenchida por registrarClasse, no fim do arquivo (um bloco por classe)
+const dadoDeVidaPorClasse = {}
 
 // media do dado arredondada para cima: d6 = 4, d8 = 5, d10 = 6, d12 = 7
 function mediaDoDado(dado) {
@@ -522,10 +384,8 @@ const NIVEL_MAXIMO = 20
 // Guerreiro e Ladino ganham escolhas extras.
 const NIVEIS_DE_ESCOLHA_PADRAO = [4, 8, 12, 16, 19]
 
-const niveisDeEscolhaPorClasse = {
-    guerreiro: [4, 6, 8, 12, 14, 16, 19],
-    ladino: [4, 8, 10, 12, 16, 19]
-}
+// preenchida por registrarClasse, no fim do arquivo (um bloco por classe)
+const niveisDeEscolhaPorClasse = {}
 
 function niveisDeEscolha(classe) {
     return niveisDeEscolhaPorClasse[classe] || NIVEIS_DE_ESCOLHA_PADRAO
@@ -538,25 +398,83 @@ function nivelTemEscolha(classe, nivel) {
 // teto de atributo: 20, contando o bonus do antecedente
 const ATRIBUTO_MAXIMO = 20
 
+/* ---------- Distribuição de pontos: antecedente e Melhoria de Atributo ---------- */
+
+// Cada forma é a lista de valores que a distribuição completa pode ter.
+const FORMAS_BONUS_ANTECEDENTE = [[2, 1], [1, 1, 1]]
+const FORMAS_MELHORIA_ATRIBUTO = [[2], [1, 1]]
+
+// { forca: 2, destreza: 1, ... } -> [2, 1], só os valores acima de zero
+function valoresDistribuidos(distribuicao) {
+    return ATRIBUTOS
+        .map(function(atributo) {
+            return distribuicao[atributo] || 0
+        })
+        .filter(function(valor) {
+            return valor > 0
+        })
+        .sort(function(a, b) {
+            return b - a
+        })
+}
+
+// ainda cabe: cada valor já distribuído tem lugar em alguma forma
+function cabeEmAlgumaForma(valores, formas) {
+    return formas.some(function(forma) {
+        const sobra = forma.slice()
+
+        return valores.every(function(valor) {
+            const posicao = sobra.indexOf(valor)
+
+            if (posicao < 0) {
+                return false
+            }
+
+            sobra.splice(posicao, 1)
+            return true
+        })
+    })
+}
+
+// completa: os valores são exatamente os de uma forma
+function distribuicaoCompleta(distribuicao, formas) {
+    const valores = valoresDistribuidos(distribuicao)
+
+    return formas.some(function(forma) {
+        return forma.length === valores.length && cabeEmAlgumaForma(valores, [forma])
+    })
+}
+
+// IDEIA06: quais valores (0, +1, +2) o atributo ainda pode receber sem
+// quebrar a forma da distribuição nem passar do espaço até o teto.
+// Usar o +2 num atributo tira o +2 dos outros.
+function valoresPermitidos(distribuicao, atributo, formas, espaco) {
+    return [0, 1, 2].filter(function(valor) {
+        if (valor === 0) {
+            return true
+        }
+
+        if (valor > espaco) {
+            return false
+        }
+
+        const simulada = Object.assign({}, distribuicao)
+        simulada[atributo] = valor
+
+        return cabeEmAlgumaForma(valoresDistribuidos(simulada), formas)
+    })
+}
+
 // Melhoria de Atributo: +2 num atributo OU +1 em dois diferentes
 function melhoriaAtributoValida(melhoria) {
-    const valores = []
+    return distribuicaoCompleta(melhoria, FORMAS_MELHORIA_ATRIBUTO)
+}
 
-    ATRIBUTOS.forEach(function(atributo) {
-        if (melhoria[atributo] > 0) {
-            valores.push(melhoria[atributo])
-        }
-    })
-
-    if (valores.length === 1) {
-        return valores[0] === 2
-    }
-
-    if (valores.length === 2) {
-        return valores[0] === 1 && valores[1] === 1
-    }
-
-    return false
+// teto do total (base + bônus): 20, ou 30 no atributo que ganhou a Dádiva Épica
+function tetoDoAtributo(atributo, atributosAte30) {
+    return (atributosAte30 || []).includes(atributo)
+        ? ATRIBUTO_MAXIMO_DADIVA
+        : ATRIBUTO_MAXIMO
 }
 
 // Robusto ja entra na conta de PV (pontosDeVida). Os demais sao texto por
@@ -731,20 +649,8 @@ function resultadoTesteDeMorte(rolagem) {
 
 // Salvaguarda nao se escolhe: cada classe da proficiencia em duas, fixas desde
 // o nivel 1. Sempre uma "forte" (For/Des/Con) e uma "fraca" (Int/Sab/Car).
-const salvaguardasPorClasse = {
-    barbaro: ["forca", "constituicao"],
-    bardo: ["destreza", "carisma"],
-    bruxo: ["sabedoria", "carisma"],
-    clerigo: ["sabedoria", "carisma"],
-    druida: ["inteligencia", "sabedoria"],
-    feiticeiro: ["constituicao", "carisma"],
-    guerreiro: ["forca", "constituicao"],
-    ladino: ["destreza", "inteligencia"],
-    mago: ["inteligencia", "sabedoria"],
-    monge: ["forca", "destreza"],
-    paladino: ["sabedoria", "carisma"],
-    patrulheiro: ["forca", "destreza"]
-}
+// preenchida por registrarClasse, no fim do arquivo (um bloco por classe)
+const salvaguardasPorClasse = {}
 
 function salvaguardasDaClasse(classe) {
     return salvaguardasPorClasse[classe] || []
@@ -790,16 +696,8 @@ function opcoesDePericias(classe) {
 // completo = tabela cheia; meio = Paladino e Patrulheiro, ja com espacos no nivel 1;
 // pacto = Magia de Pacto do Bruxo, que recupera em descanso curto.
 // Classe fora desta tabela nao conjura.
-const conjuracaoPorClasse = {
-    bardo: { atributo: "carisma", tipo: "completo" },
-    bruxo: { atributo: "carisma", tipo: "pacto" },
-    clerigo: { atributo: "sabedoria", tipo: "completo" },
-    druida: { atributo: "sabedoria", tipo: "completo" },
-    feiticeiro: { atributo: "carisma", tipo: "completo" },
-    mago: { atributo: "inteligencia", tipo: "completo" },
-    paladino: { atributo: "carisma", tipo: "meio" },
-    patrulheiro: { atributo: "sabedoria", tipo: "meio" }
-}
+// preenchida por registrarClasse, no fim do arquivo (um bloco por classe)
+const conjuracaoPorClasse = {}
 
 const NOME_TIPO_CONJURADOR = {
     completo: "Conjurador completo",
@@ -813,16 +711,8 @@ function conjuracaoDaClasse(classe) {
 }
 
 // como cada classe conjuradora se chama na API de magias (dnd5eapi.co)
-const CLASSE_NA_API = {
-    bardo: "bard",
-    bruxo: "warlock",
-    clerigo: "cleric",
-    druida: "druid",
-    feiticeiro: "sorcerer",
-    mago: "wizard",
-    paladino: "paladin",
-    patrulheiro: "ranger"
-}
+// preenchida por registrarClasse, no fim do arquivo (um bloco por classe)
+const CLASSE_NA_API = {}
 
 function classeNaApi(classe) {
     return CLASSE_NA_API[classe] || null
@@ -941,17 +831,8 @@ function espacosDeMagia(classe, nivel) {
 
 // Regra 2024, conferida no texto oficial de cada classe (API do D&D 5e).
 // Para cada momento, quantas trocas a classe ganha: 1 ou "todas".
-const TROCA_DE_MAGIAS = {
-    bardo: { descansoLongo: {}, nivel: { magias: 1, truques: 1 } },
-    bruxo: { descansoLongo: {}, nivel: { magias: 1, truques: 1 } },
-    clerigo: { descansoLongo: { magias: "todas" }, nivel: { truques: 1 } },
-    druida: { descansoLongo: { magias: "todas" }, nivel: { truques: 1 } },
-    feiticeiro: { descansoLongo: {}, nivel: { magias: 1, truques: 1 } },
-    // o Mago troca truque no descanso longo, e não ao subir de nível
-    mago: { descansoLongo: { magias: "todas", truques: 1 }, nivel: {} },
-    paladino: { descansoLongo: { magias: 1 }, nivel: {} },
-    patrulheiro: { descansoLongo: { magias: 1 }, nivel: {} }
-}
+// preenchida por registrarClasse, no fim do arquivo (um bloco por classe)
+const TROCA_DE_MAGIAS = {}
 
 const SEM_TROCAS = { magias: 0, truques: 0 }
 
@@ -1024,6 +905,25 @@ function explicarRegraDeTroca(classe) {
     return partes.length === 0 ? "" : `troca ${partes.join(" e ")}`
 }
 
+/* ---------- Magias locais (classe fora da API de magias) ---------- */
+
+// Classe que não existe na API (ex: Artífice, no conteudo-extra.js) traz no
+// bloco "magiasLocais": truques por nível e a regra de magias preparadas.
+function magiasLocaisDaClasse(classe) {
+    return CLASSES[classe] ? CLASSES[classe].magiasLocais || null : null
+}
+
+// mesmo formato que a aba de magias usa para os limites vindos da API
+function limitesDeMagiasLocais(locais, nivel, modificador) {
+    const regra = locais.preparadas
+    const metade = regra.metadeDoNivel ? Math.floor(nivel / 2) : 0
+
+    return {
+        truques: locais.truquesPorNivel[nivel - 1] || 0,
+        magias: Math.max(regra.minimo || 0, modificador + metade)
+    }
+}
+
 // usado na ficha e na aba de magias: círculo 0 é truque
 function nomeDoCirculo(circulo) {
     return circulo === 0 ? "Truque" : `${circulo}º círculo`
@@ -1085,25 +985,7 @@ function formatarModificador(modificador) {
 
 // so duas formas valem: +2/+1 em dois atributos, ou +1 em tres
 function distribuicaoBonusValida(bonus) {
-    const valores = []
-
-    ATRIBUTOS.forEach(function(atributo) {
-        if (bonus[atributo] > 0) {
-            valores.push(bonus[atributo])
-        }
-    })
-
-    if (valores.length === 2) {
-        return valores.includes(2) && valores.includes(1)
-    }
-
-    if (valores.length === 3) {
-        return valores.every(function(valor) {
-            return valor === 1
-        })
-    }
-
-    return false
+    return distribuicaoCompleta(bonus, FORMAS_BONUS_ANTECEDENTE)
 }
 
 // preenche um select a partir de uma lista [{ valor, nome }]
@@ -1126,3 +1008,650 @@ function preencherSelect(selectEL, lista, valorSelecionado) {
         selectEL.value = valorSelecionado
     }
 }
+
+/* ---------- Classes: um bloco por classe ---------- */
+
+// Tudo o que a app sabe de uma classe fica num bloco só. registrarClasse
+// espalha o bloco pelas tabelas que o resto do código consulta
+// (dadoDeVidaPorClasse, subclassesPorClasse etc.), então nada fora daqui muda.
+//
+// Para acrescentar uma classe:
+// - conteúdo gratuito (SRD): um bloco aqui;
+// - conteúdo que não pode ir para o GitHub (pago ou de terceiros):
+//   um bloco em conteudo-extra.js, que fica fora do git (veja conteudo-extra.exemplo.js).
+//
+// Campos obrigatórios: nome, dadoDeVida, salvaguardas, pericias, subclasses.
+// Opcionais: niveisDeEscolha (quando foge do padrão 4/8/12/16/19),
+// conjuracao ({ atributo, tipo: "completo" | "meio" | "pacto" }),
+// nomeNaApi (nome da classe na API de magias) e trocaDeMagias.
+//
+// Notas de conteúdo:
+// - subclasses: mistura 2014 + 2024; renomear muda só o "nome", nunca o "valor",
+//   para as fichas salvas não quebrarem (backlog, seção 3.5);
+// - pericias.opcoes "todas": o Bardo escolhe de qualquer perícia;
+// - salvaguardas: sempre uma "forte" (For/Des/Con) e uma "fraca" (Int/Sab/Car);
+// - trocaDeMagias: regra 2024 conferida no texto oficial (backlog, seção 3.6);
+//   o Mago troca truque no descanso longo, e não ao subir de nível.
+
+const CLASSES = {}
+
+const CAMPOS_OBRIGATORIOS_DA_CLASSE = ["nome", "dadoDeVida", "salvaguardas", "pericias", "subclasses"]
+
+function registrarClasse(valor, bloco) {
+    CAMPOS_OBRIGATORIOS_DA_CLASSE.forEach(function(campo) {
+        if (bloco[campo] === undefined) {
+            throw new Error(`Classe "${valor}" sem o campo obrigatório "${campo}".`)
+        }
+    })
+
+    CLASSES[valor] = bloco
+
+    dadoDeVidaPorClasse[valor] = bloco.dadoDeVida
+    salvaguardasPorClasse[valor] = bloco.salvaguardas
+    periciasPorClasse[valor] = bloco.pericias
+    subclassesPorClasse[valor] = bloco.subclasses
+
+    if (bloco.niveisDeEscolha) {
+        niveisDeEscolhaPorClasse[valor] = bloco.niveisDeEscolha
+    }
+
+    if (bloco.conjuracao) {
+        conjuracaoPorClasse[valor] = bloco.conjuracao
+    }
+
+    if (bloco.nomeNaApi) {
+        CLASSE_NA_API[valor] = bloco.nomeNaApi
+    }
+
+    if (bloco.trocaDeMagias) {
+        TROCA_DE_MAGIAS[valor] = bloco.trocaDeMagias
+    }
+}
+
+// para montar o select de classe, em ordem alfabética
+function listaDeClasses() {
+    return Object.keys(CLASSES)
+        .map(function(valor) {
+            return { valor: valor, nome: CLASSES[valor].nome }
+        })
+        .sort(function(a, b) {
+            return a.nome.localeCompare(b.nome, "pt-BR")
+        })
+}
+
+function nomeDaClasse(valor) {
+    return CLASSES[valor] ? CLASSES[valor].nome : valor
+}
+
+registrarClasse("barbaro", {
+    nome: "Bárbaro",
+    dadoDeVida: 12,
+    salvaguardas: [
+        "forca",
+        "constituicao"
+    ],
+    pericias: {
+        limite: 2,
+        opcoes: [
+            "adestrarAnimais",
+            "atletismo",
+            "intimidacao",
+            "natureza",
+            "percepcao",
+            "sobrevivencia"
+        ]
+    },
+    subclasses: [
+        {
+            valor: "berserker",
+            nome: "Caminho do Berserker"
+        },
+        {
+            valor: "guerreiroTotemico",
+            nome: "Caminho do Coração Selvagem"
+        },
+        {
+            valor: "arvoreMundo",
+            nome: "Caminho da Árvore do Mundo"
+        },
+        {
+            valor: "zelote",
+            nome: "Caminho do Zelote"
+        }
+    ]
+})
+
+registrarClasse("bardo", {
+    nome: "Bardo",
+    dadoDeVida: 8,
+    salvaguardas: [
+        "destreza",
+        "carisma"
+    ],
+    pericias: {
+        limite: 3,
+        opcoes: "todas"
+    },
+    subclasses: [
+        {
+            valor: "colegioConhecimento",
+            nome: "Colégio do Conhecimento"
+        },
+        {
+            valor: "colegioBravura",
+            nome: "Colégio da Bravura"
+        },
+        {
+            valor: "colegioDanca",
+            nome: "Colégio da Dança"
+        },
+        {
+            valor: "colegioGlamour",
+            nome: "Colégio do Glamour"
+        }
+    ],
+    conjuracao: {
+        atributo: "carisma",
+        tipo: "completo"
+    },
+    nomeNaApi: "bard",
+    trocaDeMagias: {
+        descansoLongo: {},
+        nivel: {
+            magias: 1,
+            truques: 1
+        }
+    }
+})
+
+registrarClasse("bruxo", {
+    nome: "Bruxo",
+    dadoDeVida: 8,
+    salvaguardas: [
+        "sabedoria",
+        "carisma"
+    ],
+    pericias: {
+        limite: 2,
+        opcoes: [
+            "arcanismo",
+            "enganacao",
+            "historia",
+            "intimidacao",
+            "investigacao",
+            "natureza",
+            "religiao"
+        ]
+    },
+    subclasses: [
+        {
+            valor: "arquifada",
+            nome: "Patrono Arquifada"
+        },
+        {
+            valor: "corruptor",
+            nome: "Patrono Corruptor"
+        },
+        {
+            valor: "grandeAntigo",
+            nome: "Patrono Grande Antigo"
+        },
+        {
+            valor: "celestial",
+            nome: "Patrono Celestial"
+        }
+    ],
+    conjuracao: {
+        atributo: "carisma",
+        tipo: "pacto"
+    },
+    nomeNaApi: "warlock",
+    trocaDeMagias: {
+        descansoLongo: {},
+        nivel: {
+            magias: 1,
+            truques: 1
+        }
+    }
+})
+
+registrarClasse("clerigo", {
+    nome: "Clérigo",
+    dadoDeVida: 8,
+    salvaguardas: [
+        "sabedoria",
+        "carisma"
+    ],
+    pericias: {
+        limite: 2,
+        opcoes: [
+            "historia",
+            "intuicao",
+            "medicina",
+            "persuasao",
+            "religiao"
+        ]
+    },
+    subclasses: [
+        {
+            valor: "dominioVida",
+            nome: "Domínio da Vida"
+        },
+        {
+            valor: "dominioLuz",
+            nome: "Domínio da Luz"
+        },
+        {
+            valor: "dominioGuerra",
+            nome: "Domínio da Guerra"
+        },
+        {
+            valor: "dominioTrapaca",
+            nome: "Domínio da Trapaça"
+        }
+    ],
+    conjuracao: {
+        atributo: "sabedoria",
+        tipo: "completo"
+    },
+    nomeNaApi: "cleric",
+    trocaDeMagias: {
+        descansoLongo: {
+            magias: "todas"
+        },
+        nivel: {
+            truques: 1
+        }
+    }
+})
+
+registrarClasse("druida", {
+    nome: "Druida",
+    dadoDeVida: 8,
+    salvaguardas: [
+        "inteligencia",
+        "sabedoria"
+    ],
+    pericias: {
+        limite: 2,
+        opcoes: [
+            "arcanismo",
+            "adestrarAnimais",
+            "intuicao",
+            "medicina",
+            "natureza",
+            "percepcao",
+            "religiao",
+            "sobrevivencia"
+        ]
+    },
+    subclasses: [
+        {
+            valor: "circuloTerra",
+            nome: "Círculo da Terra"
+        },
+        {
+            valor: "circuloLua",
+            nome: "Círculo da Lua"
+        },
+        {
+            valor: "circuloMar",
+            nome: "Círculo do Mar"
+        },
+        {
+            valor: "circuloEstrelas",
+            nome: "Círculo das Estrelas"
+        }
+    ],
+    conjuracao: {
+        atributo: "sabedoria",
+        tipo: "completo"
+    },
+    nomeNaApi: "druid",
+    trocaDeMagias: {
+        descansoLongo: {
+            magias: "todas"
+        },
+        nivel: {
+            truques: 1
+        }
+    }
+})
+
+registrarClasse("feiticeiro", {
+    nome: "Feiticeiro",
+    dadoDeVida: 6,
+    salvaguardas: [
+        "constituicao",
+        "carisma"
+    ],
+    pericias: {
+        limite: 2,
+        opcoes: [
+            "arcanismo",
+            "enganacao",
+            "intuicao",
+            "intimidacao",
+            "persuasao",
+            "religiao"
+        ]
+    },
+    subclasses: [
+        {
+            valor: "linhagemDraconica",
+            nome: "Feitiçaria Dracônica"
+        },
+        {
+            valor: "magiaSelvagem",
+            nome: "Feitiçaria Selvagem"
+        },
+        {
+            valor: "feiticariaAberrante",
+            nome: "Feitiçaria Aberrante"
+        },
+        {
+            valor: "feiticariaMecanica",
+            nome: "Feitiçaria Mecânica"
+        }
+    ],
+    conjuracao: {
+        atributo: "carisma",
+        tipo: "completo"
+    },
+    nomeNaApi: "sorcerer",
+    trocaDeMagias: {
+        descansoLongo: {},
+        nivel: {
+            magias: 1,
+            truques: 1
+        }
+    }
+})
+
+registrarClasse("guerreiro", {
+    nome: "Guerreiro",
+    dadoDeVida: 10,
+    salvaguardas: [
+        "forca",
+        "constituicao"
+    ],
+    pericias: {
+        limite: 2,
+        opcoes: [
+            "acrobacia",
+            "adestrarAnimais",
+            "atletismo",
+            "historia",
+            "intuicao",
+            "intimidacao",
+            "percepcao",
+            "sobrevivencia"
+        ]
+    },
+    subclasses: [
+        {
+            valor: "campeao",
+            nome: "Campeão"
+        },
+        {
+            valor: "mestreBatalha",
+            nome: "Mestre de Batalha"
+        },
+        {
+            valor: "cavaleiroArcano",
+            nome: "Cavaleiro Arcano"
+        },
+        {
+            valor: "guerreiroPsiquico",
+            nome: "Guerreiro Psíquico"
+        }
+    ],
+    niveisDeEscolha: [
+        4,
+        6,
+        8,
+        12,
+        14,
+        16,
+        19
+    ]
+})
+
+registrarClasse("ladino", {
+    nome: "Ladino",
+    dadoDeVida: 8,
+    salvaguardas: [
+        "destreza",
+        "inteligencia"
+    ],
+    pericias: {
+        limite: 4,
+        opcoes: [
+            "acrobacia",
+            "atletismo",
+            "atuacao",
+            "enganacao",
+            "furtividade",
+            "intimidacao",
+            "intuicao",
+            "investigacao",
+            "percepcao",
+            "persuasao",
+            "prestidigitacao"
+        ]
+    },
+    subclasses: [
+        {
+            valor: "trapaceiro",
+            nome: "Ladrão"
+        },
+        {
+            valor: "assassino",
+            nome: "Assassino"
+        },
+        {
+            valor: "trapaceiroArcano",
+            nome: "Trapaceiro Arcano"
+        },
+        {
+            valor: "laminaAlma",
+            nome: "Lâmina da Alma"
+        }
+    ],
+    niveisDeEscolha: [
+        4,
+        8,
+        10,
+        12,
+        16,
+        19
+    ]
+})
+
+registrarClasse("mago", {
+    nome: "Mago",
+    dadoDeVida: 6,
+    salvaguardas: [
+        "inteligencia",
+        "sabedoria"
+    ],
+    pericias: {
+        limite: 2,
+        opcoes: [
+            "arcanismo",
+            "historia",
+            "intuicao",
+            "investigacao",
+            "medicina",
+            "religiao"
+        ]
+    },
+    subclasses: [
+        {
+            valor: "evocacao",
+            nome: "Evocador"
+        },
+        {
+            valor: "abjuracao",
+            nome: "Abjurador"
+        },
+        {
+            valor: "ilusao",
+            nome: "Ilusionista"
+        },
+        {
+            valor: "adivinho",
+            nome: "Adivinho"
+        }
+    ],
+    conjuracao: {
+        atributo: "inteligencia",
+        tipo: "completo"
+    },
+    nomeNaApi: "wizard",
+    trocaDeMagias: {
+        descansoLongo: {
+            magias: "todas",
+            truques: 1
+        },
+        nivel: {}
+    }
+})
+
+registrarClasse("monge", {
+    nome: "Monge",
+    dadoDeVida: 8,
+    salvaguardas: [
+        "forca",
+        "destreza"
+    ],
+    pericias: {
+        limite: 2,
+        opcoes: [
+            "acrobacia",
+            "atletismo",
+            "furtividade",
+            "historia",
+            "intuicao",
+            "religiao"
+        ]
+    },
+    subclasses: [
+        {
+            valor: "maoAberta",
+            nome: "Guerreiro da Mão Aberta"
+        },
+        {
+            valor: "sombras",
+            nome: "Guerreiro das Sombras"
+        },
+        {
+            valor: "quatroElementos",
+            nome: "Guerreiro dos Elementos"
+        },
+        {
+            valor: "misericordia",
+            nome: "Guerreiro da Misericórdia"
+        }
+    ]
+})
+
+registrarClasse("paladino", {
+    nome: "Paladino",
+    dadoDeVida: 10,
+    salvaguardas: [
+        "sabedoria",
+        "carisma"
+    ],
+    pericias: {
+        limite: 2,
+        opcoes: [
+            "atletismo",
+            "intimidacao",
+            "intuicao",
+            "medicina",
+            "persuasao",
+            "religiao"
+        ]
+    },
+    subclasses: [
+        {
+            valor: "juramentoDevocao",
+            nome: "Juramento da Devoção"
+        },
+        {
+            valor: "juramentoAnciaos",
+            nome: "Juramento dos Anciãos"
+        },
+        {
+            valor: "juramentoVinganca",
+            nome: "Juramento da Vingança"
+        },
+        {
+            valor: "juramentoGloria",
+            nome: "Juramento da Glória"
+        }
+    ],
+    conjuracao: {
+        atributo: "carisma",
+        tipo: "meio"
+    },
+    nomeNaApi: "paladin",
+    trocaDeMagias: {
+        descansoLongo: {
+            magias: 1
+        },
+        nivel: {}
+    }
+})
+
+registrarClasse("patrulheiro", {
+    nome: "Patrulheiro",
+    dadoDeVida: 10,
+    salvaguardas: [
+        "forca",
+        "destreza"
+    ],
+    pericias: {
+        limite: 3,
+        opcoes: [
+            "adestrarAnimais",
+            "atletismo",
+            "furtividade",
+            "intuicao",
+            "investigacao",
+            "natureza",
+            "percepcao",
+            "sobrevivencia"
+        ]
+    },
+    subclasses: [
+        {
+            valor: "cacador",
+            nome: "Caçador"
+        },
+        {
+            valor: "senhorFeras",
+            nome: "Senhor das Feras"
+        },
+        {
+            valor: "andarilhoFeerico",
+            nome: "Andarilho Feérico"
+        },
+        {
+            valor: "perseguidorSombrio",
+            nome: "Perseguidor Sombrio"
+        }
+    ],
+    conjuracao: {
+        atributo: "sabedoria",
+        tipo: "meio"
+    },
+    nomeNaApi: "ranger",
+    trocaDeMagias: {
+        descansoLongo: {
+            magias: 1
+        },
+        nivel: {}
+    }
+})

@@ -151,14 +151,14 @@ Ideias que não travam nenhum sprint específico, mas que precisam entrar em alg
 - **IDEIA03: Cobertura mínima do livro oficial.** Estabelecer como meta que raças, sub-raças, classes e subclasses cubram pelo menos o conteúdo do livro base oficial, antes de qualquer expansão ou homebrew. Serve de critério de "pronto" para IDEIA01 e IDEIA02.
 - **IDEIA04: Criar a própria raça (homebrew).** Permitir que o jogador defina uma raça própria em vez de escolher da lista: nome, deslocamento, traços passivos (texto livre) e perícias/idiomas concedidos. Nas regras 2024 a raça não dá bônus de atributo, então a raça personalizada não afeta a distribuição +2/+1 ou +1/+1/+1 da seção 3.1. Depende de IDEIA03 estar fechada, para que o conteúdo oficial e o homebrew fiquem distinguíveis no select (ver item correspondente na seção 3).
 - **IDEIA05: Cadeado de edição na ficha.** Durante a sessão o jogador fica com a ficha aberta o tempo todo e pode alterar um campo sem querer — um clique no select de classe, uma rolagem do mouse sobre um campo numérico. Um botão de cadeado no topo da ficha alterna entre **travada** e **liberada**: travada, os campos ficam somente leitura; liberada, a ficha volta a ser editável. A ficha deve **abrir travada**, já que em jogo ler é o uso normal e editar é a exceção, e o estado deve ser lembrado por personagem. Atenção: campos que mudam durante o jogo (PV atuais, PV temporários, testes de morte, usos de recursos de classe) precisam continuar editáveis mesmo com o cadeado fechado. O cadeado protege a **construção** do personagem, não o estado dele em jogo.
-- **IDEIA06: Limite de 20 nos atributos e opção +2 que some ao ser usada.** Implementar depois do Sprint 5.
+- **IDEIA06: Limite de 20 nos atributos e opção +2 que some ao ser usada.** *(Feito no Sprint 5.5 — ver seção 3.9.)*
   - **Limite de 20** no valor total dos atributos (base + bônus) em três lugares: na **ficha**, no **wizard** e no **level up**.
   - **Distribuição de pontos:** quando o jogador escolher **+2** num atributo, a opção +2 **some** dos outros atributos, deixando claro que agora só dá para escolher +1. Vale para o bônus do antecedente (wizard e ficha) e para a Melhoria de Atributo do level up.
   - Pontos a decidir na implementação:
     - **Dádiva Épica (nível 19):** a regra de 2024 permite passar de 20, até 30. Hoje a ficha aceita valor base até 30 por causa dela. O limite de 20 precisa abrir essa exceção.
     - **Melhoria de Atributo:** +2 num atributo já fecha a escolha (+2 num atributo *ou* +1 em dois). Ao escolher +2, os outros atributos não têm mais opção nenhuma, e não só a de +2.
     - **Hoje:** o bônus do antecedente já trava os atributos restantes quando a distribuição fecha, e o level up já não oferece valores que passem de 20. O que falta é a opção +2 sumir no meio da escolha e o limite na ficha e no wizard.
-- **IDEIA07: Aviso para avançar no wizard.** Implementar depois do Sprint 5. Quando a etapa atual estiver completa, mostrar um **pop-up em forma de notificação** avisando que o jogador deve apertar **Próximo** ou **Enter** para ir à próxima etapa.
+- **IDEIA07: Aviso para avançar no wizard.** *(Feito no Sprint 5.5 — ver seção 3.9.)* Quando a etapa atual estiver completa, mostrar um **pop-up em forma de notificação** avisando que o jogador deve apertar **Próximo** ou **Enter** para ir à próxima etapa.
 
 ## 3.4 Level up dedicado (CONCLUÍDO — Sprint 4)
 
@@ -270,6 +270,79 @@ Limitações conhecidas:
 - Só as 339 magias do SRD estão na API.
 - Arcanas Místicas do Bruxo (6º ao 9º círculo) não são tratadas.
 
+## 3.9 Distribuição de atributos e aviso do wizard (CONCLUÍDO — Sprint 5.5)
+
+**IDEIA06 — opções que somem e teto de 20:**
+- Uma regra só para as duas distribuições: bônus do antecedente (+2/+1 ou +1/+1/+1) e Melhoria de Atributo (+2 ou +1/+1). Cada select mostra só os valores que ainda cabem numa forma válida; o resto **some** da lista.
+  - Antecedente: escolher +2 tira o +2 dos outros; com dois +1 escolhidos, o +2 também some (só sobra a forma +1/+1/+1).
+  - Melhoria de Atributo: +2 num atributo já fecha a escolha, então os outros ficam só com "—"; com um +1, o +2 some dos outros.
+  - O valor já escolhido nunca some: é por ele que o jogador desfaz a escolha.
+- **Teto de 20** no total (base + bônus):
+  - **wizard:** o array padrão (15 + 2 = 17) nunca chega lá, mas a regra vale igual;
+  - **ficha:** o bônus não oferece o que passaria de 20, e o valor base ganha limite, que a validação cobra ao salvar;
+  - **level up:** a Melhoria de Atributo já não oferecia o que passa de 20.
+- **Exceção da Dádiva Épica:** só o atributo que recebeu o +1 da dádiva vai até 30. O level up agora registra qual foi (`atributosAte30`). Ficha antiga com dádiva e sem esse registro libera todos os atributos até 30, para não travar.
+
+**IDEIA07 — aviso do wizard:**
+- Quando a etapa atual fica completa, aparece um aviso flutuante acima da barra: "Etapa completa! Aperte Próximo ou Enter para continuar." Na última etapa o texto manda salvar.
+- Aparece uma vez por etapa, some sozinho depois de 4 segundos e some também ao avançar.
+
+## 3.10 Fase 2 — login, banco de dados e conteúdo por conta (PLANEJADO, no final do projeto)
+
+**Decisão (19/09/2026):** o banco entra **no final**, quando o app estiver completo e for hospedado para a campanha. Não será criada antes uma camada de armazenamento (`armazenamento.js`), porque o site não será usado antes disso.
+- Custo aceito: no sprint do banco, cada página que lê e grava fichas (hoje `index.js`, `cadastro.js`, `ficha.js`, `levelup.js`, `magias.js`) precisará ser adaptada, porque o banco responde com espera (assíncrono) e o localStorage não.
+
+**Ordem decidida:** caminho B (Sprint 5.6) → Sprint 6 → Sprint 6.5 (RF13) → Sprint 7 → Sprint 8 → Fase 2a → Fase 2b → lançamento. O Sprint 6.5 fica depois dos recursos (várias habilidades gastam Moxie, Fúria, Ki) e antes do combate (que precisa saber o que cada nível dá, como Extra Attack). Ele cobre três mecânicas que aparecem tanto no Pugilista quanto nas classes oficiais: salvaguarda ganha por nível (Fancy Footwork; Monge no 14, Ladino no 15), atributo com teto maior (Peak Physical Condition; Bárbaro 2024 no 20) e magias concedidas pela subclasse (Hand of Dread; Domínios do Clérigo, Juramentos do Paladino). Para as classes oficiais, a API tem os nomes das habilidades por nível. O banco vem depois das funcionalidades para pegar o formato final da ficha. O **Sprint 9 foi juntado à Fase 2**: CRUD e duplicar ficha já feitos no banco; exportar ficha fica só como backup.
+
+**Como vai funcionar (o app pode virar público):**
+- **Cadastro aberto:** qualquer pessoa cria a conta e usa o app com o **conteúdo gratuito (SRD)**.
+- Cada pessoa vê **só as próprias fichas**, em qualquer aparelho.
+- **Permissão manual do mestre:** o dono do app (conta administradora) libera **pacotes de conteúdo** (Artífice, Pugilista e outros fora do SRD) para contas específicas — os amigos da campanha. Ex: só o jogador do Pugilista recebe essa classe; o público nem sabe que ela existe.
+  - Pela **tela de administração** (visível só para a conta administradora): cada conta ganha um perfil com o e-mail ao se cadastrar, e a tela lista os perfis com os pacotes para marcar.
+  - As **regras do banco** garantem que só a conta administradora altera permissões e que um pacote só é entregue a quem está liberado.
+- **Painel de mestre:** o dono vê as fichas dos amigos liberados.
+- O formato dos pacotes é o mesmo bloco de classe de `regras.js` / `conteudo-extra.js` (seção 3.11).
+- O site hospedado e o repositório no GitHub (que é **público**) ficam só com conteúdo SRD; os pacotes chegam depois do login.
+- **Segurança pelas regras do próprio serviço** (regras de segurança do Firebase / Row Level Security do Supabase), nunca só escondendo botões no JavaScript.
+- No primeiro login, botão para **enviar as fichas do navegador** para a conta.
+
+**Serviço sugerido:** Firebase (modo offline embutido para jogar sem internet e sincronizar depois; não pausa no plano gratuito). Supabase é alternativa, mas pelo que se sabia o plano gratuito pausa projetos parados por uma semana — conferir na hora.
+
+**Limites do plano gratuito do Firebase (Spark), conferidos em 19/09/2026:** 50 mil leituras e 20 mil gravações por dia, 1 GiB no banco, 50 mil usuários ativos por mês com login por e-mail, hospedagem com 10 GB e 360 MB de tráfego por dia. Estimativa: centenas a mil e poucas sessões por dia sem custo.
+- **Plano gratuito:** passou do limite, o recurso para até o dia seguinte; nunca cobra. **Lançar nele.**
+- **Plano pago (Blaze):** mesma cota grátis e cobrança só do excedente, mas **sem teto de gasto automático** — só alerta de orçamento. Se um dia precisar: alerta de orçamento + **App Check** (só o próprio site usa o banco).
+- **Dependência externa:** a API de magias é projeto da comunidade, sem garantia de ficar no ar. Para o app público, decidir na Fase 2 se as magias passam a ser baixadas para dentro do app.
+- Se for público: **termos de uso** e canal para remover conteúdo que alguém reclamar.
+
+**Sprints previstos:** Fase 2a (Firebase, login, fichas no banco com migração) e Fase 2b (permissões, tela de administração e painel de mestre) — ver tabela da seção 5.
+
+**Enquanto isso:** conteúdo fora do SRD não pode ir para o repositório público.
+
+## 3.11 Um bloco por classe e conteúdo extra local (Sprint 5.6 — caminho B)
+
+**Por quê:** acrescentar o Artífice e o Pugilista agora, para que cada sprint seguinte (recursos, combate, habilidades por nível) já inclua as duas classes. Como o repositório no GitHub é **público**, esse conteúdo (pago ou de terceiros) não pode ir para o código versionado.
+
+**Feito:**
+- **Um bloco por classe** em `regras.js`, com `registrarClasse`. Adicionar uma classe = um bloco; o resto do código não muda. As 8 tabelas antigas (subclasses, perícias, dado de vida, níveis de escolha, salvaguardas, conjuração, nome na API, troca de magias) continuam existindo e são preenchidas pelos blocos. Conferido que nenhum dado mudou na conversão.
+- O **select de classe** do wizard e da ficha é montado a partir dos blocos, em ordem alfabética.
+- **`conteudo-extra.js`**: arquivo opcional, carregado logo depois de `regras.js`, listado no **`.gitignore`** (nunca vai para o GitHub). O formato está em `conteudo-extra.exemplo.js`, que vai para o git. Sem ele o app funciona só com o conteúdo gratuito.
+- Classe que conjura e não existe na API de magias mostra um aviso na aba de magias, até ganhar lista local.
+
+**Pugilista (feito, só em `conteudo-extra.js`):** dado de vida, salvaguardas, perícias, os 7 Fight Clubs e Melhoria de Atributo no padrão; não conjura. O arquivo também guarda, em formato provisório, o que os próximos sprints vão usar: Moxie por nível (Sprint 6), dado de Fisticuffs e CA do Iron Chin (Sprint 7) e habilidades por nível (RF13). Regras que mexem no que já existe, para tratar quando chegar a hora:
+- Fancy Footwork (nível 7): salvaguarda de Destreza extra, e hoje as salvaguardas são fixas desde o nível 1;
+- Peak Physical Condition (nível 20): Força e Constituição +2 com teto 22;
+- Hand of Dread: truques usando Constituição, e hoje subclasse não dá magias.
+
+**Artífice (feito, só em `conteudo-extra.js`), versão 2014 / Tasha's Cauldron of Everything:**
+- d8, salvaguardas de Constituição e Inteligência, 2 perícias, os 4 especialistas (Alquimista, Armeiro, Artilheiro, Ferreiro de Batalha), Melhoria de Atributo no padrão.
+- Meio conjurador de Inteligência: a tabela de espaços do livro é idêntica à de meio conjurador do app (conferido nos 20 níveis).
+- Troca: a lista inteira de preparadas no descanso longo; 1 truque ao subir de nível.
+- **Magias locais** (novo no app, serve para qualquer classe fora da API): o bloco da classe traz `magiasLocais` com truques por nível, a regra de preparadas (Inteligência + metade do nível, mínimo 1) e a lista de magias. A aba de magias usa isso no lugar da API para a lista e os limites.
+  - 71 magias da lista existem na API e aparecem com descrição.
+  - 24 não existem (Xanathar's e Tasha's, fora do conteúdo gratuito): aparecem para equipar com nome, círculo e concentração, e o detalhe manda consultar o livro. Esses dados e a própria lista do Artífice foram escritos de memória: **conferir no livro**.
+- Guardado para os próximos sprints: Flash of Genius (Sprint 6), infusões conhecidas e itens infundidos por nível, habilidades por nível (RF13).
+- Não incluídos: os especialistas de Unearthed Arcana (Archivist e o Armorer antigo), que eram material de teste.
+
 ---
 
 ## 4. Backlog do Produto (ordenado por prioridade e dependência)
@@ -307,10 +380,15 @@ Escrito como histórias de usuário, do jeito Scrum — cada uma vira uma entreg
 | Sprint 4 | Level up dedicado (seção 3.4) | 8 | concluída (magias no level up vão para o Sprint 5) |
 | Sprint 5a | Magias em jogo: espaços de magia, CD e ataque mágico, concentração, descanso | 9, 10 (parte) | concluída (ver seção 3.7) |
 | Sprint 5b | Aba de magias: lista pela API, limites, equipar, troca (2024), coluna do level up | 9, 10 (parte) | concluída (ver seção 3.8) |
-| Sprint 5.5 | Ajustes de distribuição de atributos e aviso do wizard (IDEIA06, IDEIA07) | — | próxima |
+| Sprint 5.5 | Ajustes de distribuição de atributos e aviso do wizard (IDEIA06, IDEIA07) | — | concluída (ver seção 3.9) |
+| Sprint 5.6 | Um bloco por classe e conteúdo extra local, fora do git (Artífice, Pugilista) | — | em andamento (ver seção 3.11) |
 | Sprint 6 | Recursos de classe | 11 | |
+| Sprint 6.5 | Habilidades por nível (RF13): o que cada nível e subclasse traz, salvaguarda ganha por nível, atributo com teto maior, magias concedidas pela subclasse | — | |
 | Sprint 7 | Combate | 12 | |
 | Sprint 8 | Inventário | 13 | |
-| Sprint 9 | Gestão avançada de fichas | 14, 15 | |
+| ~~Sprint 9~~ | ~~Gestão avançada de fichas~~ — juntado à Fase 2 (seção 3.10) | 14, 15 | |
+| Fase 2a | Login e fichas no banco: cadastro aberto, CRUD e duplicar ficha no banco, migração do navegador | 14, 15 | |
+| Fase 2b | Permissões e administração: pacotes liberados por conta, painel de mestre, exportar ficha como backup | — | |
+| Lançamento | Hospedar, alerta de uso do Firebase, termos de uso se for público | — | |
 
 Cada sprint deve terminar com algo **funcionando de ponta a ponta**, mesmo que simples — é melhor ter "PV calcula certo, mas sem animação bonita" do que travar tentando fazer tudo perfeito de uma vez. Isso também deixa espaço pra mudança: se no meio do Sprint 3 você perceber que quer inverter a ordem com Magias, tudo bem, é revisão de backlog, não quebra de processo.

@@ -11,6 +11,10 @@ const listaSalvaguardasEL = document.getElementById("lista-salvaguardas")
 const racaEL = document.getElementById("raca")
 const subracaEL = document.getElementById("subraca")
 
+// as classes vêm dos blocos de regras.js e de conteudo-extra.js, se existir:
+// classe nova aparece no wizard e na ficha sem mexer no HTML
+preencherSelect(classeEL, listaDeClasses(), "")
+
 /* ---------- Bonus do antecedente ---------- */
 
 // le os seis selects e devolve { forca: 2, destreza: 1, ... }
@@ -52,15 +56,44 @@ function mostrarStatusBonus() {
     statusBonusEL.className = "status-bonus status-erro"
 }
 
-// com a distribuicao fechada, quem ficou sem bonus trava.
-// quem ja tem bonus continua liberado: eh por ali que o jogador desfaz a escolha.
-function atualizarTravaBonus() {
+// atributos que a Dádiva Épica deixou passar de 20; a ficha preenche ao carregar
+let atributosAte30 = []
+
+// IDEIA06: cada select de bônus só mostra o que ainda cabe numa forma válida
+// (+2/+1 ou +1/+1/+1) e não estoura o teto do atributo. Usar o +2 tira o +2
+// dos outros; com a distribuição fechada, os outros ficam só com "—" e travam.
+// Quem já tem bônus continua liberado: é por ali que o jogador desfaz a escolha.
+function atualizarOpcoesBonus() {
     const bonus = lerBonus()
-    const distribuicaoFechada = bonusValido()
 
     ATRIBUTOS.forEach(function(atributo) {
         const selectEL = document.getElementById(`bonus-${atributo}`)
-        selectEL.disabled = distribuicaoFechada && bonus[atributo] === 0
+        const campoBaseEL = document.getElementById(atributo)
+        const teto = tetoDoAtributo(atributo, atributosAte30)
+
+        // no wizard o valor base pode estar vazio: ainda não há o que limitar
+        const base = campoBaseEL.value === "" ? 0 : Number(campoBaseEL.value)
+        const permitidos = valoresPermitidos(
+            bonus,
+            atributo,
+            FORMAS_BONUS_ANTECEDENTE,
+            teto - base
+        )
+
+        Array.from(selectEL.options).forEach(function(opcao) {
+            const valor = Number(opcao.value)
+            // o valor escolhido nunca some, senão o select mostraria outra coisa
+            const some = !permitidos.includes(valor) && valor !== bonus[atributo]
+            opcao.hidden = some
+            opcao.disabled = some
+        })
+
+        selectEL.disabled = permitidos.length === 1 && bonus[atributo] === 0
+
+        // na ficha o valor base é digitado: o teto entra na validação ao salvar
+        if (campoBaseEL.tagName === "INPUT") {
+            campoBaseEL.max = teto - bonus[atributo]
+        }
     })
 }
 
@@ -443,6 +476,8 @@ function atualizarConjuracao() {
 // Tudo que e derivado sai daqui. Bloco novo entra nesta funcao e passa a
 // reagir a qualquer mudanca, sem precisar ser ligado em cada evento.
 function recalcularDerivados() {
+    // base e bônus mudam o que cada atributo ainda pode receber
+    atualizarOpcoesBonus()
     atualizarModificadores()
     atualizarProficiencia()
     atualizarPericias()
@@ -459,7 +494,6 @@ ATRIBUTOS.forEach(function(atributo) {
         .getElementById(`bonus-${atributo}`)
         .addEventListener("change", function() {
             mostrarStatusBonus()
-            atualizarTravaBonus()
             recalcularDerivados()
         })
 

@@ -75,6 +75,7 @@ btnProximo.addEventListener("click", function() {
     }
 
     etapa.disabled = false
+    esconderAvisoEtapa()
     focarPrimeiroCampo(etapa)
     proximaEtapa++
 
@@ -84,6 +85,74 @@ btnProximo.addEventListener("click", function() {
         btnSalvar.disabled = false
     }
 })
+
+/* ---------- IDEIA07: aviso para avançar ---------- */
+
+const avisoEtapaEL = document.getElementById("aviso-etapa")
+
+// quanto tempo o aviso fica na tela
+const TEMPO_AVISO_MS = 4000
+
+// cada etapa avisa uma vez só, para não piscar a cada tecla
+let etapaAvisada = 0
+let timerAviso = null
+
+// mesma regra de etapaValida, mas sem balões nem mensagens: só responde
+function etapaCompleta(numeroEtapa) {
+    if (numeroEtapa === ETAPA_BONUS) {
+        return bonusValido()
+    }
+
+    if (numeroEtapa === ETAPA_PERICIAS) {
+        return periciasCompletas()
+    }
+
+    const etapa = document.getElementById(`etapa-${numeroEtapa}`)
+
+    if (etapa === null) {
+        return false
+    }
+
+    return Array.from(etapa.querySelectorAll("input, select")).every(function(campo) {
+        return campo.checkValidity()
+    })
+}
+
+function esconderAvisoEtapa() {
+    clearTimeout(timerAviso)
+    avisoEtapaEL.hidden = true
+}
+
+function mostrarAvisoEtapa(texto) {
+    avisoEtapaEL.textContent = texto
+    avisoEtapaEL.hidden = false
+
+    clearTimeout(timerAviso)
+    timerAviso = setTimeout(esconderAvisoEtapa, TEMPO_AVISO_MS)
+}
+
+function verificarEtapaCompleta() {
+    const etapaAtual = proximaEtapa - 1
+
+    if (etapaAvisada === etapaAtual || !etapaCompleta(etapaAtual)) {
+        return
+    }
+
+    etapaAvisada = etapaAtual
+
+    // depois da última etapa não há Próximo: o que resta é salvar
+    const ultima = proximaEtapa > TOTAL_ETAPAS
+
+    mostrarAvisoEtapa(
+        ultima
+            ? "Tudo pronto! Aperte Salvar Personagem ou Enter para criar a ficha."
+            : "Etapa completa! Aperte Próximo ou Enter para continuar."
+    )
+}
+
+// os campos atualizam o estado primeiro; o evento chega no formulário depois
+formFicha.addEventListener("input", verificarEtapaCompleta)
+formFicha.addEventListener("change", verificarEtapaCompleta)
 
 // Enter avança a etapa em vez de enviar o formulario
 formFicha.addEventListener("keydown", function(evento) {

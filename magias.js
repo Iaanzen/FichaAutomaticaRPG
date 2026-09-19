@@ -89,29 +89,72 @@ async function consultar(consulta) {
     return dados.data
 }
 
+// campos da lista, sem descrição: assim a aba abre rápido.
+// A descrição vem depois, magia por magia.
+const CAMPOS_DA_LISTA = "index name level concentration ritual school { name }"
+
+// magia da lista local que não existe na API, no mesmo formato das outras
+function magiaForaDaApi(magia) {
+    return {
+        index: magia.valor,
+        name: magia.nome,
+        level: magia.circulo,
+        concentration: magia.concentracao,
+        ritual: magia.ritual,
+        school: { name: magia.escola },
+        foraDaApi: true
+    }
+}
+
 async function buscarMagias() {
-    const classeApi = classeNaApi(personagem.classe)
+    const locais = magiasLocaisDaClasse(personagem.classe)
+    let lista
 
-    // uma requisição só traz a lista inteira da classe, sem descrição:
-    // assim a aba abre rápido. A descrição vem depois, magia por magia.
-    const dados = await consultar(`{
-        spells(class: "${classeApi}", limit: 400) {
-            index
-            name
-            level
-            concentration
-            ritual
-            school { name }
-        }
-    }`)
+    if (locais) {
+        // classe fora da API: pede todas as magias e fica só com as da lista local
+        const dados = await consultar(`{ spells(limit: 400) { ${CAMPOS_DA_LISTA} } }`)
 
-    return dados.spells.slice().sort(function (a, b) {
+        lista = dados.spells
+            .filter(function (magia) {
+                return locais.daApi.includes(magia.index)
+            })
+            .concat((locais.foraDaApi || []).map(magiaForaDaApi))
+    } else {
+        // uma requisição só traz a lista inteira da classe
+        const classeApi = classeNaApi(personagem.classe)
+        const dados = await consultar(
+            `{ spells(class: "${classeApi}", limit: 400) { ${CAMPOS_DA_LISTA} } }`
+        )
+
+        lista = dados.spells
+    }
+
+    return lista.slice().sort(function (a, b) {
         return a.level - b.level || a.name.localeCompare(b.name)
     })
 }
 
+// total do atributo, já contando o bônus do antecedente
+function totalDoAtributo(atributo) {
+    const bonus = (personagem.bonusAntecedente || {})[atributo] || 0
+    return personagem[atributo] + bonus
+}
+
 // RF29: a tabela de cada classe diz quantos truques e magias preparadas cabem
 async function buscarLimites() {
+    const locais = magiasLocaisDaClasse(personagem.classe)
+
+    // classe fora da API: truques pela tabela local, preparadas pela regra dela
+    if (locais) {
+        const atributo = locais.preparadas.atributo
+
+        return limitesDeMagiasLocais(
+            locais,
+            personagem.nivel,
+            modificadorDe(totalDoAtributo(atributo))
+        )
+    }
+
     const classeApi = classeNaApi(personagem.classe)
     const resposta = await fetch(
         `${API_BASE}/api/2024/classes/${classeApi}/levels/${personagem.nivel}`
@@ -131,6 +174,22 @@ async function buscarLimites() {
 
 async function buscarDetalhe(valor) {
     if (detalhes[valor]) {
+        return detalhes[valor]
+    }
+
+    // magia que a API não tem: mostra o que a lista local sabe e manda ao livro
+    const daLista = magias.find(function (magia) {
+        return magia.index === valor
+    })
+
+    if (daLista && daLista.foraDaApi) {
+        detalhes[valor] = Object.assign({}, daLista, {
+            casting_time: "—",
+            range: "—",
+            duration: "—",
+            components: [],
+            description: "Magia fora do conteúdo gratuito da API: consulte o livro para a descrição completa."
+        })
         return detalhes[valor]
     }
 
@@ -572,6 +631,17 @@ if (!personagem) {
     mensagemErroEL.innerHTML =
         `Esta classe não conjura magias. <a href="ficha.html?id=${personagem.id}">Voltar à ficha</a>`
     mensagemErroEL.style.display = "block"
+} else if (
+    classeNaApi(personagem.classe) === null &&
+    magiasLocaisDaClasse(personagem.classe) === null
+) {
+    // classe fora da API (ex: conteúdo extra) ainda sem lista local de magias
+    telaEL.style.display = "none"
+    mensagemErroEL.innerHTML =
+        `As magias de ${nomeDaClasse(personagem.classe)} ainda não estão disponíveis: ` +
+        `a classe não existe na API de magias e a lista local dela ainda não foi feita. ` +
+        `<a href="ficha.html?id=${personagem.id}">Voltar à ficha</a>`
+    mensagemErroEL.style.display = "block"
 } else {
     document.title = `${personagem.nome} - Magias`
 
@@ -580,7 +650,7 @@ if (!personagem) {
 
     document.getElementById("nome-personagem").textContent = personagem.nome
     document.getElementById("classe-personagem").textContent =
-        `${personagem.classe} · nível ${personagem.nivel}`
+        `${nomeDaClasse(personagem.classe)} · nível ${personagem.nivel}`
     document.getElementById("circulo-maximo").textContent =
         nomeDoCirculo(circuloMaximo())
 

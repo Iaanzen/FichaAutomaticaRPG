@@ -261,6 +261,29 @@ function montarGradeAsi() {
     })
 }
 
+// IDEIA06: +2 num atributo fecha a Melhoria, então os outros ficam só com "—";
+// com um +1 escolhido, o +2 some dos outros (a forma passa a ser +1/+1)
+function atualizarOpcoesAsi() {
+    ATRIBUTOS.forEach(function (atributo) {
+        const selectEL = document.getElementById(`asi-${atributo}`)
+        const permitidos = valoresPermitidos(
+            melhoria,
+            atributo,
+            FORMAS_MELHORIA_ATRIBUTO,
+            ATRIBUTO_MAXIMO - totalAtual(atributo)
+        )
+
+        Array.from(selectEL.options).forEach(function (opcao) {
+            const valor = Number(opcao.value)
+            const some = !permitidos.includes(valor) && valor !== melhoria[atributo]
+            opcao.hidden = some
+            opcao.disabled = some
+        })
+
+        selectEL.disabled = permitidos.length === 1 && melhoria[atributo] === 0
+    })
+}
+
 function atualizarStatusAsi() {
     const statusEL = document.getElementById("status-asi")
 
@@ -406,6 +429,7 @@ function atualizarTela() {
     colunaTalentoEL.classList.toggle("coluna-apagada", escolhaAtual === "asi")
 
     montarGanhos()
+    atualizarOpcoesAsi()
     atualizarStatusAsi()
 
     document.querySelectorAll("#lista-talentos .talento").forEach(function (item) {
@@ -470,6 +494,13 @@ function confirmarNivel() {
 
     if (aplicarDadiva) {
         personagem[atributoDadiva] += 1
+
+        // IDEIA06: só este atributo pode passar de 20 na ficha
+        const ate30 = personagem.atributosAte30 || []
+
+        if (!ate30.includes(atributoDadiva)) {
+            personagem.atributosAte30 = ate30.concat(atributoDadiva)
+        }
     }
 
     if (escolheuSubclasse) {
@@ -514,7 +545,7 @@ if (!personagem) {
 
     document.getElementById("nome-personagem").textContent = personagem.nome
     document.getElementById("classe-personagem").textContent =
-        personagem.classe
+        nomeDaClasse(personagem.classe)
     document.getElementById("nivel-atual").textContent = personagem.nivel
     document.getElementById("nivel-novo").textContent = nivelNovo()
 
