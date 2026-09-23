@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="cadastro.css" />
   </head>
   <body class="tem-barra-fixa">
+    <span id="barra-conta" class="conta-topo"></span>
     <a href="index.html" class="link-voltar">← Voltar ao menu</a>
 
     <form id="form-personagem" class="ficha">
@@ -347,10 +348,16 @@
       </footer>
     </form>
 
+    <script src="https://www.gstatic.com/firebasejs/12.14.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.14.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="auth.js"></script>
     <script src="regras.js"></script>
     <!-- conteúdo fora do SRD, só local (fora do git); se não existir, o navegador só registra um aviso -->
     <script src="conteudo-extra.js"></script>
     <script src="ficha-comum.js"></script>
+    <script src="armazenamento.js"></script>
     <script src="cadastro.js"></script>
   </body>
 </html>

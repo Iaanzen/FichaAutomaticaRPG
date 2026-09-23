@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Entrar - Forja de Criação</title>
+    <link rel="stylesheet" href="cadastro.css" />
+  </head>
+  <body>
+    <div class="ficha ficha-estreita">
+      <h1 class="ficha-titulo">Forja de Criação</h1>
+
+      <p class="explicacao" id="explicacao-login">
+        Entre com a sua conta para ver os seus personagens. Eles ficam ligados
+        à conta, então você abre a mesma ficha em qualquer aparelho.
+      </p>
+
+      <form id="form-login">
+        <div class="campo">
+          <input
+            type="email"
+            id="email"
+            autocomplete="email"
+            placeholder="voce@exemplo.com"
+            required
+          />
+          <span class="rotulo">E-mail</span>
+        </div>
+
+        <div class="campo">
+          <input
+            type="password"
+            id="senha"
+            autocomplete="current-password"
+            minlength="6"
+            placeholder="pelo menos 6 caracteres"
+            required
+          />
+          <span class="rotulo">Senha</span>
+        </div>
+
+        <p class="status-bonus" id="status-login"></p>
+
+        <button type="submit" id="btn-principal">Entrar</button>
+      </form>
+
+      <div class="acoes-login">
+        <button type="button" class="botao-texto" id="btn-alternar">
+          Não tem conta? Criar uma
+        </button>
+        <button type="button" class="botao-texto" id="btn-esqueci">
+          Esqueci minha senha
+        </button>
+      </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/12.14.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.14.0/firebase-auth-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="auth.js"></script>
+    <script src="login.js"></script>
+  </body>
+</html>

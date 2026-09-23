@@ -314,6 +314,43 @@ Limitações conhecidas:
 - **Dependência externa:** a API de magias é projeto da comunidade, sem garantia de ficar no ar. Para o app público, decidir na Fase 2 se as magias passam a ser baixadas para dentro do app.
 - Se for público: **termos de uso** e canal para remover conteúdo que alguém reclamar.
 
+**Decisao (23/09/2026): o app vai ser PUBLICO, com login por pessoa.** Confirma o cadastro aberto, cada conta vendo so as proprias fichas, e mantem a Fase 2b inteira (pacotes por conta, tela de administracao, painel de mestre).
+
+**Etapa 0 (feita, 23/09/2026) — camada de armazenamento, ainda sem banco.**
+
+O problema nao era a quantidade de chamadas (eram 10, em 5 arquivos), era a forma: cada pagina lia as fichas na primeira linha do script, de modo instantaneo, e o resto do arquivo rodava logo abaixo contando com os dados prontos. Banco responde com espera. Por isso a conversao veio primeiro, ainda em localStorage, onde da para testar contra o comportamento que ja funcionava.
+
+- **`armazenamento.js`**: o unico arquivo do app que sabe onde as fichas ficam. API `carregarFichas`, `carregarFicha`, `gravarFicha`, `excluirFicha`, `novoId` e `mesmoId`. Na etapa 2, so a implementacao daqui muda.
+- **Tudo devolve Promise**, mesmo agora que a resposta e imediata.
+- **O id virou texto opaco.** O Firestore usa id de documento em texto, e as paginas faziam `Number(parametros.get("id"))` com comparacao por `===`. Se isso ficasse para depois, na troca do banco as buscas por id falhariam em silencio — o personagem simplesmente "nao seria encontrado". Ficha antiga com id numerico e convertida na leitura.
+- **Uma ficha por gravacao** (`gravarFicha`), em vez de reescrever a lista inteira: e o formato que o banco usa (um documento por ficha).
+- Cada pagina agora tem `function iniciar()` chamada por `Armazenamento.carregarFicha(...).then(...)`. `ficha.js` ganhou `salvarESair()`, porque sair da pagina passou a depender da gravacao ter terminado.
+- Testes: 21 suites de regra pura nao mudaram; as 5 que rodam paginas de verdade (`testar-teto`, `testar-artifice`, `testar-magias-subclasse`, `testar-multiclasse-levelup`, `testar-multiclasse-magias`) passaram a esperar a carga.
+
+**Etapa 1 (feita, 23/09/2026) — login.** Projeto `forja-criacao` no Firebase, Authentication por e-mail e senha, Firestore em `southamerica-east1`.
+
+- `firebase-config.js` (a configuracao e publica por natureza: identifica o projeto, nao da acesso), `auth.js`, `login.html` e `login.js`.
+- Cadastro aberto, com criar conta, entrar, sair e recuperar senha. As mensagens de erro do Firebase, que vem em ingles com codigo tecnico, sao traduzidas em `Auth.RECADOS`.
+- `Auth.protegerPagina()` nas cinco paginas internas, antes de qualquer carga. A pagina fica invisivel ate o Firebase responder, senao o conteudo pisca antes do redirecionamento.
+- **Decisao: arquivos `compat` do Firebase (versao 12.14.0).** O SDK moderno e ESM e exigiria um passo de build; o projeto inteiro e `<script>` classico sem build, e quebrar isso por causa do login seria uma troca ruim.
+- **Nesta etapa as fichas continuaram locais, de proposito:** login e dados sao dois problemas, e misturar os dois e a receita para nao saber qual quebrou.
+- Exige servidor local para testar (`python -m http.server 8000`): o login do Firebase nao funciona em `file://`.
+
+**Etapa 2 (feita, 23/09/2026) — fichas no Firestore.** So `armazenamento.js` mudou; as cinco paginas nao foram tocadas, que era o objetivo da etapa 0.
+
+- Colecao `fichas`, um documento por ficha, campo `dono` com o uid. O id agora e o do documento, nao fica dentro dos dados.
+- `firestore.rules` no repositorio e publicado no console: ler/alterar/apagar so o dono; criar so em nome de si mesmo (sem essa linha, alguem conectado poderia criar ficha marcada como de outra pessoa).
+- Persistencia offline ligada (`enablePersistence`), que e o que faz o app funcionar na mesa quando a rede do lugar cai. Falha com varias abas abertas; a segunda aba segue online e o codigo so registra aviso.
+- Limpeza por JSON antes de gravar: o Firestore recusa `undefined`, e a ficha tem varios campos que podem estar assim.
+
+**Etapa 3 (feita, 23/09/2026) — migracao.** Botao no `index.html` que aparece so quando ainda ha fichas no navegador. **Nao apaga nada antes da hora:** o navegador so e esquecido depois que o envio deu certo.
+
+**Testes:** as 5 suites que rodam paginas de verdade passaram a simular o `Armazenamento` inteiro, em vez do `localStorage`. E mais correto: as paginas so conhecem essa API, e o Firestore nao tem por que entrar em teste de regra. As 24 suites passam.
+
+**Fase 2a concluida.** Falta a Fase 2b (pacotes de conteudo por conta, tela de administracao, painel de mestre) e o lancamento (hospedagem, alerta de orcamento, termos de uso).
+
+**Em aberto:** decidir se as magias passam a ser baixadas para dentro do app. Hoje a aba depende de um projeto da comunidade estar no ar; com o site publico, uma queda dele deixa a aba inutil para todos ao mesmo tempo.
+
 **Sprints previstos:** Fase 2a (Firebase, login, fichas no banco com migração) e Fase 2b (permissões, tela de administração e painel de mestre) — ver tabela da seção 5.
 
 **Enquanto isso:** conteúdo fora do SRD não pode ir para o repositório público.
@@ -553,7 +590,7 @@ Escrito como histórias de usuário, do jeito Scrum — cada uma vira uma entreg
 | Sprint 7 | Combate | 12 | concluída (ver seção 3.14) |
 | Sprint 8 | Inventário | 13 | concluída (ver seção 3.15) |
 | ~~Sprint 9~~ | ~~Gestão avançada de fichas~~ — juntado à Fase 2 (seção 3.10) | 14, 15 | |
-| Fase 2a | Login e fichas no banco: cadastro aberto, CRUD e duplicar ficha no banco, migração do navegador | 14, 15 | |
+| Fase 2a | Login e fichas no banco: cadastro aberto, CRUD e duplicar ficha no banco, migração do navegador | 14, 15 | concluída (ver seção 3.10) |
 | Fase 2b | Permissões e administração: pacotes liberados por conta, painel de mestre, exportar ficha como backup | — | |
 | Lançamento | Hospedar, alerta de uso do Firebase, termos de uso se for público | — | |
 

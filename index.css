@@ -161,3 +161,20 @@ a[href="cadastro.html"]:active {
     max-width: 600px;
     width: 100%;
 }
+/* Fase 2, etapa 1: esconde a lista até saber quem está conectado */
+html.verificando-login body {
+    visibility: hidden;
+}
+
+#barra-conta {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.conta-email {
+    font-size: 0.8rem;
+    font-style: italic;
+    opacity: 0.8;
+}

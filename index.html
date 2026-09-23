@@ -8,12 +8,27 @@
 </head>
 <body>
 
+  <div class="topo-pagina" id="barra-conta"></div>
+
   <h1>Meus Personagens</h1>
   <a href="cadastro.html">Criar Novo Personagem</a>
+
+  <!-- Etapa 3: aparece só se ainda houver fichas guardadas no navegador -->
+  <div id="bloco-migracao" hidden>
+    <p id="texto-migracao"></p>
+    <button type="button" id="btn-migrar">Enviar para a minha conta</button>
+    <button type="button" id="btn-dispensar-migracao">Agora não</button>
+  </div>
 
   <ul id="lista-personagens"></ul>
   <p id="mensagem-vazio">Nenhum personagem cadastrado.</p>
 
+  <script src="https://www.gstatic.com/firebasejs/12.14.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/12.14.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="auth.js"></script>
+  <script src="armazenamento.js"></script>
   <script src="index.js"></script>
 </body>
 </html>

@@ -15,13 +15,10 @@ const classeNovaEL = document.getElementById("classe-nova")
 const avisoClasseEL = document.getElementById("aviso-classe")
 
 const parametros = new URLSearchParams(window.location.search)
-const idDaUrl = Number(parametros.get("id"))
+const idDaUrl = parametros.get("id")
 
-const personagens = JSON.parse(localStorage.getItem("fichas")) || []
-
-const personagem = personagens.find(function (item) {
-    return item.id === idDaUrl
-})
+// vem do armazenamento, que responde com espera
+let personagem = null
 
 /* ---------- Estado da escolha ---------- */
 
@@ -37,11 +34,8 @@ ATRIBUTOS.forEach(function (atributo) {
 })
 
 // classes que o personagem já tem e qual delas recebe este nível
-const classes = personagem ? classesDoPersonagem(personagem).map(function (entrada) {
-    return Object.assign({}, entrada)
-}) : []
-
-let classeEmFoco = classes.length ? classes[0].classe : ""
+let classes = []
+let classeEmFoco = ""
 
 /* ---------- Multiclasse: a classe que sobe ---------- */
 
@@ -893,62 +887,84 @@ function confirmarNivel() {
         personagem.pvAtual === undefined ? pvAntes : personagem.pvAtual
     personagem.pvAtual = Math.min(pvDepois, pvAtual)
 
-    localStorage.setItem("fichas", JSON.stringify(personagens))
-    window.location.href = `ficha.html?id=${personagem.id}`
+    // só sai da página depois que o armazenamento confirmou a gravação
+    Armazenamento.gravarFicha(personagem).then(function () {
+        window.location.href = `ficha.html?id=${personagem.id}`
+    })
 }
 
 /* ---------- Início ---------- */
 
-if (!personagem) {
-    telaEL.style.display = "none"
-    mensagemErroEL.style.display = "block"
-} else if (nivelTotal(classes) >= NIVEL_MAXIMO) {
-    telaEL.style.display = "none"
-    mensagemErroEL.textContent = "Este personagem já está no nível 20."
-    mensagemErroEL.style.display = "block"
-} else {
-    document.title = `${personagem.nome} - Subir de Nível`
+function iniciar() {
+    if (!personagem) {
+        telaEL.style.display = "none"
+        mensagemErroEL.style.display = "block"
+    } else if (nivelTotal(classes) >= NIVEL_MAXIMO) {
+        telaEL.style.display = "none"
+        mensagemErroEL.textContent = "Este personagem já está no nível 20."
+        mensagemErroEL.style.display = "block"
+    } else {
+        document.title = `${personagem.nome} - Subir de Nível`
 
-    document.getElementById("nome-personagem").textContent = personagem.nome
-    document.getElementById("link-cancelar").href = `ficha.html?id=${personagem.id}`
+        document.getElementById("nome-personagem").textContent = personagem.nome
+        document.getElementById("link-cancelar").href = `ficha.html?id=${personagem.id}`
 
-    montarGradeAsi()
-    montarTalentos()
-    montarSubclasse()
-    montarMagiasDoNivel()
-    montarEscolhaDeClasse()
-    atualizarCabecalho()
+        montarGradeAsi()
+        montarTalentos()
+        montarSubclasse()
+        montarMagiasDoNivel()
+        montarEscolhaDeClasse()
+        atualizarCabecalho()
 
-    atributoDadivaEL.addEventListener("change", function () {
-        atributoDadiva = atributoDadivaEL.value
-        atualizarTela()
-    })
-
-    subclasseEL.addEventListener("change", atualizarTela)
-
-    // começar uma classe nova
-    classeNovaEL.addEventListener("change", function () {
-        if (classeNovaEL.value !== "") {
-            trocarClasse(classeNovaEL.value)
-        }
-    })
-
-    // clicar no título da coluna já escolhe aquele caminho
-    document.getElementById("escolher-asi").addEventListener("click", function () {
-        escolhaAtual = "asi"
-        atualizarTela()
-    })
-
-    document
-        .getElementById("escolher-talento")
-        .addEventListener("click", function () {
-            escolhaAtual = "talento"
+        atributoDadivaEL.addEventListener("change", function () {
+            atributoDadiva = atributoDadivaEL.value
             atualizarTela()
         })
 
-    document
-        .getElementById("btn-confirmar-nivel")
-        .addEventListener("click", confirmarNivel)
+        subclasseEL.addEventListener("change", atualizarTela)
 
-    atualizarTela()
+        // começar uma classe nova
+        classeNovaEL.addEventListener("change", function () {
+            if (classeNovaEL.value !== "") {
+                trocarClasse(classeNovaEL.value)
+            }
+        })
+
+        // clicar no título da coluna já escolhe aquele caminho
+        document.getElementById("escolher-asi").addEventListener("click", function () {
+            escolhaAtual = "asi"
+            atualizarTela()
+        })
+
+        document
+            .getElementById("escolher-talento")
+            .addEventListener("click", function () {
+                escolhaAtual = "talento"
+                atualizarTela()
+            })
+
+        document
+            .getElementById("btn-confirmar-nivel")
+            .addEventListener("click", confirmarNivel)
+
+        atualizarTela()
+    }
 }
+
+// sem conta, a guarda manda para o login antes de qualquer coisa
+Auth.protegerPagina()
+    .then(function () {
+        return Armazenamento.carregarFicha(idDaUrl)
+    })
+    .then(function (encontrada) {
+        personagem = encontrada
+
+        if (personagem) {
+            classes = classesDoPersonagem(personagem).map(function (entrada) {
+                return Object.assign({}, entrada)
+            })
+            classeEmFoco = classes.length ? classes[0].classe : ""
+        }
+
+        iniciar()
+    })

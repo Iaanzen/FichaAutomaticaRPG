@@ -12,13 +12,10 @@ const blocoSubclasseEL = document.getElementById("bloco-subclasse")
 
 // Descobre qual personagem abrir pelo "?id=" da URL
 const parametros = new URLSearchParams(window.location.search)
-const idDaUrl = Number(parametros.get("id"))
+const idDaUrl = parametros.get("id")
 
-const personagens = JSON.parse(localStorage.getItem("fichas")) || []
-
-const personagem = personagens.find(function (item) {
-    return item.id === idDaUrl
-})
+// vem do armazenamento, que responde com espera
+let personagem = null
 
 /* ---------- Sub-raça ---------- */
 
@@ -1801,236 +1798,256 @@ btnCadeadoEL.addEventListener("click", alternarCadeado)
 
 /* ---------- Carregar e salvar ---------- */
 
-if (!personagem) {
-    formFicha.style.display = "none"
-    mensagemErroEl.style.display = "block"
-} else {
-    document.title = personagem.nome + " - Ficha"
+function iniciar() {
+    if (!personagem) {
+        formFicha.style.display = "none"
+        mensagemErroEl.style.display = "block"
+    } else {
+        document.title = personagem.nome + " - Ficha"
 
-    document.getElementById("nome").value = personagem.nome
-    document.getElementById("nivel").value = personagem.nivel
-    document.getElementById("classe").value = personagem.classe
-    document.getElementById("raca").value = personagem.raca
-    document.getElementById("antecedente").value = personagem.antecedente
-    document.getElementById("alinhamento").value = personagem.alinhamento
-
-    ATRIBUTOS.forEach(function (atributo) {
-        document.getElementById(atributo).value = personagem[atributo]
-    })
-
-    // os selects dependentes so podem ser preenchidos depois de classe/raca
-    atualizarSubracas(personagem.subraca)
-    atualizarSubclasse(personagem.subclasse)
-
-    // IDEIA06: teto de 20, menos no atributo que ganhou a Dádiva Épica (até 30).
-    // Ficha antiga com dádiva e sem esse registro: libera todos, para não travar.
-    const temDadiva = (personagem.talentos || []).some(function (talento) {
-        return dadivaPorValor(talento) !== undefined
-    })
-    atributosAte30 = personagem.atributosAte30 || (temDadiva ? ATRIBUTOS.slice() : [])
-
-    escreverBonus(personagem.bonusAntecedente)
-    mostrarStatusBonus()
-    atualizarOpcoesBonus()
-    atualizarModificadores()
-    atualizarProficiencia()
-
-    // renderizarPericias roda dentro de escreverPericias
-    escreverPericias(personagem.pericias)
-
-    // multiclasse: a lista de classes manda em quase tudo (PV, espaços, recursos,
-    // habilidades). Ficha antiga vira lista de uma classe.
-    classesParaCalculo = classesDoPersonagem(personagem).map(function (entrada) {
-        return Object.assign({}, entrada)
-    })
-
-    const resumoEL = document.getElementById("resumo-classes")
-    resumoEL.hidden = classesParaCalculo.length < 2
-    resumoEL.textContent = `Classes: ${descreverClasses(classesParaCalculo)} (nível ${nivelTotal(classesParaCalculo)})`
-
-    // precisa vir antes do recálculo: o talento Robusto muda o PV máximo
-    talentosDoPersonagem = personagem.talentos || []
-    mostrarTalentos()
-
-    // ficha-comum.js montou tudo antes da classe e da raça serem preenchidas aqui
-    recalcularDerivados()
-
-    // o PV atual é do jogador, então vem do que foi salvo em vez de recalculado
-    if (personagem.pvAtual !== undefined) {
-        document.getElementById("pv-atual").value = personagem.pvAtual
-    }
-
-    document.getElementById("pv-temporario").value = personagem.pvTemporario || 0
-
-    dadosVidaGastos = normalizarDadosGastos(personagem.dadosVidaGastos, classesParaCalculo[0].classe)
-    atualizarDadosDeVida()
-
-    sucessosMorte = personagem.sucessosMorte || 0
-    falhasMorte = personagem.falhasMorte || 0
-    atualizarTestesDeMorte()
-
-    espacosGastos = personagem.espacosGastos || {}
-    atualizarEspacosDeMagia()
-
-    recursosGastos = personagem.recursosGastos || {}
-    atualizarRecursos()
-
-    atualizarHabilidades()
-
-    montarSelectDeArmaduras()
-    armaduraEL.value = personagem.armadura || ""
-    escudoEL.checked = personagem.escudo === true
-    atualizarDefesa()
-
-    montarSelectDeArmas()
-    armasDoPersonagem = (personagem.armas || []).slice()
-    atualizarAtaques()
-
-    escreverPersonalidade()
-
-    moedasDoPersonagem = Object.assign({}, personagem.moedas)
-    itensDoPersonagem = (personagem.itens || []).slice()
-    montarCamposDeMoedas()
-    atualizarTotalDeMoedas()
-    atualizarInventario()
-
-    montarSelectDeExaustao()
-    condicoesAtivas = (personagem.condicoes || []).slice()
-    // RF14: em branco quer dizer que a mesa joga por marco
-    xpEL.value = personagem.xp === undefined || personagem.xp === null ? "" : personagem.xp
-    atualizarXp()
-
-    // IDEIA05: a ficha abre travada, e o estado é lembrado por personagem
-    fichaTravada = personagem.fichaTravada !== false
-    aplicarCadeado()
-
-    nivelDeExaustao = personagem.exaustao || 0
-    exaustaoEL.value = nivelDeExaustao
-    atualizarCondicoes()
-
-    // antes da concentração: o tipo de terra decide magias da subclasse
-    opcaoMagiasSubclasse = personagem.opcaoMagiasSubclasse || ""
-
-    concentracaoAtual = personagem.concentracao || ""
-    montarOpcoesConcentracao()
-    atualizarConcentracao()
-
-    mostrarMagiasEquipadas()
-    trocasMagia = normalizarTrocas(personagem.trocasMagia, classesParaCalculo[0].classe)
-
-    // ponto de partida para medir dano; os PV já foram carregados acima
-    lembrarPv()
-
-    // o nível só muda por aqui (o campo na ficha é somente leitura),
-    // para ninguém pular a Melhoria de Atributo ou o Talento
-    const linkLevelupEL = document.getElementById("link-levelup")
-    linkLevelupEL.href = `levelup.html?id=${personagem.id}`
-    linkLevelupEL.hidden = personagem.nivel >= NIVEL_MAXIMO
-
-    // só quem conjura tem o que ver na aba de magias
-    const linkMagiasEL = document.getElementById("link-magias")
-    linkMagiasEL.href = `magias.html?id=${personagem.id}`
-    linkMagiasEL.hidden = conjuracaoDaClasse(personagem.classe) === null
-
-    // Grava a ficha no localStorage. Devolve false se algo impede salvar.
-    const salvarFicha = function () {
-        if (!bonusValido()) {
-            mostrarStatusBonus()
-            return false
-        }
-
-        if (!periciasCompletas()) {
-            atualizarPericias()
-            return false
-        }
-
-        // Sobrescreve os campos do personagem, mantendo o mesmo id
-        personagem.nome = document.getElementById("nome").value
-        personagem.raca = racaEL.value
-        personagem.subraca = subracaEL.value
-        personagem.classe = classeEL.value
-        personagem.subclasse = subclasseEL.value
-        personagem.nivel = Number(nivelEL.value)
-
-        // multiclasse: a lista manda; classe/nivel/subclasse acima ficam como
-        // espelho da classe inicial e do nível total, para o resto do app
-        if (classesParaCalculo.length === 1) {
-            classesParaCalculo[0].classe = classeEL.value
-            classesParaCalculo[0].nivel = Number(nivelEL.value)
-            classesParaCalculo[0].subclasse = subclasseEL.value
-        }
-
-        personagem.classes = classesParaCalculo
-        personagem.antecedente = document.getElementById("antecedente").value
-        personagem.alinhamento = document.getElementById("alinhamento").value
+        document.getElementById("nome").value = personagem.nome
+        document.getElementById("nivel").value = personagem.nivel
+        document.getElementById("classe").value = personagem.classe
+        document.getElementById("raca").value = personagem.raca
+        document.getElementById("antecedente").value = personagem.antecedente
+        document.getElementById("alinhamento").value = personagem.alinhamento
 
         ATRIBUTOS.forEach(function (atributo) {
-            personagem[atributo] = Number(document.getElementById(atributo).value)
+            document.getElementById(atributo).value = personagem[atributo]
         })
 
-        // recalcula em vez de reaproveitar o que estava salvo
-        const calculo = calcularAtributos()
-        personagem.bonusAntecedente = lerBonus()
-        personagem.atributosTotais = calculo.totais
-        personagem.modificadores = calculo.modificadores
-        personagem.pericias = lerPericias()
-        personagem.bonusProficiencia = bonusDeProficiencia(personagem.nivel)
-        // derivado da classe, mas salvo pra ficha poder ser lida sem recalcular
-        personagem.salvaguardas = salvaguardasDaClasse(personagem.classe, personagem.nivel)
+        // os selects dependentes so podem ser preenchidos depois de classe/raca
+        atualizarSubracas(personagem.subraca)
+        atualizarSubclasse(personagem.subclasse)
 
-        const dadosRaca = dadosDaRaca(personagem.raca, personagem.subraca)
-        personagem.deslocamento = dadosRaca ? dadosRaca.deslocamento : null
-        personagem.tracos = dadosRaca ? dadosRaca.tracos : []
-        personagem.idiomas = dadosRaca ? dadosRaca.idiomas : []
+        // IDEIA06: teto de 20, menos no atributo que ganhou a Dádiva Épica (até 30).
+        // Ficha antiga com dádiva e sem esse registro: libera todos, para não travar.
+        const temDadiva = (personagem.talentos || []).some(function (talento) {
+            return dadivaPorValor(talento) !== undefined
+        })
+        atributosAte30 = personagem.atributosAte30 || (temDadiva ? ATRIBUTOS.slice() : [])
 
-        personagem.pvMaximo = calcularPvMaximo()
-        personagem.pvAtual = Number(document.getElementById("pv-atual").value)
-        personagem.pvTemporario = Number(
-            document.getElementById("pv-temporario").value
-        )
-        personagem.dadosVidaGastos = dadosVidaGastos
-        personagem.sucessosMorte = sucessosMorte
-        personagem.falhasMorte = falhasMorte
-        // guarda só o que ainda existe na tabela da classe e do nível atuais
-        personagem.espacosGastos = espacosGastosValidos()
-        personagem.recursosGastos = recursosGastosValidos()
-        personagem.opcaoMagiasSubclasse = opcaoMagiasSubclasse
-        personagem.armadura = armaduraEL.value
-        personagem.escudo = escudoEL.checked
-        personagem.armas = armasDoPersonagem
-        personagem.condicoes = condicoesAtivas
-        personagem.exaustao = nivelDeExaustao
-        personagem.xp = xpDigitado()
-        personagem.fichaTravada = fichaTravada
-        personagem.moedas = moedasDoPersonagem
-        personagem.itens = itensDoPersonagem
-        lerPersonalidade()
-        // classe que não conjura não guarda concentração
-        personagem.concentracao =
-            conjuracaoDaClasse(personagem.classe) === null ? "" : concentracaoAtual
-        personagem.trocasMagia = trocasMagia
+        escreverBonus(personagem.bonusAntecedente)
+        mostrarStatusBonus()
+        atualizarOpcoesBonus()
+        atualizarModificadores()
+        atualizarProficiencia()
 
-        localStorage.setItem("fichas", JSON.stringify(personagens))
-        return true
-    }
+        // renderizarPericias roda dentro de escreverPericias
+        escreverPericias(personagem.pericias)
 
-    formFicha.addEventListener("submit", function (evento) {
-        evento.preventDefault()
+        // multiclasse: a lista de classes manda em quase tudo (PV, espaços, recursos,
+        // habilidades). Ficha antiga vira lista de uma classe.
+        classesParaCalculo = classesDoPersonagem(personagem).map(function (entrada) {
+            return Object.assign({}, entrada)
+        })
 
-        if (salvarFicha()) {
-            window.location.href = "index.html"
+        const resumoEL = document.getElementById("resumo-classes")
+        resumoEL.hidden = classesParaCalculo.length < 2
+        resumoEL.textContent = `Classes: ${descreverClasses(classesParaCalculo)} (nível ${nivelTotal(classesParaCalculo)})`
+
+        // precisa vir antes do recálculo: o talento Robusto muda o PV máximo
+        talentosDoPersonagem = personagem.talentos || []
+        mostrarTalentos()
+
+        // ficha-comum.js montou tudo antes da classe e da raça serem preenchidas aqui
+        recalcularDerivados()
+
+        // o PV atual é do jogador, então vem do que foi salvo em vez de recalculado
+        if (personagem.pvAtual !== undefined) {
+            document.getElementById("pv-atual").value = personagem.pvAtual
         }
-    })
 
-    // Magias e Subir de Nível salvam antes de sair: sem isso, o que foi feito
-    // na ficha (um descanso longo, por exemplo) se perdia na troca de página.
-    ;[linkMagiasEL, linkLevelupEL].forEach(function (link) {
-        link.addEventListener("click", function (evento) {
-            evento.preventDefault()
+        document.getElementById("pv-temporario").value = personagem.pvTemporario || 0
 
-            if (formFicha.reportValidity() && salvarFicha()) {
-                window.location.href = link.href
+        dadosVidaGastos = normalizarDadosGastos(personagem.dadosVidaGastos, classesParaCalculo[0].classe)
+        atualizarDadosDeVida()
+
+        sucessosMorte = personagem.sucessosMorte || 0
+        falhasMorte = personagem.falhasMorte || 0
+        atualizarTestesDeMorte()
+
+        espacosGastos = personagem.espacosGastos || {}
+        atualizarEspacosDeMagia()
+
+        recursosGastos = personagem.recursosGastos || {}
+        atualizarRecursos()
+
+        atualizarHabilidades()
+
+        montarSelectDeArmaduras()
+        armaduraEL.value = personagem.armadura || ""
+        escudoEL.checked = personagem.escudo === true
+        atualizarDefesa()
+
+        montarSelectDeArmas()
+        armasDoPersonagem = (personagem.armas || []).slice()
+        atualizarAtaques()
+
+        escreverPersonalidade()
+
+        moedasDoPersonagem = Object.assign({}, personagem.moedas)
+        itensDoPersonagem = (personagem.itens || []).slice()
+        montarCamposDeMoedas()
+        atualizarTotalDeMoedas()
+        atualizarInventario()
+
+        montarSelectDeExaustao()
+        condicoesAtivas = (personagem.condicoes || []).slice()
+        // RF14: em branco quer dizer que a mesa joga por marco
+        xpEL.value = personagem.xp === undefined || personagem.xp === null ? "" : personagem.xp
+        atualizarXp()
+
+        // IDEIA05: a ficha abre travada, e o estado é lembrado por personagem
+        fichaTravada = personagem.fichaTravada !== false
+        aplicarCadeado()
+
+        nivelDeExaustao = personagem.exaustao || 0
+        exaustaoEL.value = nivelDeExaustao
+        atualizarCondicoes()
+
+        // antes da concentração: o tipo de terra decide magias da subclasse
+        opcaoMagiasSubclasse = personagem.opcaoMagiasSubclasse || ""
+
+        concentracaoAtual = personagem.concentracao || ""
+        montarOpcoesConcentracao()
+        atualizarConcentracao()
+
+        mostrarMagiasEquipadas()
+        trocasMagia = normalizarTrocas(personagem.trocasMagia, classesParaCalculo[0].classe)
+
+        // ponto de partida para medir dano; os PV já foram carregados acima
+        lembrarPv()
+
+        // o nível só muda por aqui (o campo na ficha é somente leitura),
+        // para ninguém pular a Melhoria de Atributo ou o Talento
+        const linkLevelupEL = document.getElementById("link-levelup")
+        linkLevelupEL.href = `levelup.html?id=${personagem.id}`
+        linkLevelupEL.hidden = personagem.nivel >= NIVEL_MAXIMO
+
+        // só quem conjura tem o que ver na aba de magias
+        const linkMagiasEL = document.getElementById("link-magias")
+        linkMagiasEL.href = `magias.html?id=${personagem.id}`
+        linkMagiasEL.hidden = conjuracaoDaClasse(personagem.classe) === null
+
+        // Manda a ficha para o armazenamento e devolve a Promise da gravação.
+        // Devolve null se algo impede salvar.
+        const salvarFicha = function () {
+            if (!bonusValido()) {
+                mostrarStatusBonus()
+                return null
             }
+
+            if (!periciasCompletas()) {
+                atualizarPericias()
+                return null
+            }
+
+            // Sobrescreve os campos do personagem, mantendo o mesmo id
+            personagem.nome = document.getElementById("nome").value
+            personagem.raca = racaEL.value
+            personagem.subraca = subracaEL.value
+            personagem.classe = classeEL.value
+            personagem.subclasse = subclasseEL.value
+            personagem.nivel = Number(nivelEL.value)
+
+            // multiclasse: a lista manda; classe/nivel/subclasse acima ficam como
+            // espelho da classe inicial e do nível total, para o resto do app
+            if (classesParaCalculo.length === 1) {
+                classesParaCalculo[0].classe = classeEL.value
+                classesParaCalculo[0].nivel = Number(nivelEL.value)
+                classesParaCalculo[0].subclasse = subclasseEL.value
+            }
+
+            personagem.classes = classesParaCalculo
+            personagem.antecedente = document.getElementById("antecedente").value
+            personagem.alinhamento = document.getElementById("alinhamento").value
+
+            ATRIBUTOS.forEach(function (atributo) {
+                personagem[atributo] = Number(document.getElementById(atributo).value)
+            })
+
+            // recalcula em vez de reaproveitar o que estava salvo
+            const calculo = calcularAtributos()
+            personagem.bonusAntecedente = lerBonus()
+            personagem.atributosTotais = calculo.totais
+            personagem.modificadores = calculo.modificadores
+            personagem.pericias = lerPericias()
+            personagem.bonusProficiencia = bonusDeProficiencia(personagem.nivel)
+            // derivado da classe, mas salvo pra ficha poder ser lida sem recalcular
+            personagem.salvaguardas = salvaguardasDaClasse(personagem.classe, personagem.nivel)
+
+            const dadosRaca = dadosDaRaca(personagem.raca, personagem.subraca)
+            personagem.deslocamento = dadosRaca ? dadosRaca.deslocamento : null
+            personagem.tracos = dadosRaca ? dadosRaca.tracos : []
+            personagem.idiomas = dadosRaca ? dadosRaca.idiomas : []
+
+            personagem.pvMaximo = calcularPvMaximo()
+            personagem.pvAtual = Number(document.getElementById("pv-atual").value)
+            personagem.pvTemporario = Number(
+                document.getElementById("pv-temporario").value
+            )
+            personagem.dadosVidaGastos = dadosVidaGastos
+            personagem.sucessosMorte = sucessosMorte
+            personagem.falhasMorte = falhasMorte
+            // guarda só o que ainda existe na tabela da classe e do nível atuais
+            personagem.espacosGastos = espacosGastosValidos()
+            personagem.recursosGastos = recursosGastosValidos()
+            personagem.opcaoMagiasSubclasse = opcaoMagiasSubclasse
+            personagem.armadura = armaduraEL.value
+            personagem.escudo = escudoEL.checked
+            personagem.armas = armasDoPersonagem
+            personagem.condicoes = condicoesAtivas
+            personagem.exaustao = nivelDeExaustao
+            personagem.xp = xpDigitado()
+            personagem.fichaTravada = fichaTravada
+            personagem.moedas = moedasDoPersonagem
+            personagem.itens = itensDoPersonagem
+            lerPersonalidade()
+            // classe que não conjura não guarda concentração
+            personagem.concentracao =
+                conjuracaoDaClasse(personagem.classe) === null ? "" : concentracaoAtual
+            personagem.trocasMagia = trocasMagia
+
+            return Armazenamento.gravarFicha(personagem)
+        }
+
+        // só troca de página depois que o armazenamento confirmou
+        function salvarESair(destino) {
+            const gravacao = salvarFicha()
+
+            if (gravacao) {
+                gravacao.then(function () {
+                    window.location.href = destino
+                })
+            }
+        }
+
+        formFicha.addEventListener("submit", function (evento) {
+            evento.preventDefault()
+            salvarESair("index.html")
         })
-    })
+
+        // Magias e Subir de Nível salvam antes de sair: sem isso, o que foi feito
+        // na ficha (um descanso longo, por exemplo) se perdia na troca de página.
+        ;[linkMagiasEL, linkLevelupEL].forEach(function (link) {
+            link.addEventListener("click", function (evento) {
+                evento.preventDefault()
+
+                if (formFicha.reportValidity()) {
+                    salvarESair(link.href)
+                }
+            })
+        })
+    }
 }
+
+// sem conta, a guarda manda para o login antes de qualquer coisa
+Auth.protegerPagina()
+    .then(function () {
+        return Armazenamento.carregarFicha(idDaUrl)
+    })
+    .then(function (encontrada) {
+        personagem = encontrada
+        iniciar()
+    })

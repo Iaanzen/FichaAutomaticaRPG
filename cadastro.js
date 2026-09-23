@@ -1,5 +1,8 @@
 const formFicha = document.getElementById("form-personagem");
 
+// sem conta, a guarda manda para o login
+Auth.protegerPagina()
+
 
 // As tabelas de regras vivem em regras.js.
 // Bonus, modificadores e pericias vivem em ficha-comum.js.
@@ -314,13 +317,11 @@ formFicha.addEventListener('submit', function (evento) {
         dadosVidaGastos: 0,
         sucessosMorte: 0,
         falhasMorte: 0,
-        id: Date.now()
+        id: Armazenamento.novoId()
     }
 
-
-    const personagens = JSON.parse(localStorage.getItem("fichas")) || [];
-    personagens.push(listaFichas);
-    localStorage.setItem("fichas", JSON.stringify(personagens));
-
-    window.location.href = "index.html"
+    // o armazenamento responde com espera: só sai da página depois de gravar
+    Armazenamento.gravarFicha(listaFichas).then(function () {
+        window.location.href = "index.html"
+    })
 })

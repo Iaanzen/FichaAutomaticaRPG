@@ -28,19 +28,15 @@ const listaClassesEL = document.getElementById("lista-classes-magias")
 const blocoClassesEL = document.getElementById("bloco-classes-magias")
 
 const parametros = new URLSearchParams(window.location.search)
-const idDaUrl = Number(parametros.get("id"))
+const idDaUrl = parametros.get("id")
 
-const personagens = JSON.parse(localStorage.getItem("fichas")) || []
-
-const personagem = personagens.find(function (item) {
-    return item.id === idDaUrl
-})
-
-// as classes que conjuram e a que está aberta na tela
-const classes = personagem ? classesDoPersonagem(personagem) : []
-const conjuradoras = classesConjuradoras(classes)
-const classePadrao = (classeInicial(classes) || {}).classe
-let classeAtiva = conjuradoras.length ? conjuradoras[0].classe : ""
+// a ficha vem do armazenamento, que responde com espera; até lá estes ficam
+// vazios e nada da tela é montado
+let personagem = null
+let classes = []
+let conjuradoras = []
+let classePadrao = ""
+let classeAtiva = ""
 
 // lista que veio da API, já ordenada
 let magias = []
@@ -327,7 +323,7 @@ function salvar() {
         classePadrao
     )
 
-    localStorage.setItem("fichas", JSON.stringify(personagens))
+    Armazenamento.gravarFicha(personagem)
 }
 
 /* ---------- Troca de magias (RF30, regra 2024) ---------- */
@@ -777,51 +773,71 @@ async function carregar() {
 
 /* ---------- Início ---------- */
 
-if (!personagem) {
-    telaEL.style.display = "none"
-    mensagemErroEL.style.display = "block"
-} else if (conjuradoras.length === 0) {
-    telaEL.style.display = "none"
-    mensagemErroEL.innerHTML =
-        `Esta classe não conjura magias. <a href="ficha.html?id=${personagem.id}">Voltar à ficha</a>`
-    mensagemErroEL.style.display = "block"
-} else if (
-    conjuradoras.every(function (entrada) {
-        return classeNaApi(entrada.classe) === null && magiasLocaisDaClasse(entrada.classe) === null
-    })
-) {
-    // classe fora da API (ex: conteúdo extra) ainda sem lista local de magias
-    telaEL.style.display = "none"
-    mensagemErroEL.innerHTML =
-        `As magias de ${nomeDaClasse(classeAtiva)} ainda não estão disponíveis: ` +
-        `a classe não existe na API de magias e a lista local dela ainda não foi feita. ` +
-        `<a href="ficha.html?id=${personagem.id}">Voltar à ficha</a>`
-    mensagemErroEL.style.display = "block"
-} else {
-    document.title = `${personagem.nome} - Magias`
+function iniciar() {
+    if (!personagem) {
+        telaEL.style.display = "none"
+        mensagemErroEL.style.display = "block"
+    } else if (conjuradoras.length === 0) {
+        telaEL.style.display = "none"
+        mensagemErroEL.innerHTML =
+            `Esta classe não conjura magias. <a href="ficha.html?id=${personagem.id}">Voltar à ficha</a>`
+        mensagemErroEL.style.display = "block"
+    } else if (
+        conjuradoras.every(function (entrada) {
+            return classeNaApi(entrada.classe) === null && magiasLocaisDaClasse(entrada.classe) === null
+        })
+    ) {
+        // classe fora da API (ex: conteúdo extra) ainda sem lista local de magias
+        telaEL.style.display = "none"
+        mensagemErroEL.innerHTML =
+            `As magias de ${nomeDaClasse(classeAtiva)} ainda não estão disponíveis: ` +
+            `a classe não existe na API de magias e a lista local dela ainda não foi feita. ` +
+            `<a href="ficha.html?id=${personagem.id}">Voltar à ficha</a>`
+        mensagemErroEL.style.display = "block"
+    } else {
+        document.title = `${personagem.nome} - Magias`
 
-    // classe sem lista de magias não abre: começa numa que abra
-    const utilizavel = conjuradoras.find(function (entrada) {
-        return classeNaApi(entrada.classe) !== null || magiasLocaisDaClasse(entrada.classe) !== null
-    })
+        // classe sem lista de magias não abre: começa numa que abra
+        const utilizavel = conjuradoras.find(function (entrada) {
+            return classeNaApi(entrada.classe) !== null || magiasLocaisDaClasse(entrada.classe) !== null
+        })
 
-    classeAtiva = utilizavel.classe
+        classeAtiva = utilizavel.classe
 
-    todasEquipadas = normalizarMagiasEquipadas(personagem.magiasEquipadas, classePadrao)
-    equipadas = magiasEquipadasDaClasse(todasEquipadas, classeAtiva, classePadrao)
-    trocas = trocasDaClasse(personagem.trocasMagia, classeAtiva, classePadrao)
+        todasEquipadas = normalizarMagiasEquipadas(personagem.magiasEquipadas, classePadrao)
+        equipadas = magiasEquipadasDaClasse(todasEquipadas, classeAtiva, classePadrao)
+        trocas = trocasDaClasse(personagem.trocasMagia, classeAtiva, classePadrao)
 
-    document.getElementById("nome-personagem").textContent = personagem.nome
-    montarEscolhaDeClasse()
-    atualizarCabecalho()
+        document.getElementById("nome-personagem").textContent = personagem.nome
+        montarEscolhaDeClasse()
+        atualizarCabecalho()
 
-    document.getElementById("link-ficha").href = `ficha.html?id=${personagem.id}`
+        document.getElementById("link-ficha").href = `ficha.html?id=${personagem.id}`
 
-    buscaEL.addEventListener("input", renderizar)
-    filtroCirculoEL.addEventListener("change", renderizar)
-    soEquipadasEL.addEventListener("change", renderizar)
-    btnTentarEL.addEventListener("click", carregar)
-    btnConcluirTrocaEL.addEventListener("click", concluirTroca)
+        buscaEL.addEventListener("input", renderizar)
+        filtroCirculoEL.addEventListener("change", renderizar)
+        soEquipadasEL.addEventListener("change", renderizar)
+        btnTentarEL.addEventListener("click", carregar)
+        btnConcluirTrocaEL.addEventListener("click", concluirTroca)
 
-    carregar()
+        carregar()
+    }
 }
+
+// sem conta, a guarda manda para o login antes de qualquer coisa
+Auth.protegerPagina()
+    .then(function () {
+        return Armazenamento.carregarFicha(idDaUrl)
+    })
+    .then(function (encontrada) {
+        personagem = encontrada
+
+        if (personagem) {
+            classes = classesDoPersonagem(personagem)
+            conjuradoras = classesConjuradoras(classes)
+            classePadrao = (classeInicial(classes) || {}).classe
+            classeAtiva = conjuradoras.length ? conjuradoras[0].classe : ""
+        }
+
+        iniciar()
+    })

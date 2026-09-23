@@ -8,6 +8,7 @@
   </head>
   <body>
     <div class="topo-pagina">
+      <span id="barra-conta" class="conta-topo"></span>
       <a href="#" class="link-voltar" id="link-ficha">← Voltar à ficha</a>
     </div>
 
@@ -87,9 +88,15 @@
       <div class="lista-magias" id="lista-magias"></div>
     </div>
 
+    <script src="https://www.gstatic.com/firebasejs/12.14.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.14.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="auth.js"></script>
     <script src="regras.js"></script>
     <!-- conteúdo fora do SRD, só local (fora do git); se não existir, o navegador só registra um aviso -->
     <script src="conteudo-extra.js"></script>
+    <script src="armazenamento.js"></script>
     <script src="magias.js"></script>
   </body>
 </html>

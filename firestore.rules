@@ -1,0 +1,31 @@
+rules_version = '2';
+
+// Regras de segurança do Firestore (projeto forja-criacao).
+//
+// É AQUI que os dados são protegidos, não no JavaScript do site: qualquer
+// pessoa pode abrir o console do navegador e chamar o banco direto. Esconder
+// botão não protege nada.
+//
+// Estas regras precisam ser coladas no console do Firebase:
+// Firestore Database → aba Regras → colar → Publicar.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Uma ficha por documento. O campo "dono" guarda o uid de quem a criou.
+    match /fichas/{ficha} {
+
+      // Ler, alterar e apagar: só o dono da ficha.
+      allow read, update, delete: if request.auth != null
+        && resource.data.dono == request.auth.uid;
+
+      // Criar: só em nome de si mesmo. Sem esta linha, alguém conectado
+      // poderia criar fichas marcadas como de outra pessoa.
+      allow create: if request.auth != null
+        && request.resource.data.dono == request.auth.uid;
+    }
+
+    // Tudo o que não está escrito acima fica bloqueado. Os pacotes de conteúdo
+    // e o painel de mestre (Fase 2b) entram aqui quando chegarem.
+  }
+}
