@@ -1172,6 +1172,765 @@ function habilidadesParaMostrar(classe, subclasse, nivelMaximo, nivelMinimo) {
     return lista
 }
 
+/* ---------- Sprint 7: armaduras e Classe de Armadura (RF33) ---------- */
+
+// Tabela gerada da API 2024 (nomes em inglês, como as magias).
+// Correção: a API marca o Hide Armor como leve, mas no livro ele é média.
+const ARMADURAS = [
+    { valor: "padded-armor", nome: "Padded Armor", categoria: "leve", base: 11, usaDestreza: true, furtividadeComDesvantagem: true },
+    { valor: "leather-armor", nome: "Leather Armor", categoria: "leve", base: 11, usaDestreza: true },
+    { valor: "studded-leather-armor", nome: "Studded Leather Armor", categoria: "leve", base: 12, usaDestreza: true },
+    { valor: "hide-armor", nome: "Hide Armor", categoria: "media", base: 12, usaDestreza: true, limiteDestreza: 2 },
+    { valor: "chain-shirt", nome: "Chain Shirt", categoria: "media", base: 13, usaDestreza: true, limiteDestreza: 2 },
+    { valor: "scale-mail", nome: "Scale Mail", categoria: "media", base: 14, usaDestreza: true, limiteDestreza: 2, furtividadeComDesvantagem: true },
+    { valor: "breastplate", nome: "Breastplate", categoria: "media", base: 14, usaDestreza: true, limiteDestreza: 2 },
+    { valor: "half-plate-armor", nome: "Half-Plate Armor", categoria: "media", base: 15, usaDestreza: true, limiteDestreza: 2, furtividadeComDesvantagem: true },
+    { valor: "ring-mail", nome: "Ring Mail", categoria: "pesada", base: 14, usaDestreza: false, furtividadeComDesvantagem: true },
+    { valor: "chain-mail", nome: "Chain Mail", categoria: "pesada", base: 16, usaDestreza: false, forcaMinima: 13, furtividadeComDesvantagem: true },
+    { valor: "splint-armor", nome: "Splint Armor", categoria: "pesada", base: 17, usaDestreza: false, forcaMinima: 15, furtividadeComDesvantagem: true },
+    { valor: "plate-armor", nome: "Plate Armor", categoria: "pesada", base: 18, usaDestreza: false, forcaMinima: 15, furtividadeComDesvantagem: true }
+]
+
+// o escudo não é "vestido": soma na CA de qualquer cálculo que o aceite
+const BONUS_DO_ESCUDO = 2
+const CA_SEM_ARMADURA = 10
+
+function armaduraPorValor(valor) {
+    return ARMADURAS.find(function(armadura) {
+        return armadura.valor === valor
+    }) || null
+}
+
+// destreza que a armadura deixa somar (a pesada não soma; a média para em +2)
+function destrezaNaCA(armadura, modificadorDestreza) {
+    if (!armadura) {
+        return modificadorDestreza
+    }
+
+    if (!armadura.usaDestreza) {
+        return 0
+    }
+
+    return armadura.limiteDestreza !== undefined
+        ? Math.min(modificadorDestreza, armadura.limiteDestreza)
+        : modificadorDestreza
+}
+
+// Cálculo próprio da classe (campo classeDeArmadura do bloco):
+//   { nome, base, atributos: [...], armaduras: ["nenhuma", "leve"], escudo: true|false }
+// Ex: Bárbaro 10 + Des + Con sem armadura; Iron Chin do Pugilista 12 + Con com
+// armadura leve; Monge 10 + Des + Sab, sem armadura e sem escudo.
+function calculoDeCADaClasse(classe) {
+    const bloco = CLASSES[classe]
+    return (bloco && bloco.classeDeArmadura) || null
+}
+
+function aceitaArmadura(calculo, armadura) {
+    const permitidas = calculo.armaduras || ["nenhuma"]
+    return permitidas.includes(armadura ? armadura.categoria : "nenhuma")
+}
+
+// todas as formas de calcular a CA nesta situação, da maior para a menor
+function opcoesDeCA(classe, valorDaArmadura, comEscudo, modificadores) {
+    const armadura = armaduraPorValor(valorDaArmadura)
+    const escudo = comEscudo ? BONUS_DO_ESCUDO : 0
+    const opcoes = []
+
+    opcoes.push({
+        nome: armadura ? armadura.nome : "Sem armadura",
+        total: (armadura ? armadura.base : CA_SEM_ARMADURA) +
+            destrezaNaCA(armadura, modificadores.destreza) + escudo
+    })
+
+    const calculo = calculoDeCADaClasse(classe)
+
+    // a alternativa da classe só vale com a armadura certa, e às vezes sem escudo
+    if (calculo && aceitaArmadura(calculo, armadura) && !(comEscudo && calculo.escudo === false)) {
+        const soma = calculo.atributos.reduce(function(total, atributo) {
+            return total + (modificadores[atributo] || 0)
+        }, 0)
+
+        opcoes.push({ nome: calculo.nome, total: calculo.base + soma + escudo })
+    }
+
+    return opcoes.sort(function(a, b) {
+        return b.total - a.total
+    })
+}
+
+// a melhor forma, mais os avisos da armadura equipada
+function calcularCA(classe, valorDaArmadura, comEscudo, modificadores, forcaTotal) {
+    const opcoes = opcoesDeCA(classe, valorDaArmadura, comEscudo, modificadores)
+    const armadura = armaduraPorValor(valorDaArmadura)
+    const avisos = []
+
+    if (armadura && armadura.forcaMinima && forcaTotal < armadura.forcaMinima) {
+        avisos.push(`Força ${armadura.forcaMinima} exigida: deslocamento -3 m.`)
+    }
+
+    if (armadura && armadura.furtividadeComDesvantagem) {
+        avisos.push("Desvantagem em Furtividade.")
+    }
+
+    return { total: opcoes[0].total, formula: opcoes[0].nome, opcoes: opcoes, avisos: avisos }
+}
+
+/* ---------- Sprint 7: armas e ataques (RF34) ---------- */
+
+// Tabela gerada da API 2024: 38 armas, com dano, propriedades e maestria.
+// Propriedades usadas: ammunition, finesse, heavy, light, loading, reach,
+// thrown, two-handed, versatile.
+const ARMAS = [
+    { valor: "battleaxe", nome: "Battleaxe", categoria: "marcial", tipo: "corpo", dano: "1d8", tipoDeDano: "Slashing", danoDuasMaos: "1d10", propriedades: ["versatile"], maestria: "Topple" },
+    { valor: "blowgun", nome: "Blowgun", categoria: "marcial", tipo: "distancia", dano: "1", tipoDeDano: "Piercing", propriedades: ["ammunition", "loading"], alcance: { normal: 25, longo: 100 }, maestria: "Vex" },
+    { valor: "club", nome: "Club", categoria: "simples", tipo: "corpo", dano: "1d4", tipoDeDano: "Bludgeoning", propriedades: ["light"], maestria: "Slow" },
+    { valor: "dagger", nome: "Dagger", categoria: "simples", tipo: "corpo", dano: "1d4", tipoDeDano: "Piercing", propriedades: ["finesse", "light", "thrown"], maestria: "Nick" },
+    { valor: "dart", nome: "Dart", categoria: "simples", tipo: "distancia", dano: "1d4", tipoDeDano: "Piercing", propriedades: ["finesse", "thrown"], alcance: { normal: 20, longo: 60 }, maestria: "Vex" },
+    { valor: "flail", nome: "Flail", categoria: "marcial", tipo: "corpo", dano: "1d8", tipoDeDano: "Bludgeoning", maestria: "Sap" },
+    { valor: "glaive", nome: "Glaive", categoria: "marcial", tipo: "corpo", dano: "1d10", tipoDeDano: "Slashing", propriedades: ["heavy", "reach", "two-handed"], maestria: "Graze" },
+    { valor: "greataxe", nome: "Greataxe", categoria: "marcial", tipo: "corpo", dano: "1d12", tipoDeDano: "Slashing", propriedades: ["heavy", "two-handed"], maestria: "Cleave" },
+    { valor: "greatclub", nome: "Greatclub", categoria: "simples", tipo: "corpo", dano: "1d8", tipoDeDano: "Bludgeoning", propriedades: ["two-handed"], maestria: "Push" },
+    { valor: "greatsword", nome: "Greatsword", categoria: "marcial", tipo: "corpo", dano: "2d6", tipoDeDano: "Slashing", propriedades: ["heavy", "two-handed"], maestria: "Graze" },
+    { valor: "halberd", nome: "Halberd", categoria: "marcial", tipo: "corpo", dano: "1d10", tipoDeDano: "Slashing", propriedades: ["heavy", "reach", "two-handed"], maestria: "Cleave" },
+    { valor: "hand-crossbow", nome: "Hand Crossbow", categoria: "marcial", tipo: "distancia", dano: "1d6", tipoDeDano: "Piercing", propriedades: ["ammunition", "light", "loading"], alcance: { normal: 30, longo: 120 }, maestria: "Vex" },
+    { valor: "handaxe", nome: "Handaxe", categoria: "simples", tipo: "corpo", dano: "1d6", tipoDeDano: "Slashing", propriedades: ["light", "thrown"], maestria: "Vex" },
+    { valor: "heavy-crossbow", nome: "Heavy Crossbow", categoria: "marcial", tipo: "distancia", dano: "1d10", tipoDeDano: "Piercing", propriedades: ["ammunition", "heavy", "loading", "two-handed"], alcance: { normal: 100, longo: 400 }, maestria: "Push" },
+    { valor: "javelin", nome: "Javelin", categoria: "simples", tipo: "corpo", dano: "1d6", tipoDeDano: "Piercing", propriedades: ["thrown"], maestria: "Slow" },
+    { valor: "lance", nome: "Lance", categoria: "marcial", tipo: "corpo", dano: "1d10", tipoDeDano: "Piercing", propriedades: ["heavy", "reach", "two-handed"], maestria: "Topple" },
+    { valor: "light-crossbow", nome: "Light Crossbow", categoria: "simples", tipo: "distancia", dano: "1d8", tipoDeDano: "Piercing", propriedades: ["ammunition", "loading", "two-handed"], alcance: { normal: 80, longo: 320 }, maestria: "Slow" },
+    { valor: "light-hammer", nome: "Light Hammer", categoria: "simples", tipo: "corpo", dano: "1d4", tipoDeDano: "Bludgeoning", propriedades: ["light", "thrown"], maestria: "Nick" },
+    { valor: "longbow", nome: "Longbow", categoria: "marcial", tipo: "distancia", dano: "1d8", tipoDeDano: "Piercing", propriedades: ["ammunition", "heavy", "two-handed"], alcance: { normal: 150, longo: 600 }, maestria: "Slow" },
+    { valor: "longsword", nome: "Longsword", categoria: "marcial", tipo: "corpo", dano: "1d8", tipoDeDano: "Slashing", danoDuasMaos: "1d10", propriedades: ["versatile"], maestria: "Sap" },
+    { valor: "mace", nome: "Mace", categoria: "simples", tipo: "corpo", dano: "1d6", tipoDeDano: "Bludgeoning", maestria: "Sap" },
+    { valor: "maul", nome: "Maul", categoria: "marcial", tipo: "corpo", dano: "2d6", tipoDeDano: "Bludgeoning", propriedades: ["heavy", "two-handed"], maestria: "Topple" },
+    { valor: "morningstar", nome: "Morningstar", categoria: "marcial", tipo: "corpo", dano: "1d8", tipoDeDano: "Piercing", maestria: "Sap" },
+    { valor: "musket", nome: "Musket", categoria: "marcial", tipo: "distancia", dano: "1d12", tipoDeDano: "Piercing", propriedades: ["ammunition", "loading", "two-handed"], alcance: { normal: 40, longo: 120 }, maestria: "Slow" },
+    { valor: "pike", nome: "Pike", categoria: "marcial", tipo: "corpo", dano: "1d10", tipoDeDano: "Piercing", propriedades: ["heavy", "reach", "two-handed"], maestria: "Push" },
+    { valor: "pistol", nome: "Pistol", categoria: "marcial", tipo: "distancia", dano: "1d10", tipoDeDano: "Piercing", propriedades: ["ammunition", "loading"], alcance: { normal: 30, longo: 90 }, maestria: "Vex" },
+    { valor: "quarterstaff", nome: "Quarterstaff", categoria: "simples", tipo: "corpo", dano: "1d6", tipoDeDano: "Bludgeoning", danoDuasMaos: "1d8", propriedades: ["versatile"], maestria: "Topple" },
+    { valor: "rapier", nome: "Rapier", categoria: "marcial", tipo: "corpo", dano: "1d8", tipoDeDano: "Piercing", propriedades: ["finesse"], maestria: "Vex" },
+    { valor: "scimitar", nome: "Scimitar", categoria: "marcial", tipo: "corpo", dano: "1d6", tipoDeDano: "Slashing", propriedades: ["finesse", "light"], maestria: "Nick" },
+    { valor: "shortbow", nome: "Shortbow", categoria: "simples", tipo: "distancia", dano: "1d6", tipoDeDano: "Piercing", propriedades: ["ammunition", "two-handed"], alcance: { normal: 80, longo: 320 }, maestria: "Vex" },
+    { valor: "shortsword", nome: "Shortsword", categoria: "marcial", tipo: "corpo", dano: "1d6", tipoDeDano: "Piercing", propriedades: ["finesse", "light"], maestria: "Vex" },
+    { valor: "sickle", nome: "Sickle", categoria: "simples", tipo: "corpo", dano: "1d4", tipoDeDano: "Slashing", propriedades: ["light"], maestria: "Nick" },
+    { valor: "sling", nome: "Sling", categoria: "simples", tipo: "distancia", dano: "1d4", tipoDeDano: "Piercing", propriedades: ["ammunition"], alcance: { normal: 30, longo: 120 }, maestria: "Slow" },
+    { valor: "spear", nome: "Spear", categoria: "simples", tipo: "corpo", dano: "1d6", tipoDeDano: "Piercing", danoDuasMaos: "1d8", propriedades: ["thrown", "versatile"], maestria: "Sap" },
+    { valor: "trident", nome: "Trident", categoria: "marcial", tipo: "corpo", dano: "1d6", tipoDeDano: "Piercing", danoDuasMaos: "1d8", propriedades: ["thrown", "versatile"], maestria: "Topple" },
+    { valor: "warhammer", nome: "Warhammer", categoria: "marcial", tipo: "corpo", dano: "1d8", tipoDeDano: "Bludgeoning", danoDuasMaos: "1d10", propriedades: ["versatile"], maestria: "Push" },
+    { valor: "war-pick", nome: "War Pick", categoria: "marcial", tipo: "corpo", dano: "1d8", tipoDeDano: "Piercing", danoDuasMaos: "1d10", propriedades: ["versatile"], maestria: "Sap" },
+    { valor: "whip", nome: "Whip", categoria: "marcial", tipo: "corpo", dano: "1d4", tipoDeDano: "Slashing", propriedades: ["finesse", "reach"], maestria: "Slow" }
+]
+
+// o ataque desarmado não está na tabela de armas, mas todo mundo tem
+const ARMA_DESARMADA = {
+    valor: "desarmado",
+    nome: "Unarmed Strike",
+    categoria: "simples",
+    tipo: "corpo",
+    dano: "1",
+    tipoDeDano: "Bludgeoning",
+    propriedades: []
+}
+
+function armaPorValor(valor) {
+    if (valor === ARMA_DESARMADA.valor) {
+        return ARMA_DESARMADA
+    }
+
+    return ARMAS.find(function(arma) {
+        return arma.valor === valor
+    }) || null
+}
+
+function armasParaEscolher() {
+    return [ARMA_DESARMADA].concat(ARMAS)
+}
+
+// Proficiência de arma da classe (campo proficienciasDeArma do bloco):
+//   { simples, marciais, marciaisComPropriedade, especificas: [...] }
+// Ex: Monge 2024 = simples + marciais com a propriedade "light".
+function proficienteNaArma(classe, arma) {
+    const bloco = CLASSES[classe]
+    const proficiencias = (bloco && bloco.proficienciasDeArma) || {}
+    const propriedades = arma.propriedades || []
+
+    if (arma.valor === ARMA_DESARMADA.valor) {
+        return true
+    }
+
+    if (proficiencias.simples && arma.categoria === "simples") {
+        return true
+    }
+
+    if (proficiencias.marciais && arma.categoria === "marcial") {
+        return true
+    }
+
+    if (
+        proficiencias.marciaisComPropriedade &&
+        arma.categoria === "marcial" &&
+        propriedades.includes(proficiencias.marciaisComPropriedade)
+    ) {
+        return true
+    }
+
+    return (proficiencias.especificas || []).includes(arma.valor)
+}
+
+// Força no corpo a corpo e Destreza à distância; com Acuidade (finesse), o melhor
+function atributoDoAtaque(arma, modificadores) {
+    if (arma.tipo === "distancia") {
+        return "destreza"
+    }
+
+    if ((arma.propriedades || []).includes("finesse")) {
+        return modificadores.destreza > modificadores.forca ? "destreza" : "forca"
+    }
+
+    return "forca"
+}
+
+// "1d8" -> 8; o ataque desarmado ("1") vale 1
+function facesDoDado(dado) {
+    const partes = String(dado).split("d")
+    return partes.length === 2 ? Number(partes[1]) : Number(dado)
+}
+
+// Pugilista: o Fisticuffs troca o dado de dano do ataque desarmado e das "armas
+// de pugilista" (simples de corpo a corpo sem duas mãos, chicote e improvisadas).
+function armaDePugilista(arma) {
+    const propriedades = arma.propriedades || []
+
+    if (arma.valor === ARMA_DESARMADA.valor) {
+        return true
+    }
+
+    return (
+        arma.tipo === "corpo" &&
+        (arma.categoria === "simples" || arma.valor === "whip") &&
+        !propriedades.includes("two-handed")
+    )
+}
+
+function dadoDaClasse(classe, nivel, arma) {
+    const tabela = (CLASSES[classe] || {}).dadoFisticuffsPorNivel
+
+    if (!tabela || !armaDePugilista(arma)) {
+        return null
+    }
+
+    return `1d${tabela[nivel - 1]}`
+}
+
+// RF34: bônus de ataque e dano de uma arma nas mãos deste personagem
+function ataqueComArma(classe, nivel, arma, modificadores, proficiencia, duasMaos) {
+    const atributo = atributoDoAtaque(arma, modificadores)
+    const modificador = modificadores[atributo] || 0
+    const proficiente = proficienteNaArma(classe, arma)
+
+    const versatil = duasMaos && arma.danoDuasMaos ? arma.danoDuasMaos : arma.dano
+    const alternativo = dadoDaClasse(classe, nivel, arma)
+
+    // o dado da classe só entra quando é melhor que o da arma
+    const usaAlternativo = alternativo !== null && facesDoDado(alternativo) > facesDoDado(versatil)
+
+    return {
+        atributo: atributo,
+        proficiente: proficiente,
+        bonusDeAtaque: modificador + (proficiente ? proficiencia : 0),
+        dadoDeDano: usaAlternativo ? alternativo : versatil,
+        modificadorDeDano: modificador,
+        tipoDeDano: arma.tipoDeDano,
+        dadoDaClasse: usaAlternativo
+    }
+}
+
+/* ---------- Multiclasse ---------- */
+
+// O personagem guarda as classes numa lista:
+//   personagem.classes = [{ classe, nivel, subclasse }]
+// A PRIMEIRA é a classe inicial: dela vêm as salvaguardas e as perícias, pela
+// regra oficial. Ficha antiga (classe/nivel/subclasse soltos) vira lista de uma.
+function classesDoPersonagem(personagem) {
+    if (Array.isArray(personagem.classes) && personagem.classes.length > 0) {
+        return personagem.classes
+    }
+
+    return [{
+        classe: personagem.classe,
+        nivel: personagem.nivel,
+        subclasse: personagem.subclasse || ""
+    }]
+}
+
+function nivelTotal(classes) {
+    return (classes || []).reduce(function(total, entrada) {
+        return total + (Number(entrada.nivel) || 0)
+    }, 0)
+}
+
+function nivelDaClasse(classes, classe) {
+    const entrada = (classes || []).find(function(item) {
+        return item.classe === classe
+    })
+
+    return entrada ? entrada.nivel : 0
+}
+
+function classeInicial(classes) {
+    return (classes || [])[0] || null
+}
+
+// "Bárbaro 3 / Ladino 2"
+function descreverClasses(classes) {
+    return (classes || [])
+        .map(function(entrada) {
+            return `${nomeDaClasse(entrada.classe)} ${entrada.nivel}`
+        })
+        .join(" / ")
+}
+
+// PV: o nível 1 da classe inicial leva o dado cheio; todo o resto leva a média.
+// Robusto e Dádiva da Fortitude entram uma vez só, pelo nível total.
+function pontosDeVidaMulticlasse(classes, modificadorConstituicao, talentos) {
+    let total = 0
+
+    classes.forEach(function(entrada, posicao) {
+        const dado = dadoDeVidaPorClasse[entrada.classe]
+
+        if (!dado || entrada.nivel < 1) {
+            return
+        }
+
+        const media = mediaDoDado(dado) + modificadorConstituicao
+
+        if (posicao === 0) {
+            total += dado + modificadorConstituicao + (entrada.nivel - 1) * media
+        } else {
+            total += entrada.nivel * media
+        }
+    })
+
+    const lista = talentos || []
+    const niveis = nivelTotal(classes)
+    const robusto = lista.includes("robusto") ? PV_POR_NIVEL_ROBUSTO * niveis : 0
+    const fortitude = lista.includes("dadivaFortitude") ? PV_DADIVA_FORTITUDE : 0
+
+    return Math.max(1, total) + robusto + fortitude
+}
+
+// Salvaguardas: só a classe inicial, com os ganhos por nível dela (Monge no 14...)
+function salvaguardasMulticlasse(classes) {
+    const inicial = classeInicial(classes)
+    return inicial ? salvaguardasDaClasse(inicial.classe, inicial.nivel) : []
+}
+
+// Espaços de magia com mais de uma classe conjuradora: soma os níveis
+// (conjurador completo conta tudo, meio conjurador conta a metade para baixo)
+// e consulta a tabela do conjurador completo. A Magia de Pacto fica de fora.
+function nivelDeConjurador(classes) {
+    return (classes || []).reduce(function(total, entrada) {
+        const conjuracao = conjuracaoDaClasse(entrada.classe)
+
+        if (!conjuracao || conjuracao.tipo === "pacto") {
+            return total
+        }
+
+        return total + (conjuracao.tipo === "meio" ? Math.floor(entrada.nivel / 2) : entrada.nivel)
+    }, 0)
+}
+
+// [{ circulo, total, pacto }] — os espaços de Pacto vêm marcados, porque
+// recuperam em descanso curto e não se misturam com os outros
+function espacosDeMagiaMulticlasse(classes) {
+    const conjuradoras = (classes || []).filter(function(entrada) {
+        return conjuracaoDaClasse(entrada.classe) !== null
+    })
+
+    // uma classe só: a tabela dela, exatamente como antes
+    if (conjuradoras.length === 1) {
+        const unica = conjuradoras[0]
+        const doPacto = conjuracaoDaClasse(unica.classe).tipo === "pacto"
+
+        return espacosDeMagia(unica.classe, unica.nivel).map(function(espaco) {
+            return { circulo: espaco.circulo, total: espaco.total, pacto: doPacto }
+        })
+    }
+
+    const espacos = []
+    const nivel = nivelDeConjurador(classes)
+
+    if (nivel >= 1 && nivel <= NIVEL_MAXIMO) {
+        ESPACOS_CONJURADOR_COMPLETO[nivel - 1].forEach(function(total, indice) {
+            espacos.push({ circulo: indice + 1, total: total, pacto: false })
+        })
+    }
+
+    // o Bruxo soma os espaços de Pacto dele por fora
+    const bruxo = (classes || []).find(function(entrada) {
+        const conjuracao = conjuracaoDaClasse(entrada.classe)
+        return conjuracao && conjuracao.tipo === "pacto"
+    })
+
+    if (bruxo) {
+        espacosDeMagia(bruxo.classe, bruxo.nivel).forEach(function(espaco) {
+            espacos.push({ circulo: espaco.circulo, total: espaco.total, pacto: true })
+        })
+    }
+
+    return espacos
+}
+
+// Recursos, habilidades e níveis de escolha juntam o que cada classe dá no
+// nível dela. O que é por classe continua por classe.
+function recursosMulticlasse(classes, modificadores) {
+    const lista = []
+
+    ;(classes || []).forEach(function(entrada) {
+        recursosDaClasse(entrada.classe, entrada.nivel, modificadores).forEach(function(recurso) {
+            lista.push(Object.assign({ classe: entrada.classe }, recurso))
+        })
+    })
+
+    return lista
+}
+
+function habilidadesMulticlasse(classes) {
+    const lista = []
+
+    ;(classes || []).forEach(function(entrada) {
+        habilidadesParaMostrar(entrada.classe, entrada.subclasse, entrada.nivel).forEach(function(habilidade) {
+            lista.push(Object.assign({ classe: entrada.classe }, habilidade))
+        })
+    })
+
+    return lista
+}
+
+// Pré-requisito da regra 2024: 13 no atributo principal das duas classes.
+// O app avisa, mas não impede: a mesa decide.
+// modo "todos": precisa de 13 nos dois atributos (Monge, Paladino, Patrulheiro)
+// modo "um": basta 13 num deles (Guerreiro: Força ou Destreza)
+const ATRIBUTO_PRINCIPAL = {
+    barbaro: { atributos: ["forca"], modo: "todos" },
+    bardo: { atributos: ["carisma"], modo: "todos" },
+    bruxo: { atributos: ["carisma"], modo: "todos" },
+    clerigo: { atributos: ["sabedoria"], modo: "todos" },
+    druida: { atributos: ["sabedoria"], modo: "todos" },
+    feiticeiro: { atributos: ["carisma"], modo: "todos" },
+    guerreiro: { atributos: ["forca", "destreza"], modo: "um" },
+    ladino: { atributos: ["destreza"], modo: "todos" },
+    mago: { atributos: ["inteligencia"], modo: "todos" },
+    monge: { atributos: ["destreza", "sabedoria"], modo: "todos" },
+    paladino: { atributos: ["forca", "carisma"], modo: "todos" },
+    patrulheiro: { atributos: ["destreza", "sabedoria"], modo: "todos" }
+}
+
+const MINIMO_PARA_MULTICLASSE = 13
+
+// Atributos que ainda faltam para entrar (ou sair) de uma classe. Lista vazia
+// = requisito cumprido, ou classe sem requisito (conteúdo extra).
+function faltaParaMulticlasse(classe, totais) {
+    const regra = ATRIBUTO_PRINCIPAL[classe]
+
+    if (!regra) {
+        return []
+    }
+
+    const faltando = regra.atributos.filter(function(atributo) {
+        return (totais[atributo] || 0) < MINIMO_PARA_MULTICLASSE
+    })
+
+    // no modo "um", só falta alguma coisa se nenhum dos atributos serve
+    if (regra.modo === "um") {
+        return faltando.length === regra.atributos.length ? faltando : []
+    }
+
+    return faltando
+}
+
+// CA: cada classe pode ter um cálculo próprio; vale o melhor de todos
+function calcularCAMulticlasse(classes, valorDaArmadura, comEscudo, modificadores, forcaTotal) {
+    let melhor = null
+
+    ;(classes || []).forEach(function(entrada) {
+        const ca = calcularCA(entrada.classe, valorDaArmadura, comEscudo, modificadores, forcaTotal)
+
+        if (melhor === null || ca.total > melhor.total) {
+            melhor = ca
+        }
+    })
+
+    return melhor || calcularCA("", valorDaArmadura, comEscudo, modificadores, forcaTotal)
+}
+
+// Ataque: proficiente se QUALQUER classe der proficiência na arma; o dado da
+// classe (Fisticuffs) usa o nível da classe que o tem.
+function ataqueComArmaMulticlasse(classes, arma, modificadores, proficiencia, duasMaos) {
+    let melhor = null
+
+    ;(classes || []).forEach(function(entrada) {
+        const ataque = ataqueComArma(
+            entrada.classe,
+            entrada.nivel,
+            arma,
+            modificadores,
+            proficiencia,
+            duasMaos
+        )
+
+        const ganhou = melhor === null ||
+            ataque.bonusDeAtaque > melhor.bonusDeAtaque ||
+            (ataque.bonusDeAtaque === melhor.bonusDeAtaque &&
+                facesDoDado(ataque.dadoDeDano) > facesDoDado(melhor.dadoDeDano))
+
+        if (ganhou) {
+            melhor = ataque
+        }
+    })
+
+    return melhor || ataqueComArma("", 1, arma, modificadores, proficiencia, duasMaos)
+}
+
+/* ---------- Multiclasse: dados de vida por classe (passo 4) ---------- */
+
+// Cada classe tem o dado dela, e o descanso curto gasta um de cada vez.
+// [{ classe, dado, total }], na ordem em que o personagem pegou as classes.
+function dadosDeVidaMulticlasse(classes) {
+    return (classes || [])
+        .filter(function(entrada) {
+            return dadoDeVidaPorClasse[entrada.classe]
+        })
+        .map(function(entrada) {
+            return {
+                classe: entrada.classe,
+                dado: dadoDeVidaPorClasse[entrada.classe],
+                total: entrada.nivel
+            }
+        })
+}
+
+// "3d10 + 2d8"
+function descreverDadosDeVida(classes) {
+    const grupos = dadosDeVidaMulticlasse(classes).map(function(grupo) {
+        return `${grupo.total}d${grupo.dado}`
+    })
+
+    return grupos.length ? grupos.join(" + ") : ""
+}
+
+// Ficha antiga guardava um número só; ele vira o gasto da classe inicial.
+function normalizarDadosGastos(gastos, classePadrao) {
+    if (typeof gastos === "number") {
+        const mapa = {}
+        mapa[classePadrao] = gastos
+        return mapa
+    }
+
+    return Object.assign({}, gastos || {})
+}
+
+function dadosGastosDaClasse(gastos, classe, classePadrao) {
+    return normalizarDadosGastos(gastos, classePadrao)[classe] || 0
+}
+
+// quantos dados de cada classe ainda dá para gastar
+function dadosDeVidaDisponiveis(classes, gastos, classePadrao) {
+    const mapa = normalizarDadosGastos(gastos, classePadrao)
+
+    return dadosDeVidaMulticlasse(classes).map(function(grupo) {
+        return Object.assign({}, grupo, {
+            disponiveis: Math.max(0, grupo.total - (mapa[grupo.classe] || 0))
+        })
+    })
+}
+
+function totalDeDadosDisponiveis(classes, gastos, classePadrao) {
+    return dadosDeVidaDisponiveis(classes, gastos, classePadrao).reduce(function(total, grupo) {
+        return total + grupo.disponiveis
+    }, 0)
+}
+
+/* ---------- Multiclasse: magias por classe (passo 3) ---------- */
+
+// As classes que conjuram, na ordem em que o personagem as pegou.
+function classesConjuradoras(classes) {
+    return (classes || []).filter(function(entrada) {
+        return conjuracaoDaClasse(entrada.classe) !== null
+    })
+}
+
+// Círculo mais alto que a classe pode PREPARAR. Não é o mesmo que o espaço de
+// magia disponível: um Clérigo 1 / Mago 4 lança com espaços de 3º círculo, mas
+// só prepara magias de 1º na lista de Clérigo. Cada classe usa a tabela dela.
+function circuloMaximoDaClasse(classe, nivelDaClasse) {
+    const espacos = espacosDeMagia(classe, nivelDaClasse)
+
+    if (espacos.length === 0) {
+        return 0
+    }
+
+    return Math.max.apply(null, espacos.map(function(espaco) {
+        return espaco.circulo
+    }))
+}
+
+// Ficha antiga: magia equipada sem classe pertence à classe inicial.
+function normalizarMagiasEquipadas(equipadas, classePadrao) {
+    return (equipadas || []).map(function(magia) {
+        return magia.classe ? magia : Object.assign({}, magia, { classe: classePadrao })
+    })
+}
+
+function magiasEquipadasDaClasse(equipadas, classe, classePadrao) {
+    return normalizarMagiasEquipadas(equipadas, classePadrao).filter(function(magia) {
+        return magia.classe === classe
+    })
+}
+
+// As trocas passaram a ser por classe: { mago: { magias, truques } }. Uma ficha
+// antiga guardava um objeto só ({ magias, truques }), que vira o da classe inicial.
+function normalizarTrocas(trocasMagia, classePadrao) {
+    if (!trocasMagia) {
+        return {}
+    }
+
+    const antigo = "magias" in trocasMagia || "truques" in trocasMagia
+
+    if (!antigo) {
+        return Object.assign({}, trocasMagia)
+    }
+
+    const mapa = {}
+    mapa[classePadrao] = juntarTrocas(trocasMagia, SEM_TROCAS)
+    return mapa
+}
+
+function trocasDaClasse(trocasMagia, classe, classePadrao) {
+    const mapa = normalizarTrocas(trocasMagia, classePadrao)
+    return juntarTrocas(mapa[classe], SEM_TROCAS)
+}
+
+// Devolve o mapa inteiro com a classe atualizada, sem mexer nas outras.
+function guardarTrocasDaClasse(trocasMagia, classe, novas, classePadrao) {
+    const mapa = normalizarTrocas(trocasMagia, classePadrao)
+    mapa[classe] = juntarTrocas(novas, SEM_TROCAS)
+    return mapa
+}
+
+// Descanso longo e level up liberam troca; o descanso vale para todas as
+// classes de uma vez, o level up só para a classe que subiu.
+function liberarTrocasMulticlasse(trocasMagia, classes, momento) {
+    let mapa = normalizarTrocas(trocasMagia, (classeInicial(classes) || {}).classe)
+
+    classesConjuradoras(classes).forEach(function(entrada) {
+        mapa = guardarTrocasDaClasse(
+            mapa,
+            entrada.classe,
+            juntarTrocas(mapa[entrada.classe], trocasLiberadas(entrada.classe, momento))
+        )
+    })
+
+    return mapa
+}
+
+/* ---------- RF05: valores passivos ---------- */
+
+// Perícias que têm valor passivo na ficha de 2024.
+// O talento Observador soma +5 em Percepção e Investigação.
+const PASSIVAS = [
+    { pericia: "percepcao", nome: "Percepção", talentoObservador: true },
+    { pericia: "investigacao", nome: "Investigação", talentoObservador: true },
+    { pericia: "intuicao", nome: "Intuição", talentoObservador: false }
+]
+
+const BONUS_DO_OBSERVADOR = 5
+
+// 10 + o bônus da perícia (modificador, mais proficiência se houver)
+function valorPassivo(passiva, bonusDaPericia, talentos) {
+    const observador = passiva.talentoObservador && (talentos || []).includes("observador")
+    return 10 + bonusDaPericia + (observador ? BONUS_DO_OBSERVADOR : 0)
+}
+
+/* ---------- Sprint 8: moedas e inventário (RF36, RF37) ---------- */
+
+// da menor para a maior, com o valor de cada uma em peças de ouro
+const MOEDAS = [
+    { valor: "pc", nome: "PC", nomeCompleto: "Cobre", emOuro: 0.01 },
+    { valor: "pp", nome: "PP", nomeCompleto: "Prata", emOuro: 0.1 },
+    { valor: "pe", nome: "PE", nomeCompleto: "Electro", emOuro: 0.5 },
+    { valor: "po", nome: "PO", nomeCompleto: "Ouro", emOuro: 1 },
+    { valor: "pl", nome: "PL", nomeCompleto: "Platina", emOuro: 10 }
+]
+
+// quanto a bolsa vale em peças de ouro, somando todas as moedas
+function totalEmOuro(moedas) {
+    return MOEDAS.reduce(function(total, moeda) {
+        return total + (Number((moedas || {})[moeda.valor]) || 0) * moeda.emOuro
+    }, 0)
+}
+
+// capacidade de carga: 7,5 kg por ponto de Força (o equivalente métrico das 15 lb)
+const CAPACIDADE_POR_FORCA = 7.5
+
+function capacidadeDeCarga(forcaTotal) {
+    return CAPACIDADE_POR_FORCA * forcaTotal
+}
+
+// peso de tudo que está no inventário: [{ nome, quantidade, peso }]
+function pesoDoInventario(itens) {
+    return (itens || []).reduce(function(total, item) {
+        return total + (Number(item.quantidade) || 0) * (Number(item.peso) || 0)
+    }, 0)
+}
+
+function estaSobrecarregado(peso, capacidade) {
+    return peso > capacidade
+}
+
+/* ---------- Sprint 7: condições (RF35) ---------- */
+
+// Lista da API 2024 (nomes em inglês, como as magias). A exaustão fica de fora
+// da lista porque não liga e desliga: ela tem níveis.
+const CONDICOES = [
+    { valor: "blinded", nome: "Blinded" },
+    { valor: "charmed", nome: "Charmed" },
+    { valor: "deafened", nome: "Deafened" },
+    { valor: "frightened", nome: "Frightened" },
+    { valor: "grappled", nome: "Grappled" },
+    { valor: "incapacitated", nome: "Incapacitated" },
+    { valor: "invisible", nome: "Invisible" },
+    { valor: "paralyzed", nome: "Paralyzed" },
+    { valor: "petrified", nome: "Petrified" },
+    { valor: "poisoned", nome: "Poisoned" },
+    { valor: "prone", nome: "Prone" },
+    { valor: "restrained", nome: "Restrained" },
+    { valor: "stunned", nome: "Stunned" },
+    { valor: "unconscious", nome: "Unconscious" }
+]
+
+const EXAUSTAO_MAXIMA = 6
+
+// metros perdidos por nível de exaustão (regra 2024: 5 pés = 1,5 m)
+const DESLOCAMENTO_POR_EXAUSTAO = 1.5
+
+// regra 2024: cada nível tira 2 dos testes de d20 e 1,5 m de deslocamento
+function efeitosDaExaustao(nivel) {
+    return {
+        testes: -2 * nivel,
+        deslocamento: -DESLOCAMENTO_POR_EXAUSTAO * nivel,
+        morre: nivel >= EXAUSTAO_MAXIMA
+    }
+}
+
+/* ---------- Sprint 7: iniciativa (RF32) ---------- */
+
+// Destreza, mais o bônus de proficiência de quem tem o talento Alerta
+function calcularIniciativa(modificadorDestreza, proficiencia, talentos) {
+    const alerta = (talentos || []).includes("alerta")
+    return modificadorDestreza + (alerta ? proficiencia : 0)
+}
+
 /* ---------- Sprint 6.5: magias concedidas pela subclasse ---------- */
 
 // Campo "magias" da subclasse:
@@ -1415,6 +2174,14 @@ function nomeDaClasse(valor) {
 registrarClasse("barbaro", {
     nome: "Bárbaro",
     dadoDeVida: 12,
+    // Defesa sem Armadura: 10 + Destreza + Constituição, escudo permitido
+    classeDeArmadura: {
+        nome: "Defesa sem Armadura",
+        base: 10,
+        atributos: ["destreza", "constituicao"],
+        armaduras: ["nenhuma"],
+        escudo: true
+    },
     // Primal Champion (nível 20), conferido no texto oficial da API
     aumentoDeAtributoPorNivel: {
         20: { nome: "Primal Champion", atributos: ["forca", "constituicao"], valor: 4, teto: 25 }
@@ -1534,7 +2301,8 @@ registrarClasse("barbaro", {
         20: [
             { nome: "Primal Champion", api: "barbarian-primal-champion" }
         ]
-    }
+    },
+    proficienciasDeArma: { simples: true, marciais: true }
 })
 
 registrarClasse("bardo", {
@@ -1647,7 +2415,8 @@ registrarClasse("bardo", {
         20: [
             { nome: "Words of Creation", api: "bard-words-of-creation" }
         ]
-    }
+    },
+    proficienciasDeArma: { simples: true }
 })
 
 registrarClasse("bruxo", {
@@ -1791,7 +2560,8 @@ registrarClasse("bruxo", {
         20: [
             { nome: "Eldritch Master", api: "warlock-eldritch-master" }
         ]
-    }
+    },
+    proficienciasDeArma: { simples: true }
 })
 
 registrarClasse("clerigo", {
@@ -1925,7 +2695,8 @@ registrarClasse("clerigo", {
         20: [
             { nome: "Greater Divine Intervention", api: "cleric-greater-divine-intervention" }
         ]
-    }
+    },
+    proficienciasDeArma: { simples: true }
 })
 
 registrarClasse("druida", {
@@ -2133,7 +2904,8 @@ registrarClasse("druida", {
         20: [
             { nome: "Archdruid", api: "druid-archdruid" }
         ]
-    }
+    },
+    proficienciasDeArma: { simples: true }
 })
 
 registrarClasse("feiticeiro", {
@@ -2280,7 +3052,8 @@ registrarClasse("feiticeiro", {
         20: [
             { nome: "Arcane Apotheosis", api: "sorcerer-arcane-apotheosis" }
         ]
-    }
+    },
+    proficienciasDeArma: { simples: true }
 })
 
 registrarClasse("guerreiro", {
@@ -2426,7 +3199,8 @@ registrarClasse("guerreiro", {
         20: [
             { nome: "Three Extra Attacks", api: "fighter-three-extra-attacks" }
         ]
-    }
+    },
+    proficienciasDeArma: { simples: true, marciais: true }
 })
 
 registrarClasse("ladino", {
@@ -2565,6 +3339,10 @@ registrarClasse("ladino", {
         20: [
             { nome: "Stroke of Luck", api: "rogue-stroke-of-luck" }
         ]
+    },
+    proficienciasDeArma: {
+        simples: true,
+        especificas: ["longsword", "rapier", "scimitar", "shortsword", "whip", "hand-crossbow"]
     }
 })
 
@@ -2677,12 +3455,21 @@ registrarClasse("mago", {
         20: [
             { nome: "Signature Spells", api: "wizard-signature-spells" }
         ]
-    }
+    },
+    proficienciasDeArma: { simples: true }
 })
 
 registrarClasse("monge", {
     nome: "Monge",
     dadoDeVida: 8,
+    // Defesa sem Armadura: 10 + Destreza + Sabedoria, sem armadura e sem escudo
+    classeDeArmadura: {
+        nome: "Defesa sem Armadura",
+        base: 10,
+        atributos: ["destreza", "sabedoria"],
+        armaduras: ["nenhuma"],
+        escudo: false
+    },
     salvaguardas: [
         "forca",
         "destreza"
@@ -2812,7 +3599,8 @@ registrarClasse("monge", {
         20: [
             { nome: "Body and Mind", api: "monk-body-and-mind" }
         ]
-    }
+    },
+    proficienciasDeArma: { simples: true, marciaisComPropriedade: "light" }
 })
 
 registrarClasse("paladino", {
@@ -2970,7 +3758,8 @@ registrarClasse("paladino", {
         20: [
             { nome: "Paladin Subclass", api: "paladin-subclass", subclasse: true }
         ]
-    }
+    },
+    proficienciasDeArma: { simples: true, marciais: true }
 })
 
 registrarClasse("patrulheiro", {
@@ -3102,5 +3891,6 @@ registrarClasse("patrulheiro", {
         20: [
             { nome: "Foe Slayer", api: "ranger-foe-slayer" }
         ]
-    }
+    },
+    proficienciasDeArma: { simples: true, marciais: true }
 })

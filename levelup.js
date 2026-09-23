@@ -1,11 +1,18 @@
 // RF09: tela dedicada de level up.
 // Usa so regras.js; nao carrega ficha-comum.js porque esta tela nao tem os
 // campos da ficha (pericias, salvaguardas, PV) que aquele arquivo espera.
+//
+// Multiclasse: o jogador escolhe em QUAL classe o nível entra (ou começa uma
+// classe nova). Quase tudo aqui é por nível DA CLASSE escolhida; o bônus de
+// proficiência, o PV e os espaços de magia olham o personagem inteiro.
 
 const telaEL = document.getElementById("tela-levelup")
 const mensagemErroEL = document.getElementById("mensagem-erro")
 const subclasseEL = document.getElementById("subclasse")
 const atributoDadivaEL = document.getElementById("atributo-dadiva")
+const listaClassesEL = document.getElementById("lista-classes-levelup")
+const classeNovaEL = document.getElementById("classe-nova")
+const avisoClasseEL = document.getElementById("aviso-classe")
 
 const parametros = new URLSearchParams(window.location.search)
 const idDaUrl = Number(parametros.get("id"))
@@ -29,14 +36,73 @@ ATRIBUTOS.forEach(function (atributo) {
     melhoria[atributo] = 0
 })
 
+// classes que o personagem já tem e qual delas recebe este nível
+const classes = personagem ? classesDoPersonagem(personagem).map(function (entrada) {
+    return Object.assign({}, entrada)
+}) : []
+
+let classeEmFoco = classes.length ? classes[0].classe : ""
+
+/* ---------- Multiclasse: a classe que sobe ---------- */
+
+function entradaEmFoco() {
+    return classes.find(function (entrada) {
+        return entrada.classe === classeEmFoco
+    }) || null
+}
+
+// é uma classe nova quando o personagem ainda não tem nível nela
+function ehClasseNova() {
+    return entradaEmFoco() === null
+}
+
+function nivelAtualDaClasse() {
+    const entrada = entradaEmFoco()
+    return entrada ? entrada.nivel : 0
+}
+
+// nível DA CLASSE escolhida depois de confirmar
 function nivelNovo() {
-    return personagem.nivel + 1
+    return nivelAtualDaClasse() + 1
+}
+
+function nivelTotalAtual() {
+    return nivelTotal(classes)
+}
+
+function nivelTotalNovo() {
+    return nivelTotalAtual() + 1
+}
+
+function subclasseEmFoco() {
+    const entrada = entradaEmFoco()
+    return entrada ? entrada.subclasse || "" : ""
+}
+
+// como fica a lista de classes se o jogador confirmar
+function classesDepois() {
+    const copia = classes.map(function (entrada) {
+        return Object.assign({}, entrada)
+    })
+
+    const entrada = copia.find(function (item) {
+        return item.classe === classeEmFoco
+    })
+
+    if (entrada) {
+        entrada.nivel += 1
+    } else {
+        copia.push({ classe: classeEmFoco, nivel: 1, subclasse: "" })
+    }
+
+    return copia
 }
 
 function temEscolha() {
-    return nivelTemEscolha(personagem.classe, nivelNovo())
+    return nivelTemEscolha(classeEmFoco, nivelNovo())
 }
 
+// a Dádiva Épica é do nível 19 DA CLASSE
 function nivelDaDadiva() {
     return nivelNovo() === NIVEL_DADIVA_EPICA
 }
@@ -45,13 +111,13 @@ function escolheuDadiva() {
     return talentoEscolhido !== null && dadivaPorValor(talentoEscolhido) !== undefined
 }
 
-// sem subclasse salva, o nivel 3 (ou qualquer um acima) pede a escolha aqui
+// sem subclasse salva, o nivel da escolha (ou qualquer um acima) pede a escolha aqui
 function precisaSubclasse() {
-    const lista = subclassesPorClasse[personagem.classe] || []
+    const lista = subclassesPorClasse[classeEmFoco] || []
 
     return (
-        nivelNovo() >= NIVEL_SUBCLASSE &&
-        !personagem.subclasse &&
+        nivelNovo() >= nivelDaEscolhaDeSubclasse(classeEmFoco) &&
+        subclasseEmFoco() === "" &&
         lista.length > 0
     )
 }
@@ -91,7 +157,7 @@ function totalDepois(atributo) {
 // Sprint 6.5: aumento automático do nível (Primal Champion, Peak Physical
 // Condition). Conta depois da melhoria e da dádiva, e nunca passa do teto dele.
 function aumentoDeClasse(atributo) {
-    const aumento = aumentoDeAtributoDoNivel(personagem.classe, nivelNovo())
+    const aumento = aumentoDeAtributoDoNivel(classeEmFoco, nivelNovo())
 
     if (!aumento || !aumento.atributos.includes(atributo)) {
         return 0
@@ -121,9 +187,8 @@ function talentosDepois() {
 }
 
 function pvMaximoAntes() {
-    return pontosDeVida(
-        personagem.classe,
-        personagem.nivel,
+    return pontosDeVidaMulticlasse(
+        classes,
         modificadorDe(totalAtual("constituicao")),
         personagem.talentos || []
     )
@@ -131,9 +196,8 @@ function pvMaximoAntes() {
 
 // +Constituicao, Robusto e Fortitude valem para todos os niveis, entao a conta e refeita
 function pvMaximoDepois() {
-    return pontosDeVida(
-        personagem.classe,
-        nivelNovo(),
+    return pontosDeVidaMulticlasse(
+        classesDepois(),
         modificadorDe(totalDepois("constituicao")),
         talentosDepois()
     )
@@ -141,21 +205,46 @@ function pvMaximoDepois() {
 
 /* ---------- O que o nível traz ---------- */
 
+// "1º: 4 · 2º: 3" e, se houver, os espaços de Pacto à parte
+function descreverEspacosDaLista(lista) {
+    const comuns = lista.filter(function (espaco) {
+        return !espaco.pacto
+    })
+
+    const doPacto = lista.filter(function (espaco) {
+        return espaco.pacto
+    })
+
+    const partes = []
+
+    if (comuns.length) {
+        partes.push(descreverEspacos(comuns))
+    }
+
+    if (doPacto.length) {
+        partes.push(`Pacto ${descreverEspacos(doPacto)}`)
+    }
+
+    return partes.join(" · ")
+}
+
 // roda a cada mudanca: a previa de PV acompanha a escolha do jogador
 function montarGanhos() {
     const ganhos = []
+    const depois = classesDepois()
 
-    const dado = dadoDeVidaPorClasse[personagem.classe]
+    const dado = dadoDeVidaPorClasse[classeEmFoco]
 
     if (dado) {
-        const antes = pvMaximoAntes()
-        const depois = pvMaximoDepois()
-        ganhos.push(`Pontos de vida máximos: ${antes} → ${depois} (+${depois - antes}).`)
-        ganhos.push(`Dados de vida: ${nivelNovo()}d${dado}.`)
+        const pvAntes = pvMaximoAntes()
+        const pvDepois = pvMaximoDepois()
+        ganhos.push(`Pontos de vida máximos: ${pvAntes} → ${pvDepois} (+${pvDepois - pvAntes}).`)
+        ganhos.push(`Dados de vida: ${descreverDadosDeVida(depois)}.`)
     }
 
-    const proficienciaAntes = bonusDeProficiencia(personagem.nivel)
-    const proficienciaDepois = bonusDeProficiencia(nivelNovo())
+    // o bônus de proficiência é pelo nível total, não pelo da classe
+    const proficienciaAntes = bonusDeProficiencia(nivelTotalAtual())
+    const proficienciaDepois = bonusDeProficiencia(nivelTotalNovo())
 
     if (proficienciaDepois > proficienciaAntes) {
         ganhos.push(
@@ -164,15 +253,15 @@ function montarGanhos() {
     }
 
     // só aparece quando a tabela muda; quem não conjura tem lista vazia nos dois
-    const espacosAntes = descreverEspacos(espacosDeMagia(personagem.classe, personagem.nivel))
-    const espacosDepois = descreverEspacos(espacosDeMagia(personagem.classe, nivelNovo()))
+    const espacosAntes = descreverEspacosDaLista(espacosDeMagiaMulticlasse(classes))
+    const espacosDepois = descreverEspacosDaLista(espacosDeMagiaMulticlasse(depois))
 
     if (espacosDepois !== espacosAntes) {
         ganhos.push(`Espaços de magia por círculo: ${espacosDepois}.`)
     }
 
     // Sprint 6.5: aumento de atributo da classe (ex: Bárbaro no 20)
-    const aumento = aumentoDeAtributoDoNivel(personagem.classe, nivelNovo())
+    const aumento = aumentoDeAtributoDoNivel(classeEmFoco, nivelNovo())
 
     if (aumento) {
         const detalhes = aumento.atributos.map(function (atributo) {
@@ -183,10 +272,10 @@ function montarGanhos() {
     }
 
     // Sprint 6.5: magias que a subclasse dá neste nível (sempre preparadas)
-    const subclasseDasMagias = precisaSubclasse() ? subclasseEL.value : personagem.subclasse
-    const escolhaDeMagias = escolhaDeMagiasDaSubclasse(personagem.classe, subclasseDasMagias)
+    const subclasseDasMagias = precisaSubclasse() ? subclasseEL.value : subclasseEmFoco()
+    const escolhaDeMagias = escolhaDeMagiasDaSubclasse(classeEmFoco, subclasseDasMagias)
     const magiasNovas = magiasDaSubclasse(
-        personagem.classe,
+        classeEmFoco,
         subclasseDasMagias,
         nivelNovo(),
         personagem.opcaoMagiasSubclasse
@@ -209,9 +298,9 @@ function montarGanhos() {
         ganhos.push(`Magias da subclasse: escolha na ficha (${escolhaDeMagias.rotulo.toLowerCase()}).`)
     }
 
-    // Sprint 6.5: proficiência nova em salvaguarda (ex: Monge no 14)
-    const salvaguardasAntes = salvaguardasDaClasse(personagem.classe, personagem.nivel)
-    const salvaguardasNovas = salvaguardasDaClasse(personagem.classe, nivelNovo())
+    // Sprint 6.5: proficiência nova em salvaguarda (só a classe inicial dá)
+    const salvaguardasAntes = salvaguardasMulticlasse(classes)
+    const salvaguardasNovas = salvaguardasMulticlasse(depois)
         .filter(function (atributo) {
             return !salvaguardasAntes.includes(atributo)
         })
@@ -230,9 +319,9 @@ function montarGanhos() {
         modificadores[atributo] = modificadorDe(totalDepois(atributo))
     })
 
-    const recursosAntes = recursosDaClasse(personagem.classe, personagem.nivel, modificadores)
+    const recursosAntes = recursosDaClasse(classeEmFoco, nivelAtualDaClasse(), modificadores)
 
-    recursosDaClasse(personagem.classe, nivelNovo(), modificadores).forEach(function (recurso) {
+    recursosDaClasse(classeEmFoco, nivelNovo(), modificadores).forEach(function (recurso) {
         const antes = recursosAntes.find(function (item) {
             return item.valor === recurso.valor
         })
@@ -246,6 +335,10 @@ function montarGanhos() {
         }
     })
 
+    if (ehClasseNova()) {
+        ganhos.push(`Primeiro nível de ${nomeDaClasse(classeEmFoco)}: as salvaguardas e as perícias continuam vindo da classe inicial.`)
+    }
+
     if (precisaSubclasse()) {
         ganhos.push("Escolha de subclasse.")
     }
@@ -258,8 +351,8 @@ function montarGanhos() {
 
     // RF13: habilidades que o nível novo traz. Melhoria de Atributo e Dádiva
     // Épica ficam de fora porque já aparecem como escolha logo abaixo.
-    const subclasseDepois = precisaSubclasse() ? subclasseEL.value : personagem.subclasse
-    const novas = habilidadesParaMostrar(personagem.classe, subclasseDepois, nivelNovo(), nivelNovo())
+    const subclasseDepois = precisaSubclasse() ? subclasseEL.value : subclasseEmFoco()
+    const novas = habilidadesParaMostrar(classeEmFoco, subclasseDepois, nivelNovo(), nivelNovo())
         .map(function (habilidade) {
             return habilidade.rotulo
         })
@@ -286,46 +379,156 @@ function preencherListaSimples(listaEL, itens) {
 
 /* ---------- Magias do nível (RF09, RF30) ---------- */
 
-function circuloMaximoNoNivel(nivel) {
-    const espacos = espacosDeMagia(personagem.classe, nivel)
-    return espacos.length === 0 ? 0 : espacos[espacos.length - 1].circulo
+function circuloMaximoDaLista(lista) {
+    const espacos = espacosDeMagiaMulticlasse(lista)
+    return espacos.length === 0 ? 0 : Math.max.apply(null, espacos.map(function (espaco) {
+        return espaco.circulo
+    }))
 }
 
 // Aparece em todo nível de quem conjura, com ou sem escolha de ASI/talento.
 // As escolhas em si (vagas novas, trocas) são feitas na aba de magias.
 function montarMagiasDoNivel() {
-    if (conjuracaoDaClasse(personagem.classe) === null) {
+    const blocoEL = document.getElementById("bloco-magias-levelup")
+
+    if (conjuracaoDaClasse(classeEmFoco) === null) {
+        blocoEL.hidden = true
         return
     }
 
     const itens = []
-    const circuloAntes = circuloMaximoNoNivel(personagem.nivel)
-    const circuloDepois = circuloMaximoNoNivel(nivelNovo())
+    const circuloAntes = circuloMaximoDaLista(classes)
+    const circuloDepois = circuloMaximoDaLista(classesDepois())
 
     if (circuloDepois > circuloAntes) {
         itens.push(`Novo círculo liberado: ${nomeDoCirculo(circuloDepois)}.`)
     }
 
-    const troca = descreverTrocas(trocasLiberadas(personagem.classe, "nivel"))
+    const troca = descreverTrocas(trocasLiberadas(classeEmFoco, "nivel"))
 
     if (troca) {
         itens.push(`Ao confirmar, libera a troca de ${troca}.`)
     } else {
         itens.push(
-            `Este nível não libera troca de magias: sua classe ${explicarRegraDeTroca(personagem.classe)}.`
+            `Este nível não libera troca de magias: ${nomeDaClasse(classeEmFoco)} ${explicarRegraDeTroca(classeEmFoco)}.`
         )
     }
 
     itens.push("Vagas novas de truques e magias podem ser preenchidas na aba Magias depois de confirmar.")
 
     preencherListaSimples(document.getElementById("lista-magias-levelup"), itens)
-    document.getElementById("bloco-magias-levelup").hidden = false
+    blocoEL.hidden = false
 }
 
 /* ---------- Subclasse ---------- */
 
 function subclasseCompleta() {
     return !precisaSubclasse() || subclasseEL.value !== ""
+}
+
+function montarSubclasse() {
+    const blocoEL = document.getElementById("bloco-subclasse")
+
+    blocoEL.hidden = !precisaSubclasse()
+
+    if (precisaSubclasse()) {
+        preencherSelect(subclasseEL, subclassesPorClasse[classeEmFoco], "")
+    } else {
+        subclasseEL.value = ""
+    }
+}
+
+/* ---------- Multiclasse: escolher a classe do nível ---------- */
+
+// avisa (sem impedir) quando falta o 13 do pré-requisito de 2024
+function avisoDoPreRequisito() {
+    if (!ehClasseNova()) {
+        return ""
+    }
+
+    const totais = {}
+
+    ATRIBUTOS.forEach(function (atributo) {
+        totais[atributo] = totalAtual(atributo)
+    })
+
+    const faltaNova = faltaParaMulticlasse(classeEmFoco, totais)
+    const inicial = classeInicial(classes)
+    const faltaAtual = inicial ? faltaParaMulticlasse(inicial.classe, totais) : []
+
+    const avisos = []
+
+    if (faltaNova.length) {
+        avisos.push(`${nomeDaClasse(classeEmFoco)} pede 13 em ${faltaNova.map(function (a) {
+            return NOME_ATRIBUTO[a]
+        }).join(" e ")}`)
+    }
+
+    if (faltaAtual.length) {
+        avisos.push(`sair de ${nomeDaClasse(inicial.classe)} pede 13 em ${faltaAtual.map(function (a) {
+            return NOME_ATRIBUTO[a]
+        }).join(" e ")}`)
+    }
+
+    return avisos.length
+        ? `Pré-requisito de multiclasse: ${avisos.join("; ")}. O app não impede: combine com o mestre.`
+        : ""
+}
+
+function trocarClasse(classe) {
+    classeEmFoco = classe
+
+    // a escolha anterior era de outra classe: recomeça
+    escolhaAtual = null
+    talentoEscolhido = null
+    atributoDadiva = ""
+
+    ATRIBUTOS.forEach(function (atributo) {
+        melhoria[atributo] = 0
+    })
+
+    montarGradeAsi()
+    montarTalentos()
+    montarAtributoDadiva()
+    montarSubclasse()
+    montarMagiasDoNivel()
+    montarEscolhaDeClasse()
+    atualizarCabecalho()
+    atualizarTela()
+}
+
+function montarEscolhaDeClasse() {
+    listaClassesEL.innerHTML = ""
+
+    classes.forEach(function (entrada) {
+        const botao = document.createElement("button")
+        botao.type = "button"
+        botao.className = "classe-opcao"
+        botao.classList.toggle("classe-escolhida", entrada.classe === classeEmFoco)
+        botao.textContent = `${nomeDaClasse(entrada.classe)} ${entrada.nivel} → ${entrada.nivel + 1}`
+        botao.addEventListener("click", function () {
+            trocarClasse(entrada.classe)
+        })
+        listaClassesEL.appendChild(botao)
+    })
+
+    // classes que o personagem ainda não tem
+    const novas = listaDeClasses().filter(function (classe) {
+        return !classes.some(function (entrada) {
+            return entrada.classe === classe.valor
+        })
+    })
+
+    preencherSelect(classeNovaEL, novas, ehClasseNova() ? classeEmFoco : "")
+
+    avisoClasseEL.textContent = avisoDoPreRequisito()
+    avisoClasseEL.hidden = avisoClasseEL.textContent === ""
+}
+
+function atualizarCabecalho() {
+    document.getElementById("classe-personagem").textContent = descreverClasses(classesDepois())
+    document.getElementById("nivel-atual").textContent = nivelTotalAtual()
+    document.getElementById("nivel-novo").textContent = nivelTotalNovo()
 }
 
 /* ---------- Coluna 1: Melhoria de Atributo ---------- */
@@ -525,18 +728,34 @@ function escolhaCompleta() {
 }
 
 function tudoPronto() {
-    return subclasseCompleta() && escolhaCompleta()
+    return classeEmFoco !== "" && subclasseCompleta() && escolhaCompleta()
 }
 
 function atualizarTela() {
     const colunaAsiEL = document.getElementById("coluna-asi")
     const colunaTalentoEL = document.getElementById("coluna-talento")
+    const colunasEL = document.getElementById("colunas-escolha")
+    const instrucaoEL = document.getElementById("instrucao-escolha")
 
     // a coluna escolhida ganha destaque; a outra apaga, mas continua clicável
     colunaAsiEL.classList.toggle("coluna-ativa", escolhaAtual === "asi")
     colunaTalentoEL.classList.toggle("coluna-ativa", escolhaAtual === "talento")
     colunaAsiEL.classList.toggle("coluna-apagada", escolhaAtual === "talento")
     colunaTalentoEL.classList.toggle("coluna-apagada", escolhaAtual === "asi")
+
+    // a classe escolhida decide se este nível tem escolha
+    colunasEL.hidden = !temEscolha()
+
+    if (nivelDaDadiva()) {
+        instrucaoEL.textContent =
+            "Nível 19 da classe: além da Melhoria de Atributo e dos talentos, você pode escolher uma Dádiva Épica."
+    } else if (temEscolha()) {
+        instrucaoEL.textContent =
+            "Este nível permite uma escolha. Compare as opções e decida."
+    } else {
+        instrucaoEL.textContent =
+            "Este nível não tem escolha a fazer. Confira o que ele traz e confirme."
+    }
 
     montarGanhos()
     atualizarOpcoesAsi()
@@ -555,6 +774,8 @@ function atualizarTela() {
 
     if (tudoPronto()) {
         statusEL.textContent = ""
+    } else if (classeEmFoco === "") {
+        statusEL.textContent = "Escolha em qual classe o nível entra."
     } else if (!subclasseCompleta()) {
         statusEL.textContent = "Falta escolher a subclasse."
     } else if (escolhaAtual === "asi") {
@@ -585,6 +806,7 @@ function confirmarNivel() {
     const aplicarMelhoria = melhoriaAplicada()
     const aplicarDadiva = dadivaAplicada()
     const escolheuSubclasse = precisaSubclasse()
+    const subclasseNova = subclasseEL.value
 
     // Sprint 6.5: aumento automático do nível, calculado antes de mexer nos valores
     const aumentos = {}
@@ -593,14 +815,39 @@ function confirmarNivel() {
         aumentos[atributo] = aumentoDeClasse(atributo)
     })
 
-    // RF30: a troca do level up fica guardada até ser usada na aba de magias
-    personagem.trocasMagia = juntarTrocas(
+    // RF30: a troca do level up fica guardada até ser usada na aba de magias,
+    // e vale só para a classe que subiu
+    personagem.trocasMagia = guardarTrocasDaClasse(
         personagem.trocasMagia,
-        trocasLiberadas(personagem.classe, "nivel")
+        classeEmFoco,
+        juntarTrocas(
+            trocasDaClasse(personagem.trocasMagia, classeEmFoco, classeInicial(classes).classe),
+            trocasLiberadas(classeEmFoco, "nivel")
+        ),
+        classeInicial(classes).classe
     )
 
-    personagem.nivel = nivelNovo()
+    // o nível entra na classe escolhida (ou abre uma classe nova)
+    const entrada = entradaEmFoco()
+
+    if (entrada) {
+        entrada.nivel += 1
+    } else {
+        classes.push({ classe: classeEmFoco, nivel: 1, subclasse: "" })
+    }
+
+    if (escolheuSubclasse) {
+        entradaEmFoco().subclasse = subclasseNova
+    }
+
+    personagem.classes = classes
     personagem.talentos = talentos
+
+    // espelhos, para o resto do app: classe inicial e nível total
+    const inicial = classeInicial(classes)
+    personagem.classe = inicial.classe
+    personagem.subclasse = inicial.subclasse || ""
+    personagem.nivel = nivelTotal(classes)
 
     // melhoria e dadiva entram no valor base, que é o que a ficha guarda
     if (aplicarMelhoria) {
@@ -625,10 +872,6 @@ function confirmarNivel() {
         personagem[atributo] += aumentos[atributo]
     })
 
-    if (escolheuSubclasse) {
-        personagem.subclasse = subclasseEL.value
-    }
-
     // derivados salvos acompanham, igual o salvar da ficha faz
     const totais = {}
     const modificadores = {}
@@ -641,7 +884,7 @@ function confirmarNivel() {
     personagem.atributosTotais = totais
     personagem.modificadores = modificadores
     personagem.bonusProficiencia = bonusDeProficiencia(personagem.nivel)
-    personagem.salvaguardas = salvaguardasDaClasse(personagem.classe, personagem.nivel)
+    personagem.salvaguardas = salvaguardasMulticlasse(classes)
     personagem.pvMaximo = pvDepois
 
     // subir de nível só aumenta o máximo; o PV atual fica como estava
@@ -659,7 +902,7 @@ function confirmarNivel() {
 if (!personagem) {
     telaEL.style.display = "none"
     mensagemErroEL.style.display = "block"
-} else if (personagem.nivel >= NIVEL_MAXIMO) {
+} else if (nivelTotal(classes) >= NIVEL_MAXIMO) {
     telaEL.style.display = "none"
     mensagemErroEL.textContent = "Este personagem já está no nível 20."
     mensagemErroEL.style.display = "block"
@@ -667,43 +910,28 @@ if (!personagem) {
     document.title = `${personagem.nome} - Subir de Nível`
 
     document.getElementById("nome-personagem").textContent = personagem.nome
-    document.getElementById("classe-personagem").textContent =
-        nomeDaClasse(personagem.classe)
-    document.getElementById("nivel-atual").textContent = personagem.nivel
-    document.getElementById("nivel-novo").textContent = nivelNovo()
-
     document.getElementById("link-cancelar").href = `ficha.html?id=${personagem.id}`
 
     montarGradeAsi()
     montarTalentos()
+    montarSubclasse()
     montarMagiasDoNivel()
+    montarEscolhaDeClasse()
+    atualizarCabecalho()
 
     atributoDadivaEL.addEventListener("change", function () {
         atributoDadiva = atributoDadivaEL.value
         atualizarTela()
     })
 
-    if (precisaSubclasse()) {
-        document.getElementById("bloco-subclasse").hidden = false
-        preencherSelect(subclasseEL, subclassesPorClasse[personagem.classe], "")
-        subclasseEL.addEventListener("change", atualizarTela)
-    }
+    subclasseEL.addEventListener("change", atualizarTela)
 
-    const instrucaoEL = document.getElementById("instrucao-escolha")
-    const colunasEL = document.getElementById("colunas-escolha")
-
-    if (nivelDaDadiva()) {
-        instrucaoEL.textContent =
-            "Nível 19: além da Melhoria de Atributo e dos talentos, você pode escolher uma Dádiva Épica."
-    } else if (temEscolha()) {
-        instrucaoEL.textContent =
-            "Este nível permite uma escolha. Compare as opções e decida."
-    } else {
-        // nível sem escolha: o jogador só confirma o que vem automático
-        instrucaoEL.textContent =
-            "Este nível não tem escolha a fazer. Confira o que ele traz e confirme."
-        colunasEL.hidden = true
-    }
+    // começar uma classe nova
+    classeNovaEL.addEventListener("change", function () {
+        if (classeNovaEL.value !== "") {
+            trocarClasse(classeNovaEL.value)
+        }
+    })
 
     // clicar no título da coluna já escolhe aquele caminho
     document.getElementById("escolher-asi").addEventListener("click", function () {

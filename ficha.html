@@ -125,6 +125,9 @@
         </div>
       </header>
 
+      <!-- multiclasse: aparece só quando o personagem tem mais de uma classe -->
+      <p class="resumo-classes" id="resumo-classes" hidden></p>
+
       <div class="ficha-corpo">
         <!-- ---------- Coluna 1: atributos, proficiência, perícias ---------- -->
         <div class="coluna coluna-esquerda">
@@ -248,9 +251,9 @@
             <p id="status-pericias" class="status-pericias"></p>
           </div>
 
-          <div class="bloco-ficha bloco-vazio">
-            <span class="valor-destaque">—</span>
-            <span class="rotulo">Sabedoria Passiva (Percepção)</span>
+          <div class="bloco-ficha">
+            <span class="rotulo-bloco">Passivas</span>
+            <div class="linha-passivas" id="linha-passivas"></div>
           </div>
 
           <div class="bloco-ficha">
@@ -262,18 +265,35 @@
         <!-- ---------- Coluna 2: combate e equipamento ---------- -->
         <div class="coluna coluna-central">
           <div class="linha-combate">
-            <div class="bloco-ficha bloco-vazio bloco-combate">
-              <span class="valor-destaque">—</span>
+            <div class="bloco-ficha bloco-combate">
+              <span class="valor-destaque" id="valor-ca"></span>
               <span class="rotulo">Classe de Armadura</span>
+              <span class="detalhe-combate" id="formula-ca"></span>
             </div>
-            <div class="bloco-ficha bloco-vazio bloco-combate">
-              <span class="valor-destaque">—</span>
+            <div class="bloco-ficha bloco-combate">
+              <span class="valor-destaque" id="valor-iniciativa"></span>
               <span class="rotulo">Iniciativa</span>
+              <span class="detalhe-combate" id="detalhe-iniciativa"></span>
             </div>
             <div class="bloco-ficha bloco-combate">
               <span class="valor-destaque" id="valor-deslocamento"></span>
               <span class="rotulo">Deslocamento</span>
             </div>
+          </div>
+
+          <div class="bloco-ficha" id="bloco-armadura">
+            <span class="rotulo-bloco">Armadura</span>
+            <div class="linha-armadura">
+              <div class="campo">
+                <select id="armadura"></select>
+                <span class="rotulo">Equipada</span>
+              </div>
+              <label class="campo-escudo">
+                <input type="checkbox" id="escudo" />
+                Escudo
+              </label>
+            </div>
+            <p class="descanso-ajuda" id="avisos-armadura"></p>
           </div>
 
           <div class="bloco-ficha">
@@ -337,9 +357,8 @@
               <p class="descanso-titulo" id="titulo-descanso"></p>
 
               <div class="acao-descanso" id="acao-dados-vida">
-                <button type="button" id="btn-gastar-dado">
-                  Gastar dado de vida
-                </button>
+                <!-- um botão por classe: cada uma tem o dado dela (multiclasse) -->
+                <div class="botoes-dado-vida" id="botoes-dado-vida"></div>
                 <p class="descanso-ajuda">
                   Rola o dado de vida e soma o modificador de Constituição aos
                   PV atuais.
@@ -431,14 +450,57 @@
             <div class="lista-recursos" id="lista-recursos"></div>
           </div>
 
-          <div class="bloco-ficha bloco-vazio bloco-alto">
+          <div class="bloco-ficha" id="bloco-ataques">
             <span class="rotulo-bloco">Ataques</span>
-            <p class="vazio-texto">Entra no Sprint 7 (RF34).</p>
+            <div class="linha-armadura">
+              <div class="campo">
+                <select id="arma-nova"></select>
+                <span class="rotulo">Arma</span>
+              </div>
+              <button type="button" id="btn-adicionar-arma">Adicionar</button>
+            </div>
+            <div class="lista-ataques" id="lista-ataques"></div>
           </div>
 
-          <div class="bloco-ficha bloco-vazio bloco-alto">
+          <div class="bloco-ficha" id="bloco-condicoes">
+            <span class="rotulo-bloco">Condições</span>
+            <div class="lista-condicoes" id="lista-condicoes"></div>
+
+            <div class="linha-armadura">
+              <div class="campo">
+                <select id="exaustao"></select>
+                <span class="rotulo">Exaustão</span>
+              </div>
+              <span class="detalhe-combate" id="efeito-exaustao"></span>
+            </div>
+
+            <div class="detalhe-magia" id="detalhe-condicao" hidden></div>
+          </div>
+
+          <div class="bloco-ficha" id="bloco-equipamento">
             <span class="rotulo-bloco">Equipamento</span>
-            <p class="vazio-texto">Entra no Sprint 8 (RF36, RF37).</p>
+
+            <div class="linha-moedas" id="linha-moedas"></div>
+            <p class="detalhe-combate" id="total-moedas"></p>
+
+            <div class="linha-item">
+              <div class="campo">
+                <input type="text" id="item-nome" placeholder="Nome do item" />
+                <span class="rotulo">Item</span>
+              </div>
+              <div class="campo campo-estreito">
+                <input type="number" id="item-quantidade" min="1" value="1" />
+                <span class="rotulo">Qtd.</span>
+              </div>
+              <div class="campo campo-estreito">
+                <input type="number" id="item-peso" min="0" step="0.1" value="0" />
+                <span class="rotulo">kg (un.)</span>
+              </div>
+              <button type="button" id="btn-adicionar-item">Adicionar</button>
+            </div>
+
+            <div class="lista-itens" id="lista-itens"></div>
+            <p class="descanso-ajuda" id="peso-total"></p>
           </div>
         </div>
 
@@ -446,22 +508,42 @@
         <div class="coluna coluna-direita">
           <div class="bloco-ficha bloco-vazio">
             <span class="rotulo-bloco">Traços de Personalidade</span>
-            <p class="vazio-texto">Entra com o RF03.</p>
+            <textarea
+              id="tracos-personalidade"
+              class="texto-livre"
+              rows="3"
+              placeholder="Como ele fala, o que faz sem pensar..."
+            ></textarea>
           </div>
 
-          <div class="bloco-ficha bloco-vazio">
+          <div class="bloco-ficha">
             <span class="rotulo-bloco">Ideais</span>
-            <p class="vazio-texto">Entra com o RF03.</p>
+            <textarea
+              id="ideais"
+              class="texto-livre"
+              rows="2"
+              placeholder="No que ele acredita"
+            ></textarea>
           </div>
 
-          <div class="bloco-ficha bloco-vazio">
+          <div class="bloco-ficha">
             <span class="rotulo-bloco">Vínculos</span>
-            <p class="vazio-texto">Entra com o RF03.</p>
+            <textarea
+              id="vinculos"
+              class="texto-livre"
+              rows="2"
+              placeholder="Quem ou o que ele não abandona"
+            ></textarea>
           </div>
 
-          <div class="bloco-ficha bloco-vazio">
+          <div class="bloco-ficha">
             <span class="rotulo-bloco">Defeitos</span>
-            <p class="vazio-texto">Entra com o RF03.</p>
+            <textarea
+              id="defeitos"
+              class="texto-livre"
+              rows="2"
+              placeholder="O que o mete em encrenca"
+            ></textarea>
           </div>
 
           <div class="bloco-ficha">
@@ -479,7 +561,7 @@
             </p>
           </div>
 
-          <div class="bloco-ficha bloco-alto">
+          <div class="bloco-ficha">
             <span class="rotulo-bloco">Características e Traços</span>
             <ul class="lista-texto" id="lista-tracos"></ul>
           </div>

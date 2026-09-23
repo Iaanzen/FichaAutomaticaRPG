@@ -1501,3 +1501,282 @@ body {
 
 /* Escolha que decide as magias da subclasse (Círculo da Terra) */
 .escolha-magias { margin-bottom: 8px; }
+
+/* Defesa e armadura (Sprint 7) */
+.detalhe-combate {
+    display: block;
+    margin-top: 2px;
+    font-size: 0.68rem;
+    font-style: italic;
+    color: #6a4f3a;
+}
+
+.linha-armadura {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+}
+
+.linha-armadura .campo { flex: 1; }
+
+.campo-escudo {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding-bottom: 8px;
+    white-space: nowrap;
+    font-size: 0.85rem;
+}
+
+.campo-escudo input { width: auto; }
+
+/* Ataques (Sprint 7) */
+.lista-ataques { text-align: left; }
+
+.ataque {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    border-bottom: 1px solid var(--borda-fina);
+    font-size: 0.82rem;
+}
+
+.ataque:last-child { border-bottom: none; }
+
+.ataque-nome { flex: 1; }
+
+.ataque-valor {
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
+    min-width: 34px;
+    text-align: center;
+}
+
+.ataque-dano { min-width: 118px; }
+
+.ataque-marca {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.72rem;
+    white-space: nowrap;
+}
+
+.ataque-marca input { width: auto; }
+
+.ataque-aviso {
+    font-size: 0.7rem;
+    font-style: italic;
+    color: #8a6f57;
+}
+
+.ataque-remover {
+    width: auto;
+    padding: 0 6px;
+    font-size: 1rem;
+    line-height: 1.2;
+    color: var(--sangue-dragao);
+    background: none;
+    border: 1px solid var(--borda-fina);
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.ataque-remover:hover {
+    color: var(--pergaminho);
+    background-color: var(--sangue-dragao);
+}
+
+#btn-adicionar-arma {
+    width: auto;
+    margin-bottom: 8px;
+    padding: 8px 14px;
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
+    font-size: 0.8rem;
+    color: var(--tinta);
+    background-color: rgba(255,255,255,0.5);
+    border: 2px solid var(--tinta);
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+#btn-adicionar-arma:hover { background-color: var(--ouro); }
+
+/* Condições (Sprint 7) */
+.lista-condicoes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-bottom: 10px;
+}
+
+.condicao {
+    padding: 3px 10px;
+    font-family: 'Lora', serif;
+    font-size: 0.75rem;
+    color: var(--tinta);
+    background: rgba(255,255,255,0.4);
+    border: 1px solid var(--borda-fina);
+    border-radius: 12px;
+    cursor: pointer;
+}
+
+.condicao:hover { background: rgba(255,255,255,0.75); }
+
+/* condição ligada fica marcada como as magias equipadas */
+.condicao-ativa {
+    font-weight: 700;
+    background: var(--sangue-dragao);
+    color: var(--pergaminho);
+    border-color: var(--tinta);
+}
+
+#detalhe-condicao .detalhe-descricao { white-space: pre-line; }
+
+/* Moedas e inventário (Sprint 8) */
+.linha-moedas {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 4px;
+}
+
+.campo-moeda { flex: 1; }
+
+.campo-moeda input {
+    padding: 4px;
+    text-align: center;
+    font-size: 0.85rem;
+}
+
+.linha-item {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    margin: 10px 0 8px;
+}
+
+.linha-item .campo { flex: 1; }
+
+.campo-estreito { flex: 0 0 68px !important; }
+
+.campo-estreito input {
+    padding: 4px;
+    text-align: center;
+    font-size: 0.85rem;
+}
+
+.lista-itens { text-align: left; }
+
+.item-quantidade {
+    width: 48px;
+    padding: 2px 4px;
+    text-align: center;
+    font-size: 0.8rem;
+}
+
+#btn-adicionar-item {
+    width: auto;
+    margin-bottom: 8px;
+    padding: 8px 14px;
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
+    font-size: 0.8rem;
+    color: var(--tinta);
+    background-color: rgba(255,255,255,0.5);
+    border: 2px solid var(--tinta);
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+#btn-adicionar-item:hover { background-color: var(--ouro); }
+
+/* Personalidade em texto livre (RF03) */
+.texto-livre {
+    width: 100%;
+    padding: 6px;
+    font-family: 'Lora', serif;
+    font-size: 0.85rem;
+    line-height: 1.4;
+    color: var(--tinta);
+    background-color: rgba(255,255,255,0.55);
+    border: 1px solid var(--borda-fina);
+    border-bottom: 2px solid var(--tinta);
+    border-radius: 4px 4px 0 0;
+    resize: vertical;
+}
+
+.texto-livre:focus {
+    outline: none;
+    background: #fff;
+    border-bottom-color: var(--sangue-dragao);
+}
+
+/* Passivas (RF05) */
+.linha-passivas {
+    display: flex;
+    gap: 10px;
+    text-align: center;
+}
+
+.campo-passiva {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Multiclasse */
+.resumo-classes {
+    margin: -10px 0 16px;
+    font-family: 'Cinzel', serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-align: center;
+}
+
+.habilidades-classe {
+    margin: 8px 0 3px;
+    font-family: 'Cinzel', serif;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* ---------- Level up: escolher a classe que sobe (multiclasse) ---------- */
+
+.lista-classes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.classe-opcao {
+    padding: 8px 12px;
+    font-family: 'Lora', serif;
+    font-size: 0.95rem;
+    color: var(--tinta);
+    background: rgba(255,255,255,0.4);
+    border: 1px solid var(--borda-fina);
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.classe-opcao:hover { background: rgba(255,255,255,0.75); }
+
+.classe-escolhida {
+    font-weight: 700;
+    background: var(--ouro);
+    border: 2px solid var(--tinta);
+}
+
+.campo-classe-nova { max-width: 280px; }
+
+/* um botão por dado de vida: com multiclasse há um de cada classe */
+.botoes-dado-vida {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}

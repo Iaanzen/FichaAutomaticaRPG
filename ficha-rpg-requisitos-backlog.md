@@ -1,7 +1,7 @@
 # Ficha de RPG Automatizada — D&D 5e
 
 **Projeto pessoal — mestre e jogadores da campanha**
-**Escopo:** apenas D&D 5e, sem multiclasse (fora do MVP)
+**Escopo:** apenas D&D 5e; multiclasse entrou no escopo em 23/09/2026 (seção 3.16)
 **Armazenamento:** localStorage (sem login/servidor por enquanto)
 
 ---
@@ -11,9 +11,9 @@
 ### 1.1 Identidade e Perfil
 - RF01: Cadastrar nome, raça (e sub-raça), classe (e subclasse), antecedente e alinhamento.
 - RF02: Selecionar/editar nível do personagem (1–20).
-- RF03: Registrar traços de personalidade, ideais, vínculos e defeitos (texto livre).
+- RF03: Registrar traços de personalidade, ideais, vínculos e defeitos (texto livre). *(Feito: quatro caixas de texto na ficha, salvas com ela.)*
 - RF04: Registrar idiomas conhecidos e proficiência com ferramentas/instrumentos.
-- RF05: Calcular percepção passiva automaticamente (10 + mod. Sabedoria + proficiência, se houver).
+- RF05: Calcular percepção passiva automaticamente (10 + mod. Sabedoria + proficiência, se houver). *(Feito, e ampliado: Percepção, Investigação e Intuição passivas, como na ficha de 2024; o talento Observador soma +5 em Percepção e Investigação.)*
 
 ### 1.2 Atributos e Modificadores
 - RF06: Preencher os 6 atributos (Força, Destreza, Constituição, Inteligência, Sabedoria, Carisma).
@@ -96,7 +96,7 @@
 
 ## 3. Fora de escopo por enquanto (Backlog futuro / Fase 2)
 
-- Multiclasse
+- ~~Multiclasse~~ — **entrou no escopo** (pedido em 23/09/2026); em andamento, ver seção 3.16
 - Login e sincronização em servidor (múltiplos dispositivos)
 - Painel de mestre (visão consolidada de todas as fichas dos jogadores)
 - Talentos avançados com pré-requisitos complexos
@@ -409,6 +409,89 @@ Limitações conhecidas:
 - **B (aos poucos):** subclasses fora da API recebem as habilidades à mão no `conteudo-extra.js`, só as que a mesa usar. Já feito: os 7 Fight Clubs do Pugilista (nomes, do material do usuário).
 - **Na tela:** no nível de uma habilidade de subclasse aparecem as habilidades da subclasse escolhida (com descrição ao clicar, quando vêm da API). Subclasse sem dados continua como "Habilidade de ...". Isso vale também para níveis de subclasse fora das marcas da classe (ex: Campeão no 7).
 
+## 3.14 Combate (CONCLUÍDO — Sprint 7)
+
+**Passos:** 1. iniciativa e CA; 2. ataques e armas; 3. condições.
+
+**Passo 1 (feito):**
+- **Tabela de armaduras** gerada da API 2024: 12 vestíveis mais o escudo, com CA base, uso de Destreza (e o limite +2 das médias), Força mínima e desvantagem em Furtividade. **Correção:** a API marca o Hide Armor como leve, mas no livro ele é média; corrigido na tabela, com o motivo comentado.
+- **CA (RF33):** a ficha tem o select de armadura e a caixa de escudo. O app calcula todas as formas possíveis e **usa a maior**, mostrando qual foi:
+  - padrão: armadura (ou 10) + Destreza, respeitando o limite da armadura;
+  - **Bárbaro:** 10 + Destreza + Constituição, sem armadura, escudo permitido;
+  - **Monge:** 10 + Destreza + Sabedoria, sem armadura e **sem escudo**;
+  - **Pugilista (Iron Chin):** 12 + Constituição, sem armadura ou com leve, sem escudo.
+  - Avisos da armadura equipada: Força mínima (deslocamento -3 m) e desvantagem em Furtividade.
+- **Iniciativa (RF32):** modificador de Destreza, somando o bônus de proficiência de quem tem o talento **Alerta**.
+- Armadura e escudo são salvos com a ficha.
+
+**Passo 2 (feito) — ataques (RF34):**
+- **Tabela de armas** gerada da API 2024: 38 armas com dano, tipo de dano, propriedades (acuidade, versátil, leve, pesada, alcance, arremesso, munição, duas mãos, recarga), alcance e maestria. Mais o **ataque desarmado**, que não está na API.
+- **Proficiência de arma por classe**, da API: simples e marciais para Bárbaro, Guerreiro, Paladino e Patrulheiro; só simples para os conjuradores; lista própria do Ladino (espada longa, rapieira, cimitarra, espada curta, chicote, besta de mão). **Exceção:** o Monge segue a regra de 2024 (simples e marciais com a propriedade Leve); a API ainda traz a lista de 2014.
+- **Bônus de ataque:** Força no corpo a corpo, Destreza à distância, o melhor dos dois com Acuidade, mais a proficiência quando a classe tem. Sem proficiência, a linha avisa.
+- **Dano:** dado da arma + modificador do mesmo atributo, com a opção "2 mãos" nas versáteis.
+- **Fisticuffs do Pugilista:** o dado da classe (d6 a d12 por nível) substitui o dado do ataque desarmado e das armas de pugilista quando é maior, e a linha marca "dado da classe".
+- **Ficha:** bloco "Ataques" com select de arma, botão Adicionar e uma linha por ataque (bônus, dano, versátil, remover). Salvo com a ficha.
+
+**Passo 3 (feito) — condições (RF35):**
+- As **14 condições** da API 2024 viram botões que ligam e desligam na ficha; ligar mostra a descrição (buscada na API, em inglês). A lista funciona sem internet.
+- **Exaustão** fica à parte, com nível de 0 a 6, porque é cumulativa: o app mostra o efeito do nível (regra 2024: testes de d20 -2 por nível, deslocamento -1,5 m por nível, morte no 6).
+- Condições e nível de exaustão são salvos com a ficha.
+- O app **marca** as condições; aplicar o efeito nas rolagens continua com o jogador.
+
+## 3.15 Inventário e moedas (CONCLUÍDO — Sprint 8)
+
+- **Moedas (RF37):** PC, PP, PE, PO e PL na ficha, com o **total convertido em PO** (100 PC = 10 PP = 2 PE = 1 PO; 1 PL = 10 PO). O total só aparece quando há dinheiro.
+- **Inventário (RF36):** itens com **nome, quantidade e peso por unidade**, adicionados à mão. Cada linha mostra o peso total do item e tem botão de remover; a quantidade é editável na própria linha.
+- **Decisão:** os itens são **digitados**, e não vêm da API. Assim o inventário funciona sem internet e aceita itens da campanha que não existem em lista nenhuma.
+- **Peso e carga:** o app soma o peso carregado e mostra a **capacidade de carga** (7,5 kg por ponto de Força, o equivalente métrico das 15 lb do livro), avisando quando passa do limite.
+- Moedas e itens são salvos com a ficha.
+
+**Junto com o Sprint 8, os dois requisitos soltos que faltavam:**
+- **RF03 — personalidade:** traços, ideais, vínculos e defeitos viraram quatro caixas de texto livre na ficha, salvas com ela.
+- **RF05 — passivas:** bloco com **Percepção, Investigação e Intuição** passivas (10 + o bônus da perícia, contando proficiência). O talento **Observador** soma +5 em Percepção e Investigação. As passivas acompanham mudanças de atributo, nível e perícia.
+
+## 3.16 Multiclasse — CONCLUÍDA
+
+**Passos:** 1. base; 2. level up escolhendo a classe; 3. magias por classe; 4. acabamento. **Todos concluídos.**
+
+**Modelo de dados:** `personagem.classes = [{ classe, nivel, subclasse }]`. A **primeira** é a classe inicial. `classe`, `nivel` e `subclasse` continuam existindo como espelho (classe inicial e **nível total**), para o resto do app seguir funcionando. Ficha antiga vira lista de uma classe sozinha, sem migração manual.
+
+**Passo 1 (feito) — regras e ficha:**
+- **PV:** dado cheio só no nível 1 da classe inicial; todo o resto pela média do dado de cada classe. Robusto e Dádiva da Fortitude contam uma vez, pelo nível total.
+- **Bônus de proficiência:** pelo nível total.
+- **Salvaguardas e perícias:** só da classe inicial, como manda a regra.
+- **Espaços de magia:** com duas classes conjuradoras, soma-se o nível de conjurador (completo conta tudo, meio conjurador conta a metade para baixo) e usa-se a tabela do conjurador completo. A **Magia de Pacto do Bruxo fica separada**, com contagem própria de gastos.
+- **Recursos, habilidades e subclasses:** por nível de cada classe; a ficha mostra as habilidades agrupadas por classe.
+- **CA e ataques:** valem o melhor cálculo entre as classes (Defesa sem Armadura, Iron Chin, Fisticuffs, proficiência de arma de qualquer uma delas).
+- **Pré-requisito 2024** (13 no atributo principal) já calculado, incluindo o "Força **ou** Destreza" do Guerreiro e o "Destreza **e** Sabedoria" do Monge. Mostrado na tela no passo 2.
+- A ficha mostra "Classes: Guerreiro 3 / Ladino 2 (nível 5)" quando há mais de uma.
+
+**Passo 2 (feito) — level up escolhendo a classe:**
+- Bloco novo **"Classe que sobe"** no topo do level up: um botão por classe que o personagem já tem ("Guerreiro 3 → 4") e um select para **começar uma classe nova**. É por aqui que se cria um multiclasse.
+- O que é **por nível da classe escolhida**: Melhoria de Atributo / Talento / Dádiva Épica, subclasse (no nível de escolha daquela classe), recursos, habilidades, aumento automático de atributo e troca de magias.
+- O que é **pelo personagem inteiro**: PV, bônus de proficiência, espaços de magia (com os de Pacto listados à parte) e o nível mostrado no cabeçalho.
+- Trocar de classe **zera a escolha em andamento** (ASI/talento), porque ela era da outra classe.
+- **Pré-requisito 2024:** o app **avisa e deixa passar** — diz o que falta para entrar na classe nova e o que falta para sair da inicial, e sugere combinar com o mestre. Não bloqueia, porque mesas mudam essa regra.
+- Ao confirmar: o nível entra na classe certa (ou abre uma entrada nova com nível 1), `personagem.nivel` vira o **total**, `classe`/`subclasse` espelham a **inicial** e as salvaguardas são recalculadas pela inicial.
+- Coberto por `testar-multiclasse-levelup.js` (Guerreiro 3 → Ladino 1 → Ladino 3, com subclasse indo para o Ladino e não para o Guerreiro).
+
+**Passo 3 (feito) — magias por classe:**
+- A aba de magias trabalha **uma classe de cada vez**, com um bloco "Classe" no topo (só aparece com duas ou mais classes conjuradoras). Cada classe tem a lista, o limite de truques/preparadas, as magias equipadas e a troca dela.
+- **Distinção que importa:** o círculo que a classe *prepara* vem da tabela **dela** (`circuloMaximoDaClasse`), enquanto os espaços de magia são **compartilhados** e somados pelo nível de conjurador. Um Clérigo 1 / Mago 4 lança com espaços de 3º círculo, mas só prepara magias de 1º na lista de Clérigo e de 2º na de Mago.
+- `magiasEquipadas` ganhou o campo `classe`. Ficha antiga sem esse campo: a magia é da classe inicial (`normalizarMagiasEquipadas`), sem migração manual.
+- `trocasMagia` virou um **mapa por classe** (`{ mago: { magias, truques } }`). Ficha antiga, que guardava um objeto só, vira a troca da classe inicial. O **descanso longo libera em todas** as classes conjuradoras; o **level up só na classe que subiu**.
+- Trocar de classe na aba **não apaga** as magias das outras: a limpeza de magias fora da lista só olha a classe aberta.
+- Na ficha, as magias sempre preparadas de subclasse saem pelo nível **daquela** classe, e com duas conjuradoras cada magia mostra de onde vem.
+- Coberto por `testar-multiclasse-magias.js` (regras + o `magias.js` de verdade contra a API, com um Clérigo 1 / Mago 4).
+
+**Passo 4 (feito) — acabamento:**
+- **Dados de vida por classe.** `dadosVidaGastos` virou um mapa (`{ guerreiro: 2 }`); ficha antiga, que guardava um número, vira o gasto da classe inicial. No descanso curto aparece **um botão por classe** ("Gastar d10 (Guerreiro) — 3 de 3"), e o texto do resultado diz de qual classe foi o dado. Com uma classe só, o botão continua sendo o de sempre ("Gastar dado de vida").
+- O bloco de Dados de Vida da ficha mostra "3d10 + 2d8" em vez de um grupo só.
+- **Texto do wizard:** a etapa 2 avisa que aquela é a **classe inicial**, que dá para multiclassear depois pelo level up, e que as **salvaguardas e perícias ficam sempre as dela**. De propósito, não menciona o pré-requisito de 13 (não se aplica no nível 1, e o aviso já aparece no level up) nem dá conselho de build.
+- Coberto por `testar-multiclasse-dados.js`.
+
+**Resumo do que o multiclasse toca:** `regras.js` (camada nova), `levelup.js` (escolha da classe), `magias.js` (uma classe por vez), `ficha.js` (resumo, recursos, habilidades, espaços, CA, ataques, trocas, dados de vida), `ficha-comum.js` (PV e salvaguardas), `cadastro.js`/`cadastro.html` (classe inicial).
+
 ---
 
 ## 4. Backlog do Produto (ordenado por prioridade e dependência)
@@ -450,8 +533,8 @@ Escrito como histórias de usuário, do jeito Scrum — cada uma vira uma entreg
 | Sprint 5.6 | Um bloco por classe e conteúdo extra local, fora do git (Artífice, Pugilista) | — | em andamento (ver seção 3.11) |
 | Sprint 6 | Recursos de classe | 11 | concluída (ver seção 3.12) |
 | Sprint 6.5 | Habilidades por nível (RF13): o que cada nível e subclasse traz, salvaguarda ganha por nível, atributo com teto maior, magias concedidas pela subclasse | — | concluída (ver seção 3.13) |
-| Sprint 7 | Combate | 12 | |
-| Sprint 8 | Inventário | 13 | |
+| Sprint 7 | Combate | 12 | concluída (ver seção 3.14) |
+| Sprint 8 | Inventário | 13 | concluída (ver seção 3.15) |
 | ~~Sprint 9~~ | ~~Gestão avançada de fichas~~ — juntado à Fase 2 (seção 3.10) | 14, 15 | |
 | Fase 2a | Login e fichas no banco: cadastro aberto, CRUD e duplicar ficha no banco, migração do navegador | 14, 15 | |
 | Fase 2b | Permissões e administração: pacotes liberados por conta, painel de mestre, exportar ficha como backup | — | |

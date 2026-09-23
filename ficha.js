@@ -75,18 +75,23 @@ const pendenciasDescansoEL = document.getElementById("pendencias-descanso")
 const acaoDadosVidaEL = document.getElementById("acao-dados-vida")
 const acaoDescansoLongoEL = document.getElementById("acao-descanso-longo")
 const dadosDisponiveisEL = document.getElementById("dados-disponiveis")
-const btnGastarDadoEL = document.getElementById("btn-gastar-dado")
+const botoesDadoVidaEL = document.getElementById("botoes-dado-vida")
 const acaoConcluirCurtoEL = document.getElementById("acao-concluir-curto")
 
-// quantos dados de vida ja foram gastos desde o ultimo descanso longo
-let dadosVidaGastos = 0
+// quantos dados de vida já foram gastos desde o último descanso longo,
+// por classe ({ guerreiro: 2 }): cada classe tem o dado dela
+let dadosVidaGastos = {}
+
+function classePadraoDoPersonagem() {
+    return classesParaCalculo.length ? classesParaCalculo[0].classe : classeEL.value
+}
 
 function dadosVidaTotais() {
     return Number(nivelEL.value)
 }
 
 function dadosVidaDisponiveis() {
-    return dadosVidaTotais() - dadosVidaGastos
+    return totalDeDadosDisponiveis(classesParaCalculo, dadosVidaGastos, classePadraoDoPersonagem())
 }
 
 function definirPvAtual(valor) {
@@ -105,28 +110,66 @@ function atualizarDadosDeVida() {
     dadosDisponiveisEL.textContent =
         `${dadosVidaDisponiveis()} de ${dadosVidaTotais()} disponíveis`
 
-    btnGastarDadoEL.disabled = dadosVidaDisponiveis() <= 0
+    const grupos = dadosDeVidaDisponiveis(
+        classesParaCalculo,
+        dadosVidaGastos,
+        classePadraoDoPersonagem()
+    )
+
+    botoesDadoVidaEL.innerHTML = ""
+
+    grupos.forEach(function (grupo) {
+        const botao = document.createElement("button")
+        botao.type = "button"
+
+        // com uma classe só o texto continua o de sempre
+        botao.textContent = grupos.length > 1
+            ? `Gastar d${grupo.dado} (${nomeDaClasse(grupo.classe)}) — ${grupo.disponiveis} de ${grupo.total}`
+            : "Gastar dado de vida"
+
+        botao.disabled = grupo.disponiveis <= 0
+
+        botao.addEventListener("click", function () {
+            gastarDadoDeVida(grupo.classe)
+        })
+
+        botoesDadoVidaEL.appendChild(botao)
+    })
 }
 
-// RF23: gastar um dado de vida recupera 1 dado + modificador de Constituição
-function gastarDadoDeVida() {
-    if (dadosVidaDisponiveis() <= 0) {
+// RF23: gastar um dado de vida recupera 1 dado + modificador de Constituição.
+// Com multiclasse, o jogador escolhe de qual classe é o dado.
+function gastarDadoDeVida(classe) {
+    const gastos = normalizarDadosGastos(dadosVidaGastos, classePadraoDoPersonagem())
+
+    const grupo = dadosDeVidaDisponiveis(
+        classesParaCalculo,
+        gastos,
+        classePadraoDoPersonagem()
+    ).find(function (item) {
+        return item.classe === classe
+    })
+
+    if (!grupo || grupo.disponiveis <= 0) {
         return
     }
 
-    const dado = dadoDeVidaPorClasse[classeEL.value]
     const modificador = calcularAtributos().modificadores.constituicao
-    const rolagem = rolarDado(dado)
+    const rolagem = rolarDado(grupo.dado)
 
     // uma Constituição negativa nunca tira PV de quem está descansando
     const recuperado = Math.max(0, rolagem + modificador)
 
-    dadosVidaGastos++
+    gastos[classe] = (gastos[classe] || 0) + 1
+    dadosVidaGastos = gastos
+
     definirPvAtual(Number(pvAtualEL.value) + recuperado)
     atualizarDadosDeVida()
 
+    const deQuem = classesParaCalculo.length > 1 ? ` de ${nomeDaClasse(classe)}` : ""
+
     resultadoDescansoEL.textContent =
-        `Rolou ${rolagem} no d${dado} ${formatarModificador(modificador)} = ${recuperado} PV recuperados.`
+        `Rolou ${rolagem} no d${grupo.dado}${deQuem} ${formatarModificador(modificador)} = ${recuperado} PV recuperados.`
 }
 
 // RF27: espaços de magia voltam ao total; atualizarEspacosDeMagia fica mais abaixo
@@ -166,13 +209,13 @@ function concluirDescansoCurto() {
 
 // RF23: descanso longo devolve tudo, inclusive todos os dados de vida (regra 2024)
 function concluirDescansoLongo() {
-    const devolvidos = dadosVidaGastos
-    const conjura = conjuracaoDaClasse(classeEL.value) !== null
+    const devolvidos = dadosVidaTotais() - dadosVidaDisponiveis()
+    const conjura = classesConjuradoras(classesParaCalculo).length > 0
 
     definirPvAtual(calcularPvMaximo())
     pvTemporarioEL.value = 0
     lembrarPv()
-    dadosVidaGastos = 0
+    dadosVidaGastos = {}
 
     atualizarDadosDeVida()
 
@@ -193,12 +236,24 @@ function concluirDescansoLongo() {
 
     const espacos = extras.length ? `, ${extras.join(", ")}` : ""
 
-    // RF30: a troca liberada fica guardada até ser usada na aba de magias
-    const liberadas = trocasLiberadas(classeEL.value, "descansoLongo")
-    trocasMagia = juntarTrocas(trocasMagia, liberadas)
+    // RF30: a troca liberada fica guardada até ser usada na aba de magias.
+    // Com multiclasse, cada classe conjuradora libera a troca dela.
+    trocasMagia = liberarTrocasMulticlasse(trocasMagia, classesParaCalculo, "descansoLongo")
 
-    const troca = descreverTrocas(liberadas)
-    const textoTroca = troca ? ` Troca liberada: ${troca} (aba Magias).` : ""
+    const porClasse = classesConjuradoras(classesParaCalculo)
+        .map(function (entrada) {
+            const troca = descreverTrocas(trocasLiberadas(entrada.classe, "descansoLongo"))
+            return troca
+                ? (classesConjuradoras(classesParaCalculo).length > 1
+                    ? `${nomeDaClasse(entrada.classe)}: ${troca}`
+                    : troca)
+                : null
+        })
+        .filter(Boolean)
+
+    const textoTroca = porClasse.length
+        ? ` Troca liberada: ${porClasse.join("; ")} (aba Magias).`
+        : ""
 
     resultadoDescansoEL.textContent =
         `PV no máximo, temporários zerados${espacos} e ${devolvidos} dado(s) de vida recuperado(s).${textoTroca}`
@@ -273,7 +328,6 @@ document
         entrarNoDescanso("longo")
     })
 
-btnGastarDadoEL.addEventListener("click", gastarDadoDeVida)
 
 document
     .getElementById("btn-concluir-curto")
@@ -414,19 +468,25 @@ const listaEspacosEL = document.getElementById("lista-espacos")
 let espacosGastos = {}
 
 // o que foi marcado, limitado ao que a classe e o nivel atuais permitem
+// Pacto e comum podem ser do mesmo círculo: cada um tem sua contagem
+function chaveDoEspaco(espaco) {
+    return espaco.pacto ? `pacto${espaco.circulo}` : String(espaco.circulo)
+}
+
 function espacosGastosValidos() {
     const validos = {}
 
-    espacosDeMagia(classeEL.value, Number(nivelEL.value)).forEach(function (espaco) {
-        validos[espaco.circulo] = Math.min(espacosGastos[espaco.circulo] || 0, espaco.total)
+    espacosDeMagiaMulticlasse(classesDoCalculo()).forEach(function (espaco) {
+        const chave = chaveDoEspaco(espaco)
+        validos[chave] = Math.min(espacosGastos[chave] || 0, espaco.total)
     })
 
     return validos
 }
 
 function atualizarEspacosDeMagia() {
-    const espacos = espacosDeMagia(classeEL.value, Number(nivelEL.value))
-    const conjuracao = conjuracaoDaClasse(classeEL.value)
+    // multiclasse: níveis somados na tabela de conjurador, Pacto à parte
+    const espacos = espacosDeMagiaMulticlasse(classesDoCalculo())
     const gastos = espacosGastosValidos()
 
     listaEspacosEL.innerHTML = ""
@@ -441,26 +501,29 @@ function atualizarEspacosDeMagia() {
     listaEspacosEL.appendChild(ajuda)
 
     espacos.forEach(function (espaco) {
+        const chave = chaveDoEspaco(espaco)
+        const gasto = gastos[chave]
+
         const linha = document.createElement("div")
         linha.className = "linha-espaco"
 
         const rotulo = document.createElement("span")
         rotulo.className = "espaco-rotulo"
-        rotulo.textContent = conjuracao.tipo === "pacto"
+        rotulo.textContent = espaco.pacto
             ? `${espaco.circulo}º círculo (Pacto)`
             : `${espaco.circulo}º círculo`
 
         const circulosEL = document.createElement("div")
         circulosEL.className = "espaco-circulos"
 
-        montarCirculos(circulosEL, espaco.total, gastos[espaco.circulo], false, function (novo) {
-            espacosGastos[espaco.circulo] = novo
+        montarCirculos(circulosEL, espaco.total, gasto, false, function (novo) {
+            espacosGastos[chave] = novo
             atualizarEspacosDeMagia()
         })
 
         const restantes = document.createElement("span")
         restantes.className = "espaco-restantes"
-        restantes.textContent = `${espaco.total - gastos[espaco.circulo]} de ${espaco.total}`
+        restantes.textContent = `${espaco.total - gasto} de ${espaco.total}`
 
         linha.appendChild(rotulo)
         linha.appendChild(circulosEL)
@@ -471,6 +534,516 @@ function atualizarEspacosDeMagia() {
 
 // trocar de classe muda a tabela de espacos (ou tira ela)
 classeEL.addEventListener("change", atualizarEspacosDeMagia)
+
+/* ---------- Sprint 7: defesa (RF32, RF33) ---------- */
+
+const armaduraEL = document.getElementById("armadura")
+const escudoEL = document.getElementById("escudo")
+
+const NOME_DA_CATEGORIA = { leve: "leve", media: "média", pesada: "pesada" }
+
+function montarSelectDeArmaduras() {
+    armaduraEL.innerHTML = ""
+
+    const semArmadura = document.createElement("option")
+    semArmadura.value = ""
+    semArmadura.textContent = "Sem armadura"
+    armaduraEL.appendChild(semArmadura)
+
+    ARMADURAS.forEach(function (armadura) {
+        // o escudo não é "vestido": entra pela caixa ao lado
+        if (armadura.categoria === "escudo") {
+            return
+        }
+
+        const opcao = document.createElement("option")
+        opcao.value = armadura.valor
+        opcao.textContent = `${armadura.nome} (${NOME_DA_CATEGORIA[armadura.categoria]})`
+        armaduraEL.appendChild(opcao)
+    })
+}
+
+// RF32 e RF33: iniciativa e CA, com o melhor cálculo que a classe permite
+function atualizarDefesa() {
+    const calculo = calcularAtributos()
+    const proficiencia = bonusDeProficiencia(Number(nivelEL.value))
+
+    // multiclasse: vale o melhor cálculo entre as classes
+    const ca = calcularCAMulticlasse(
+        classesDoCalculo(),
+        armaduraEL.value,
+        escudoEL.checked,
+        calculo.modificadores,
+        calculo.totais.forca
+    )
+
+    document.getElementById("valor-ca").textContent = ca.total
+    document.getElementById("formula-ca").textContent =
+        escudoEL.checked ? `${ca.formula} + escudo` : ca.formula
+    document.getElementById("avisos-armadura").textContent = ca.avisos.join(" ")
+
+    const iniciativa = calcularIniciativa(
+        calculo.modificadores.destreza,
+        proficiencia,
+        talentosDoPersonagem
+    )
+
+    document.getElementById("valor-iniciativa").textContent = formatarModificador(iniciativa)
+    document.getElementById("detalhe-iniciativa").textContent =
+        iniciativa === calculo.modificadores.destreza ? "Destreza" : "Destreza + Alerta"
+}
+
+armaduraEL.addEventListener("change", atualizarDefesa)
+escudoEL.addEventListener("change", atualizarDefesa)
+classeEL.addEventListener("change", atualizarDefesa)
+
+/* ---------- RF03: personalidade (texto livre) ---------- */
+
+// id do campo na tela -> campo salvo no personagem
+const CAMPOS_DE_PERSONALIDADE = [
+    ["tracos-personalidade", "tracosPersonalidade"],
+    ["ideais", "ideais"],
+    ["vinculos", "vinculos"],
+    ["defeitos", "defeitos"]
+]
+
+function escreverPersonalidade() {
+    CAMPOS_DE_PERSONALIDADE.forEach(function (campo) {
+        document.getElementById(campo[0]).value = personagem[campo[1]] || ""
+    })
+}
+
+function lerPersonalidade() {
+    CAMPOS_DE_PERSONALIDADE.forEach(function (campo) {
+        personagem[campo[1]] = document.getElementById(campo[0]).value
+    })
+}
+
+/* ---------- Sprint 8: moedas e inventário (RF36, RF37) ---------- */
+
+const linhaMoedasEL = document.getElementById("linha-moedas")
+const listaItensEL = document.getElementById("lista-itens")
+const itemNomeEL = document.getElementById("item-nome")
+const itemQuantidadeEL = document.getElementById("item-quantidade")
+const itemPesoEL = document.getElementById("item-peso")
+
+// { pc: 0, pp: 0, ... } e [{ nome, quantidade, peso }]
+let moedasDoPersonagem = {}
+let itensDoPersonagem = []
+
+function montarCamposDeMoedas() {
+    linhaMoedasEL.innerHTML = ""
+
+    MOEDAS.forEach(function (moeda) {
+        const campo = document.createElement("div")
+        campo.className = "campo campo-moeda"
+
+        const entrada = document.createElement("input")
+        entrada.type = "number"
+        entrada.min = 0
+        entrada.id = `moeda-${moeda.valor}`
+        entrada.value = moedasDoPersonagem[moeda.valor] || 0
+        entrada.title = moeda.nomeCompleto
+
+        entrada.addEventListener("change", function () {
+            moedasDoPersonagem[moeda.valor] = Math.max(0, Number(entrada.value) || 0)
+            entrada.value = moedasDoPersonagem[moeda.valor]
+            atualizarTotalDeMoedas()
+        })
+
+        const rotulo = document.createElement("span")
+        rotulo.className = "rotulo"
+        rotulo.textContent = moeda.nome
+
+        campo.appendChild(entrada)
+        campo.appendChild(rotulo)
+        linhaMoedasEL.appendChild(campo)
+    })
+}
+
+function atualizarTotalDeMoedas() {
+    const total = totalEmOuro(moedasDoPersonagem)
+
+    // o total some quando a bolsa está vazia, para não poluir a ficha
+    document.getElementById("total-moedas").textContent = total > 0
+        ? `Total: ${total.toFixed(2).replace(".", ",")} PO`
+        : ""
+}
+
+function adicionarItem() {
+    const nome = itemNomeEL.value.trim()
+
+    if (nome === "") {
+        itemNomeEL.focus()
+        return
+    }
+
+    itensDoPersonagem.push({
+        nome: nome,
+        quantidade: Math.max(1, Number(itemQuantidadeEL.value) || 1),
+        peso: Math.max(0, Number(itemPesoEL.value) || 0)
+    })
+
+    itemNomeEL.value = ""
+    itemQuantidadeEL.value = 1
+    itemPesoEL.value = 0
+    itemNomeEL.focus()
+
+    atualizarInventario()
+}
+
+function criarLinhaDeItem(item, indice) {
+    const linha = document.createElement("div")
+    linha.className = "ataque"
+
+    const quantidade = document.createElement("input")
+    quantidade.type = "number"
+    quantidade.min = 1
+    quantidade.className = "item-quantidade"
+    quantidade.value = item.quantidade
+    quantidade.title = "Quantidade"
+    quantidade.addEventListener("change", function () {
+        item.quantidade = Math.max(1, Number(quantidade.value) || 1)
+        atualizarInventario()
+    })
+
+    const nome = document.createElement("span")
+    nome.className = "ataque-nome"
+    nome.textContent = item.nome
+
+    const peso = document.createElement("span")
+    peso.className = "ataque-aviso"
+    peso.textContent = item.peso
+        ? `${(item.peso * item.quantidade).toFixed(1).replace(".", ",")} kg`
+        : ""
+
+    const remover = document.createElement("button")
+    remover.type = "button"
+    remover.className = "ataque-remover"
+    remover.textContent = "×"
+    remover.title = "Remover este item"
+    remover.addEventListener("click", function () {
+        itensDoPersonagem.splice(indice, 1)
+        atualizarInventario()
+    })
+
+    linha.appendChild(quantidade)
+    linha.appendChild(nome)
+    linha.appendChild(peso)
+    linha.appendChild(remover)
+    return linha
+}
+
+function atualizarInventario() {
+    listaItensEL.innerHTML = ""
+
+    if (itensDoPersonagem.length === 0) {
+        const vazio = document.createElement("p")
+        vazio.className = "vazio-texto"
+        vazio.textContent = "Inventário vazio."
+        listaItensEL.appendChild(vazio)
+    } else {
+        itensDoPersonagem.forEach(function (item, indice) {
+            listaItensEL.appendChild(criarLinhaDeItem(item, indice))
+        })
+    }
+
+    const peso = pesoDoInventario(itensDoPersonagem)
+    const capacidade = capacidadeDeCarga(calcularAtributos().totais.forca)
+    const pesoEL = document.getElementById("peso-total")
+
+    if (peso === 0) {
+        pesoEL.textContent = `Capacidade de carga: ${capacidade.toFixed(1).replace(".", ",")} kg (7,5 kg por ponto de Força).`
+        pesoEL.classList.remove("status-erro")
+        return
+    }
+
+    const numeros = `${peso.toFixed(1).replace(".", ",")} kg de ${capacidade.toFixed(1).replace(".", ",")} kg`
+
+    pesoEL.textContent = estaSobrecarregado(peso, capacidade)
+        ? `Sobrecarregado: ${numeros}.`
+        : `Peso carregado: ${numeros}.`
+    pesoEL.classList.toggle("status-erro", estaSobrecarregado(peso, capacidade))
+}
+
+document.getElementById("btn-adicionar-item").addEventListener("click", adicionarItem)
+
+// Enter no nome do item adiciona, em vez de enviar a ficha
+itemNomeEL.addEventListener("keydown", function (evento) {
+    if (evento.key === "Enter") {
+        evento.preventDefault()
+        adicionarItem()
+    }
+})
+
+/* ---------- Sprint 7: condições (RF35) ---------- */
+
+const API_CONDICOES = "https://www.dnd5eapi.co/api/2024/conditions"
+const listaCondicoesEL = document.getElementById("lista-condicoes")
+const exaustaoEL = document.getElementById("exaustao")
+const detalheCondicaoEL = document.getElementById("detalhe-condicao")
+
+// condições ligadas agora; a exaustão é à parte, porque tem níveis
+let condicoesAtivas = []
+let nivelDeExaustao = 0
+
+const descricoesDeCondicoes = {}
+
+function fecharCondicao() {
+    detalheCondicaoEL.hidden = true
+    detalheCondicaoEL.innerHTML = ""
+}
+
+// a lista funciona sem internet; só a descrição vem da API
+async function mostrarCondicao(condicao) {
+    detalheCondicaoEL.hidden = false
+    detalheCondicaoEL.innerHTML = ""
+
+    const fechar = document.createElement("button")
+    fechar.type = "button"
+    fechar.className = "detalhe-fechar"
+    fechar.textContent = "Fechar"
+    fechar.addEventListener("click", fecharCondicao)
+
+    const titulo = document.createElement("span")
+    titulo.className = "detalhe-titulo"
+    titulo.textContent = condicao.nome
+
+    const texto = document.createElement("p")
+    texto.className = "detalhe-descricao"
+    texto.textContent = "Buscando a descrição..."
+
+    detalheCondicaoEL.appendChild(fechar)
+    detalheCondicaoEL.appendChild(titulo)
+    detalheCondicaoEL.appendChild(texto)
+
+    try {
+        if (!descricoesDeCondicoes[condicao.valor]) {
+            const resposta = await fetch(`${API_CONDICOES}/${condicao.valor}`)
+
+            if (!resposta.ok) {
+                throw new Error(`A API respondeu ${resposta.status}`)
+            }
+
+            const dados = await resposta.json()
+            const descricao = dados.description || dados.desc || "Sem descrição."
+
+            descricoesDeCondicoes[condicao.valor] = Array.isArray(descricao)
+                ? descricao.join("\n\n")
+                : descricao
+        }
+
+        texto.textContent = descricoesDeCondicoes[condicao.valor]
+    } catch (erro) {
+        texto.textContent = "Sem conexão para buscar a descrição. Tente de novo."
+        console.error(erro)
+    }
+}
+
+function alternarCondicao(condicao) {
+    if (condicoesAtivas.includes(condicao.valor)) {
+        condicoesAtivas = condicoesAtivas.filter(function (valor) {
+            return valor !== condicao.valor
+        })
+        fecharCondicao()
+    } else {
+        condicoesAtivas.push(condicao.valor)
+        // ligar a condição já mostra o que ela faz
+        mostrarCondicao(condicao)
+    }
+
+    atualizarCondicoes()
+}
+
+function montarSelectDeExaustao() {
+    exaustaoEL.innerHTML = ""
+
+    for (let nivel = 0; nivel <= EXAUSTAO_MAXIMA; nivel++) {
+        const opcao = document.createElement("option")
+        opcao.value = nivel
+        opcao.textContent = nivel === 0 ? "Sem exaustão" : `Nível ${nivel}`
+        exaustaoEL.appendChild(opcao)
+    }
+}
+
+function atualizarCondicoes() {
+    listaCondicoesEL.innerHTML = ""
+
+    CONDICOES.forEach(function (condicao) {
+        const ativa = condicoesAtivas.includes(condicao.valor)
+
+        const botao = document.createElement("button")
+        botao.type = "button"
+        botao.className = "condicao"
+        botao.classList.toggle("condicao-ativa", ativa)
+        botao.textContent = condicao.nome
+        botao.title = ativa ? "Clique para tirar a condição" : "Clique para marcar e ver o efeito"
+        botao.addEventListener("click", function () {
+            alternarCondicao(condicao)
+        })
+
+        listaCondicoesEL.appendChild(botao)
+    })
+
+    const efeitos = efeitosDaExaustao(nivelDeExaustao)
+    const efeitoEL = document.getElementById("efeito-exaustao")
+
+    if (nivelDeExaustao === 0) {
+        efeitoEL.textContent = ""
+    } else if (efeitos.morre) {
+        efeitoEL.textContent = "Nível 6: o personagem morre."
+    } else {
+        efeitoEL.textContent =
+            `Testes de d20 ${efeitos.testes}, deslocamento ${efeitos.deslocamento} m.`
+    }
+}
+
+exaustaoEL.addEventListener("change", function () {
+    nivelDeExaustao = Number(exaustaoEL.value)
+    atualizarCondicoes()
+})
+
+/* ---------- Sprint 7: ataques (RF34) ---------- */
+
+const armaNovaEL = document.getElementById("arma-nova")
+const listaAtaquesEL = document.getElementById("lista-ataques")
+
+// armas que o jogador pôs na ficha: [{ valor, duasMaos }]
+let armasDoPersonagem = []
+
+function montarSelectDeArmas() {
+    armaNovaEL.innerHTML = ""
+
+    armasParaEscolher().forEach(function (arma) {
+        const opcao = document.createElement("option")
+        opcao.value = arma.valor
+        opcao.textContent = arma.valor === ARMA_DESARMADA.valor
+            ? arma.nome
+            : `${arma.nome} (${arma.categoria === "simples" ? "simples" : "marcial"})`
+        armaNovaEL.appendChild(opcao)
+    })
+}
+
+function adicionarArma() {
+    armasDoPersonagem.push({ valor: armaNovaEL.value, duasMaos: false })
+    atualizarAtaques()
+}
+
+function criarLinhaDeAtaque(item, indice, modificadores, proficiencia) {
+    const arma = armaPorValor(item.valor)
+
+    if (arma === null) {
+        return null
+    }
+
+    // multiclasse: basta uma classe dar proficiência; o dado da classe usa o nível dela
+    const ataque = ataqueComArmaMulticlasse(
+        classesDoCalculo(),
+        arma,
+        modificadores,
+        proficiencia,
+        item.duasMaos
+    )
+
+    const linha = document.createElement("div")
+    linha.className = "ataque"
+
+    const nome = document.createElement("span")
+    nome.className = "ataque-nome"
+    nome.textContent = arma.nome
+
+    const bonus = document.createElement("span")
+    bonus.className = "ataque-valor"
+    bonus.textContent = formatarModificador(ataque.bonusDeAtaque)
+    bonus.title = `Ataque: ${NOME_ATRIBUTO[ataque.atributo]}${ataque.proficiente ? " + proficiência" : " (sem proficiência)"}`
+
+    const dano = document.createElement("span")
+    dano.className = "ataque-dano"
+    const somaDoDano = ataque.modificadorDeDano
+        ? formatarModificador(ataque.modificadorDeDano)
+        : ""
+    dano.textContent = `${ataque.dadoDeDano}${somaDoDano} ${ataque.tipoDeDano}`
+
+    linha.appendChild(nome)
+    linha.appendChild(bonus)
+    linha.appendChild(dano)
+
+    // versátil: a mesma arma muda de dado nas duas mãos
+    if (arma.danoDuasMaos) {
+        const duasMaos = document.createElement("label")
+        duasMaos.className = "ataque-marca"
+
+        const caixa = document.createElement("input")
+        caixa.type = "checkbox"
+        caixa.checked = item.duasMaos === true
+        caixa.addEventListener("change", function () {
+            item.duasMaos = caixa.checked
+            atualizarAtaques()
+        })
+
+        duasMaos.appendChild(caixa)
+        duasMaos.appendChild(document.createTextNode("2 mãos"))
+        linha.appendChild(duasMaos)
+    }
+
+    const avisos = []
+
+    if (!ataque.proficiente) {
+        avisos.push("sem proficiência")
+    }
+
+    if (ataque.dadoDaClasse) {
+        avisos.push("dado da classe")
+    }
+
+    if (avisos.length) {
+        const aviso = document.createElement("span")
+        aviso.className = "ataque-aviso"
+        aviso.textContent = avisos.join(", ")
+        linha.appendChild(aviso)
+    }
+
+    const remover = document.createElement("button")
+    remover.type = "button"
+    remover.className = "ataque-remover"
+    remover.textContent = "×"
+    remover.title = "Remover este ataque"
+    remover.addEventListener("click", function () {
+        armasDoPersonagem.splice(indice, 1)
+        atualizarAtaques()
+    })
+
+    linha.appendChild(remover)
+    return linha
+}
+
+function atualizarAtaques() {
+    const calculo = calcularAtributos()
+    const proficiencia = bonusDeProficiencia(Number(nivelEL.value))
+
+    listaAtaquesEL.innerHTML = ""
+
+    if (armasDoPersonagem.length === 0) {
+        const vazio = document.createElement("p")
+        vazio.className = "vazio-texto"
+        vazio.textContent = "Nenhum ataque. Escolha uma arma acima e clique em Adicionar."
+        listaAtaquesEL.appendChild(vazio)
+        return
+    }
+
+    armasDoPersonagem.forEach(function (item, indice) {
+        const linha = criarLinhaDeAtaque(item, indice, calculo.modificadores, proficiencia)
+
+        if (linha !== null) {
+            listaAtaquesEL.appendChild(linha)
+        }
+    })
+}
+
+document.getElementById("btn-adicionar-arma").addEventListener("click", adicionarArma)
+
+// trocar de classe muda proficiência e o dado da classe (Fisticuffs)
+classeEL.addEventListener("change", atualizarAtaques)
 
 /* ---------- Sprint 6: recursos de classe (RF31) ---------- */
 
@@ -484,11 +1057,8 @@ let recursosGastos = {}
 const MAXIMO_DE_BOLINHAS = 8
 
 function recursosAtuais() {
-    return recursosDaClasse(
-        classeEL.value,
-        Number(nivelEL.value),
-        calcularAtributos().modificadores
-    )
+    // multiclasse: junta os recursos de cada classe, pelo nível dela
+    return recursosMulticlasse(classesDoCalculo(), calcularAtributos().modificadores)
 }
 
 // o que foi marcado, limitado ao total que a classe e o nível atuais dão
@@ -581,6 +1151,10 @@ formFicha.addEventListener("input", function (evento) {
 
     if (ATRIBUTOS.includes(id) || id.startsWith("bonus-")) {
         atualizarRecursos()
+        atualizarDefesa()
+        atualizarAtaques()
+        // a Força muda a capacidade de carga
+        atualizarInventario()
     }
 })
 
@@ -658,7 +1232,8 @@ async function abrirHabilidade(habilidade, rotulo) {
 // uma linha por nível, do 1 até o nível atual, com as da subclasse escolhida
 function atualizarHabilidades() {
     const classe = classeEL.value
-    const habilidades = habilidadesParaMostrar(classe, subclasseEL.value, Number(nivelEL.value))
+    // multiclasse: as habilidades de cada classe, pelo nível dela
+    const habilidades = habilidadesMulticlasse(classesDoCalculo())
 
     listaHabilidadesEL.innerHTML = ""
     fecharHabilidade()
@@ -673,6 +1248,30 @@ function atualizarHabilidades() {
         return
     }
 
+    const classes = classesDoCalculo()
+
+    // com mais de uma classe, cada uma ganha um título antes dos níveis dela
+    classes.forEach(function (entrada) {
+        const daClasse = habilidades.filter(function (habilidade) {
+            return habilidade.classe === entrada.classe
+        })
+
+        if (daClasse.length === 0) {
+            return
+        }
+
+        if (classes.length > 1) {
+            const titulo = document.createElement("p")
+            titulo.className = "habilidades-classe"
+            titulo.textContent = `${nomeDaClasse(entrada.classe)} ${entrada.nivel}`
+            listaHabilidadesEL.appendChild(titulo)
+        }
+
+        montarHabilidadesDaClasse(daClasse)
+    })
+}
+
+function montarHabilidadesDaClasse(habilidades) {
     const niveis = []
 
     habilidades.forEach(function (habilidade) {
@@ -887,8 +1486,9 @@ classeEL.addEventListener("change", function () {
 
 /* ---------- Sprint 5b: magias equipadas (RF26) e trocas (RF30) ---------- */
 
-// trocas liberadas e ainda não usadas; o descanso longo acrescenta, a aba gasta
-let trocasMagia = { magias: 0, truques: 0 }
+// trocas liberadas e ainda não usadas, por classe ({ mago: { magias, truques } }):
+// o descanso longo acrescenta, a aba de magias gasta
+let trocasMagia = {}
 
 // A escolha é feita na aba de magias; a ficha só mostra, agrupado por círculo.
 // Usa o que foi salvo junto com a magia, então funciona sem internet.
@@ -896,18 +1496,34 @@ let trocasMagia = { magias: 0, truques: 0 }
 let opcaoMagiasSubclasse = ""
 const selectEscolhaMagiasEL = document.getElementById("opcao-magias-subclasse")
 
-// equipadas + as sempre preparadas da subclasse, sem repetir
-function magiasParaMostrar() {
-    const daSubclasse = magiasDaSubclasse(
-        classeEL.value,
-        subclasseEL.value,
-        Number(nivelEL.value),
-        opcaoMagiasSubclasse
-    ).map(function (magia) {
-        return Object.assign({}, magia, { daSubclasse: true })
+// as magias sempre preparadas de cada subclasse, pelo nível NAQUELA classe
+function magiasDeTodasAsSubclasses() {
+    const lista = []
+
+    classesParaCalculo.forEach(function (entrada) {
+        magiasDaSubclasse(
+            entrada.classe,
+            entrada.subclasse || "",
+            entrada.nivel,
+            opcaoMagiasSubclasse
+        ).forEach(function (magia) {
+            if (!lista.some(function (item) { return item.valor === magia.valor })) {
+                lista.push(Object.assign({}, magia, { daSubclasse: true, classe: entrada.classe }))
+            }
+        })
     })
 
-    const equipadas = (personagem.magiasEquipadas || []).filter(function (equipada) {
+    return lista
+}
+
+// equipadas + as sempre preparadas da subclasse, sem repetir
+function magiasParaMostrar() {
+    const daSubclasse = magiasDeTodasAsSubclasses()
+
+    const equipadas = normalizarMagiasEquipadas(
+        personagem.magiasEquipadas,
+        classesParaCalculo[0].classe
+    ).filter(function (equipada) {
         return !daSubclasse.some(function (magia) {
             return magia.valor === equipada.valor
         })
@@ -938,9 +1554,28 @@ function mostrarMagiasEquipadas() {
     const listaEL = document.getElementById("lista-magias-equipadas")
     const notaEL = document.getElementById("nota-magias-subclasse")
 
-    const conjura = conjuracaoDaClasse(classeEL.value) !== null
-    const escolha = escolhaDeMagiasDaSubclasse(classeEL.value, subclasseEL.value)
-    const atributo = atributoDasMagiasDaSubclasse(classeEL.value, subclasseEL.value)
+    const conjura = classesConjuradoras(classesParaCalculo).length > 0
+
+    // a subclasse que pede escolha (Círculo da Terra) pode ser a da segunda classe
+    let escolha = null
+    let atributo = null
+    let classeDaSubclasse = classeEL.value
+    let subclasseDaNota = subclasseEL.value
+
+    classesParaCalculo.forEach(function (entrada) {
+        const desta = escolhaDeMagiasDaSubclasse(entrada.classe, entrada.subclasse || "")
+        const atributoDesta = atributoDasMagiasDaSubclasse(entrada.classe, entrada.subclasse || "")
+
+        if (escolha === null && desta !== null) {
+            escolha = desta
+        }
+
+        if (atributo === null && atributoDesta !== null) {
+            atributo = atributoDesta
+            classeDaSubclasse = entrada.classe
+            subclasseDaNota = entrada.subclasse || ""
+        }
+    })
     const equipadas = magiasParaMostrar()
 
     // quem não conjura (Pugilista) só vê o bloco se a subclasse der magias
@@ -951,7 +1586,7 @@ function mostrarMagiasEquipadas() {
 
     notaEL.hidden = atributo === null
     notaEL.textContent = atributo
-        ? `As magias de ${nomeDaSubclasse(classeEL.value, subclasseEL.value)} usam ${NOME_ATRIBUTO[atributo]}.`
+        ? `As magias de ${nomeDaSubclasse(classeDaSubclasse, subclasseDaNota)} usam ${NOME_ATRIBUTO[atributo]}.`
         : ""
 
     if (equipadas.length === 0) {
@@ -997,6 +1632,11 @@ function mostrarMagiasEquipadas() {
 
                 if (magia.daSubclasse) {
                     marcas.push("subclasse")
+                }
+
+                // com duas classes conjuradoras, cada magia diz de onde vem
+                if (classesConjuradoras(classesParaCalculo).length > 1 && magia.classe) {
+                    marcas.push(nomeDaClasse(magia.classe))
                 }
 
                 return marcas.length ? `${magia.nome} (${marcas.join(", ")})` : magia.nome
@@ -1084,6 +1724,16 @@ if (!personagem) {
     // renderizarPericias roda dentro de escreverPericias
     escreverPericias(personagem.pericias)
 
+    // multiclasse: a lista de classes manda em quase tudo (PV, espaços, recursos,
+    // habilidades). Ficha antiga vira lista de uma classe.
+    classesParaCalculo = classesDoPersonagem(personagem).map(function (entrada) {
+        return Object.assign({}, entrada)
+    })
+
+    const resumoEL = document.getElementById("resumo-classes")
+    resumoEL.hidden = classesParaCalculo.length < 2
+    resumoEL.textContent = `Classes: ${descreverClasses(classesParaCalculo)} (nível ${nivelTotal(classesParaCalculo)})`
+
     // precisa vir antes do recálculo: o talento Robusto muda o PV máximo
     talentosDoPersonagem = personagem.talentos || []
     mostrarTalentos()
@@ -1098,7 +1748,7 @@ if (!personagem) {
 
     document.getElementById("pv-temporario").value = personagem.pvTemporario || 0
 
-    dadosVidaGastos = personagem.dadosVidaGastos || 0
+    dadosVidaGastos = normalizarDadosGastos(personagem.dadosVidaGastos, classesParaCalculo[0].classe)
     atualizarDadosDeVida()
 
     sucessosMorte = personagem.sucessosMorte || 0
@@ -1113,6 +1763,29 @@ if (!personagem) {
 
     atualizarHabilidades()
 
+    montarSelectDeArmaduras()
+    armaduraEL.value = personagem.armadura || ""
+    escudoEL.checked = personagem.escudo === true
+    atualizarDefesa()
+
+    montarSelectDeArmas()
+    armasDoPersonagem = (personagem.armas || []).slice()
+    atualizarAtaques()
+
+    escreverPersonalidade()
+
+    moedasDoPersonagem = Object.assign({}, personagem.moedas)
+    itensDoPersonagem = (personagem.itens || []).slice()
+    montarCamposDeMoedas()
+    atualizarTotalDeMoedas()
+    atualizarInventario()
+
+    montarSelectDeExaustao()
+    condicoesAtivas = (personagem.condicoes || []).slice()
+    nivelDeExaustao = personagem.exaustao || 0
+    exaustaoEL.value = nivelDeExaustao
+    atualizarCondicoes()
+
     // antes da concentração: o tipo de terra decide magias da subclasse
     opcaoMagiasSubclasse = personagem.opcaoMagiasSubclasse || ""
 
@@ -1121,7 +1794,7 @@ if (!personagem) {
     atualizarConcentracao()
 
     mostrarMagiasEquipadas()
-    trocasMagia = juntarTrocas(personagem.trocasMagia, SEM_TROCAS)
+    trocasMagia = normalizarTrocas(personagem.trocasMagia, classesParaCalculo[0].classe)
 
     // ponto de partida para medir dano; os PV já foram carregados acima
     lembrarPv()
@@ -1156,6 +1829,16 @@ if (!personagem) {
         personagem.classe = classeEL.value
         personagem.subclasse = subclasseEL.value
         personagem.nivel = Number(nivelEL.value)
+
+        // multiclasse: a lista manda; classe/nivel/subclasse acima ficam como
+        // espelho da classe inicial e do nível total, para o resto do app
+        if (classesParaCalculo.length === 1) {
+            classesParaCalculo[0].classe = classeEL.value
+            classesParaCalculo[0].nivel = Number(nivelEL.value)
+            classesParaCalculo[0].subclasse = subclasseEL.value
+        }
+
+        personagem.classes = classesParaCalculo
         personagem.antecedente = document.getElementById("antecedente").value
         personagem.alinhamento = document.getElementById("alinhamento").value
 
@@ -1190,6 +1873,14 @@ if (!personagem) {
         personagem.espacosGastos = espacosGastosValidos()
         personagem.recursosGastos = recursosGastosValidos()
         personagem.opcaoMagiasSubclasse = opcaoMagiasSubclasse
+        personagem.armadura = armaduraEL.value
+        personagem.escudo = escudoEL.checked
+        personagem.armas = armasDoPersonagem
+        personagem.condicoes = condicoesAtivas
+        personagem.exaustao = nivelDeExaustao
+        personagem.moedas = moedasDoPersonagem
+        personagem.itens = itensDoPersonagem
+        lerPersonalidade()
         // classe que não conjura não guarda concentração
         personagem.concentracao =
             conjuracaoDaClasse(personagem.classe) === null ? "" : concentracaoAtual

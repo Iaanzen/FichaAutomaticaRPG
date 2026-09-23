@@ -201,13 +201,29 @@ function atualizarRaca() {
 // talentos vem do level up: a ficha preenche ao carregar, o cadastro fica vazio
 let talentosDoPersonagem = []
 
+// Multiclasse: a ficha preenche com [{ classe, nivel, subclasse }] ao carregar.
+// Vazio (wizard, ou antes de carregar) = uma classe só, lida dos campos da tela.
+let classesParaCalculo = []
+
+function classesDoCalculo() {
+    if (classesParaCalculo.length > 0) {
+        return classesParaCalculo
+    }
+
+    return [{ classe: classeEL.value, nivel: Number(nivelEL.value), subclasse: "" }]
+}
+
 // o maximo e calculado; o PV atual e do jogador e so ele mexe
 function calcularPvMaximo() {
     const calculo = calcularAtributos()
+    const classes = classesDoCalculo()
 
-    return pontosDeVida(
-        classeEL.value,
-        Number(nivelEL.value),
+    if (!classes[0].classe) {
+        return null
+    }
+
+    return pontosDeVidaMulticlasse(
+        classes,
         calculo.modificadores.constituicao,
         talentosDoPersonagem
     )
@@ -226,8 +242,9 @@ function atualizarPontosDeVida() {
     const dadoEL = document.getElementById("valor-dado-vida")
 
     if (dadoEL !== null) {
-        const dado = dadoDeVidaPorClasse[classeEL.value]
-        dadoEL.textContent = dado ? `${nivelEL.value}d${dado}` : "—"
+        // com multiclasse são vários grupos: "3d10 + 2d8"
+        const dados = descreverDadosDeVida(classesDoCalculo())
+        dadoEL.textContent = dados || "—"
     }
 
     const pvAtualEL = document.getElementById("pv-atual")
@@ -253,7 +270,8 @@ function atualizarSalvaguardas() {
 
     const calculo = calcularAtributos()
     const proficiencia = bonusDeProficiencia(Number(nivelEL.value))
-    const proficientes = salvaguardasDaClasse(classeEL.value, Number(nivelEL.value))
+    // multiclasse: as salvaguardas vêm só da classe inicial
+    const proficientes = salvaguardasMulticlasse(classesDoCalculo())
 
     listaSalvaguardasEL.innerHTML = ""
 
@@ -425,6 +443,9 @@ function atualizarPericias() {
         item.classList.toggle("pericia-travada", travada)
     })
 
+    // marcar ou desmarcar perícia muda as passivas
+    atualizarPassivas()
+
     if (limite === 0) {
         statusPericiasEL.textContent = "Escolha uma classe para liberar as perícias."
         statusPericiasEL.className = "status-pericias status-erro"
@@ -476,6 +497,48 @@ function atualizarConjuracao() {
         `${NOME_TIPO_CONJURADOR[conjuracao.tipo]} · usa ${NOME_ATRIBUTO[conjuracao.atributo]}`
 }
 
+/* ---------- RF05: valores passivos ---------- */
+
+// So a ficha tem esse bloco; o wizard nao.
+// talentosDoPersonagem (mais acima) traz o Observador, que soma +5.
+function atualizarPassivas() {
+    const linhaEL = document.getElementById("linha-passivas")
+
+    if (linhaEL === null) {
+        return
+    }
+
+    const calculo = calcularAtributos()
+    const proficiencia = bonusDeProficiencia(Number(nivelEL.value))
+
+    linhaEL.innerHTML = ""
+
+    PASSIVAS.forEach(function(passiva) {
+        const pericia = periciaPorValor(passiva.pericia)
+
+        const bonus = bonusComProficiencia(
+            calculo.modificadores[pericia.atributo],
+            periciasEscolhidas.includes(passiva.pericia),
+            proficiencia
+        )
+
+        const campo = document.createElement("div")
+        campo.className = "campo-passiva"
+
+        const valor = document.createElement("span")
+        valor.className = "valor-destaque"
+        valor.textContent = valorPassivo(passiva, bonus, talentosDoPersonagem)
+
+        const rotulo = document.createElement("span")
+        rotulo.className = "rotulo"
+        rotulo.textContent = passiva.nome
+
+        campo.appendChild(valor)
+        campo.appendChild(rotulo)
+        linhaEL.appendChild(campo)
+    })
+}
+
 /* ---------- Ligacoes ---------- */
 
 // Tudo que e derivado sai daqui. Bloco novo entra nesta funcao e passa a
@@ -489,6 +552,7 @@ function recalcularDerivados() {
     atualizarSalvaguardas()
     atualizarPontosDeVida()
     atualizarConjuracao()
+    atualizarPassivas()
 }
 
 // atualizarRaca fica de fora: traços e idiomas só dependem de raça e sub-raça,

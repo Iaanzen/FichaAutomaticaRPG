@@ -1,6 +1,9 @@
 // Sprint 5b: aba de magias.
 // Passo 1: lista as magias da classe. Passo 2: equipar respeitando o limite.
 // Passo 3: descrição ao abrir a magia.
+// Multiclasse (passo 3): a aba trabalha numa classe de cada vez. Cada classe
+// tem a lista, os limites, as magias equipadas e as trocas dela; os espaços de
+// magia, que são compartilhados, ficam na ficha.
 // O conteúdo das magias aparece como vem da API, em inglês (decisão do 5b).
 // Magias e limites vêm da API do D&D 5e (dnd5eapi.co, regras de 2024), ao vivo.
 
@@ -21,6 +24,8 @@ const btnTentarEL = document.getElementById("btn-tentar-de-novo")
 const detalheEL = document.getElementById("detalhe-magia")
 const textoTrocasEL = document.getElementById("texto-trocas")
 const btnConcluirTrocaEL = document.getElementById("btn-concluir-troca")
+const listaClassesEL = document.getElementById("lista-classes-magias")
+const blocoClassesEL = document.getElementById("bloco-classes-magias")
 
 const parametros = new URLSearchParams(window.location.search)
 const idDaUrl = Number(parametros.get("id"))
@@ -31,22 +36,30 @@ const personagem = personagens.find(function (item) {
     return item.id === idDaUrl
 })
 
+// as classes que conjuram e a que está aberta na tela
+const classes = personagem ? classesDoPersonagem(personagem) : []
+const conjuradoras = classesConjuradoras(classes)
+const classePadrao = (classeInicial(classes) || {}).classe
+let classeAtiva = conjuradoras.length ? conjuradoras[0].classe : ""
+
 // lista que veio da API, já ordenada
 let magias = []
 
 // quantos truques e magias preparadas o nível permite (vem da API)
 let limites = { truques: 0, magias: 0 }
 
-// o que vai para a ficha: { valor, nome, circulo, concentracao }.
+// o que vai para a ficha: { valor, nome, circulo, concentracao, classe }.
 // Guarda mais que o código para a ficha funcionar sem internet.
+// "todasEquipadas" é a ficha inteira; "equipadas" é só a classe aberta.
+let todasEquipadas = []
 let equipadas = []
 
 // RF30: trocas liberadas pelo descanso longo ou pelo level up ({ magias, truques })
 let trocas = { magias: 0, truques: 0 }
 
 // Equipada nesta visita à aba pode ser desfeita sem gastar troca:
-// é correção de engano, não troca de magia.
-const equipadasNestaVisita = []
+// é correção de engano, não troca de magia. Zera ao trocar de classe.
+let equipadasNestaVisita = []
 
 // descrições já buscadas, para não pedir a mesma magia duas vezes
 const detalhes = {}
@@ -54,17 +67,29 @@ const detalhes = {}
 // qual magia está aberta no painel de detalhe
 let magiaAberta = null
 
+/* ---------- A classe aberta na tela ---------- */
+
+function entradaAtiva() {
+    return conjuradoras.find(function (entrada) {
+        return entrada.classe === classeAtiva
+    }) || conjuradoras[0]
+}
+
+function nivelAtivo() {
+    return entradaAtiva() ? entradaAtiva().nivel : 0
+}
+
+function subclasseAtiva() {
+    return entradaAtiva() ? entradaAtiva().subclasse || "" : ""
+}
+
 /* ---------- O que o personagem alcança ---------- */
 
-// maior círculo com espaço de magia; truques (círculo 0) valem sempre
+// Maior círculo que ESTA classe prepara, pela tabela dela. Com multiclasse os
+// espaços podem chegar mais alto (eles somam), mas a magia preparada continua
+// limitada pelo nível na classe; truques (círculo 0) valem sempre.
 function circuloMaximo() {
-    const espacos = espacosDeMagia(personagem.classe, personagem.nivel)
-
-    if (espacos.length === 0) {
-        return 0
-    }
-
-    return espacos[espacos.length - 1].circulo
+    return circuloMaximoDaClasse(classeAtiva, nivelAtivo())
 }
 
 /* ---------- API ---------- */
@@ -107,7 +132,7 @@ function magiaForaDaApi(magia) {
 }
 
 async function buscarMagias() {
-    const locais = magiasLocaisDaClasse(personagem.classe)
+    const locais = magiasLocaisDaClasse(classeAtiva)
     let lista
 
     if (locais) {
@@ -121,7 +146,7 @@ async function buscarMagias() {
             .concat((locais.foraDaApi || []).map(magiaForaDaApi))
     } else {
         // uma requisição só traz a lista inteira da classe
-        const classeApi = classeNaApi(personagem.classe)
+        const classeApi = classeNaApi(classeAtiva)
         const dados = await consultar(
             `{ spells(class: "${classeApi}", limit: 400) { ${CAMPOS_DA_LISTA} } }`
         )
@@ -139,9 +164,9 @@ async function buscarMagias() {
 // Sempre preparadas: não contam no limite e não saem na troca.
 function magiasDaSubclasseDoPersonagem() {
     return magiasDaSubclasse(
-        personagem.classe,
-        personagem.subclasse,
-        personagem.nivel,
+        classeAtiva,
+        subclasseAtiva(),
+        nivelAtivo(),
         personagem.opcaoMagiasSubclasse
     )
 }
@@ -186,7 +211,7 @@ function totalDoAtributo(atributo) {
 
 // RF29: a tabela de cada classe diz quantos truques e magias preparadas cabem
 async function buscarLimites() {
-    const locais = magiasLocaisDaClasse(personagem.classe)
+    const locais = magiasLocaisDaClasse(classeAtiva)
 
     // classe fora da API: truques pela tabela local, preparadas pela regra dela
     if (locais) {
@@ -194,14 +219,14 @@ async function buscarLimites() {
 
         return limitesDeMagiasLocais(
             locais,
-            personagem.nivel,
+            nivelAtivo(),
             modificadorDe(totalDoAtributo(atributo))
         )
     }
 
-    const classeApi = classeNaApi(personagem.classe)
+    const classeApi = classeNaApi(classeAtiva)
     const resposta = await fetch(
-        `${API_BASE}/api/2024/classes/${classeApi}/levels/${personagem.nivel}`
+        `${API_BASE}/api/2024/classes/${classeApi}/levels/${nivelAtivo()}`
     )
 
     if (!resposta.ok) {
@@ -285,10 +310,23 @@ function limiteAtingido(circulo) {
     return contarMagias() >= limites.magias
 }
 
-// grava direto no personagem: a aba não tem botão de salvar
+// grava direto no personagem: a aba não tem botão de salvar.
+// As magias das outras classes ficam intocadas.
 function salvar() {
-    personagem.magiasEquipadas = equipadas
-    personagem.trocasMagia = trocas
+    const deOutrasClasses = todasEquipadas.filter(function (magia) {
+        return magia.classe !== classeAtiva
+    })
+
+    todasEquipadas = deOutrasClasses.concat(equipadas)
+
+    personagem.magiasEquipadas = todasEquipadas
+    personagem.trocasMagia = guardarTrocasDaClasse(
+        personagem.trocasMagia,
+        classeAtiva,
+        trocas,
+        classePadrao
+    )
+
     localStorage.setItem("fichas", JSON.stringify(personagens))
 }
 
@@ -333,7 +371,7 @@ function atualizarTrocas() {
         return
     }
 
-    const regra = explicarRegraDeTroca(personagem.classe)
+    const regra = explicarRegraDeTroca(classeAtiva)
 
     textoTrocasEL.textContent =
         `Nenhuma troca liberada agora: vagas livres podem ser preenchidas, mas ` +
@@ -370,7 +408,8 @@ function alternarMagia(magia) {
             valor: magia.index,
             nome: magia.name,
             circulo: magia.level,
-            concentracao: magia.concentration
+            concentracao: magia.concentration,
+            classe: classeAtiva
         })
     }
 
@@ -396,6 +435,57 @@ function removerForaDaLista() {
             `${removidas} magia(s) equipada(s) não pertencem mais à lista da classe e foram removidas da ficha.`
         avisoEL.hidden = false
     }
+}
+
+/* ---------- Multiclasse: escolher a classe (passo 3) ---------- */
+
+// Abre a aba numa classe de cada vez: a lista, os limites e as trocas são dela.
+function montarEscolhaDeClasse() {
+    // com uma classe conjuradora só, o bloco nem aparece
+    blocoClassesEL.hidden = conjuradoras.length < 2
+
+    listaClassesEL.innerHTML = ""
+
+    conjuradoras.forEach(function (entrada) {
+        const botao = document.createElement("button")
+        botao.type = "button"
+        botao.className = "classe-opcao"
+        botao.classList.toggle("classe-escolhida", entrada.classe === classeAtiva)
+        botao.textContent = `${nomeDaClasse(entrada.classe)} ${entrada.nivel}`
+        botao.addEventListener("click", function () {
+            trocarClasseAtiva(entrada.classe)
+        })
+        listaClassesEL.appendChild(botao)
+    })
+}
+
+function trocarClasseAtiva(classe) {
+    if (classe === classeAtiva) {
+        return
+    }
+
+    classeAtiva = classe
+
+    // cada classe tem as suas: lista, limites, equipadas e trocas
+    magias = []
+    limites = { truques: 0, magias: 0 }
+    equipadasNestaVisita = []
+    equipadas = magiasEquipadasDaClasse(todasEquipadas, classeAtiva, classePadrao)
+    trocas = trocasDaClasse(personagem.trocasMagia, classeAtiva, classePadrao)
+
+    avisoEL.hidden = true
+    montarEscolhaDeClasse()
+    atualizarCabecalho()
+    carregar()
+}
+
+function atualizarCabecalho() {
+    document.getElementById("classe-personagem").textContent =
+        conjuradoras.length > 1
+            ? `${descreverClasses(classes)} · magias de ${nomeDaClasse(classeAtiva)} (nível ${nivelAtivo()})`
+            : `${nomeDaClasse(classeAtiva)} · nível ${nivelAtivo()}`
+
+    document.getElementById("circulo-maximo").textContent = nomeDoCirculo(circuloMaximo())
 }
 
 /* ---------- Filtros ---------- */
@@ -657,6 +747,16 @@ async function carregar() {
     listaEL.innerHTML = ""
     fecharDetalhe()
 
+    // classe de conteúdo extra ainda sem lista: as outras continuam abrindo
+    if (classeNaApi(classeAtiva) === null && magiasLocaisDaClasse(classeAtiva) === null) {
+        statusEL.textContent =
+            `As magias de ${nomeDaClasse(classeAtiva)} ainda não estão disponíveis: ` +
+            `a classe não existe na API e a lista local dela ainda não foi feita.`
+        statusEL.className = "status-bonus status-erro"
+        renderizar()
+        return
+    }
+
     try {
         // as duas consultas são independentes, então vão juntas
         const resultados = await Promise.all([buscarMagias(), buscarLimites()])
@@ -680,33 +780,40 @@ async function carregar() {
 if (!personagem) {
     telaEL.style.display = "none"
     mensagemErroEL.style.display = "block"
-} else if (conjuracaoDaClasse(personagem.classe) === null) {
+} else if (conjuradoras.length === 0) {
     telaEL.style.display = "none"
     mensagemErroEL.innerHTML =
         `Esta classe não conjura magias. <a href="ficha.html?id=${personagem.id}">Voltar à ficha</a>`
     mensagemErroEL.style.display = "block"
 } else if (
-    classeNaApi(personagem.classe) === null &&
-    magiasLocaisDaClasse(personagem.classe) === null
+    conjuradoras.every(function (entrada) {
+        return classeNaApi(entrada.classe) === null && magiasLocaisDaClasse(entrada.classe) === null
+    })
 ) {
     // classe fora da API (ex: conteúdo extra) ainda sem lista local de magias
     telaEL.style.display = "none"
     mensagemErroEL.innerHTML =
-        `As magias de ${nomeDaClasse(personagem.classe)} ainda não estão disponíveis: ` +
+        `As magias de ${nomeDaClasse(classeAtiva)} ainda não estão disponíveis: ` +
         `a classe não existe na API de magias e a lista local dela ainda não foi feita. ` +
         `<a href="ficha.html?id=${personagem.id}">Voltar à ficha</a>`
     mensagemErroEL.style.display = "block"
 } else {
     document.title = `${personagem.nome} - Magias`
 
-    equipadas = (personagem.magiasEquipadas || []).slice()
-    trocas = juntarTrocas(personagem.trocasMagia, SEM_TROCAS)
+    // classe sem lista de magias não abre: começa numa que abra
+    const utilizavel = conjuradoras.find(function (entrada) {
+        return classeNaApi(entrada.classe) !== null || magiasLocaisDaClasse(entrada.classe) !== null
+    })
+
+    classeAtiva = utilizavel.classe
+
+    todasEquipadas = normalizarMagiasEquipadas(personagem.magiasEquipadas, classePadrao)
+    equipadas = magiasEquipadasDaClasse(todasEquipadas, classeAtiva, classePadrao)
+    trocas = trocasDaClasse(personagem.trocasMagia, classeAtiva, classePadrao)
 
     document.getElementById("nome-personagem").textContent = personagem.nome
-    document.getElementById("classe-personagem").textContent =
-        `${nomeDaClasse(personagem.classe)} · nível ${personagem.nivel}`
-    document.getElementById("circulo-maximo").textContent =
-        nomeDoCirculo(circuloMaximo())
+    montarEscolhaDeClasse()
+    atualizarCabecalho()
 
     document.getElementById("link-ficha").href = `ficha.html?id=${personagem.id}`
 

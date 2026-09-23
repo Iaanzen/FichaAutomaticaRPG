@@ -285,6 +285,9 @@ formFicha.addEventListener('submit', function (evento) {
         classe: classe,
         subclasse: subclasse,
         nivel: nivel,
+        // multiclasse: a lista de classes começa com a classe inicial no nível 1;
+        // classe/nivel/subclasse acima ficam como espelho dela
+        classes: [{ classe: classe, nivel: nivel, subclasse: subclasse }],
         antecedente: antecedente,
         alinhamento: alinhamento,
         forca: forca,
