@@ -88,7 +88,7 @@ const Auth = {
 
         const sair = document.createElement("button")
         sair.type = "button"
-        sair.className = "botao-secundario botao-topo"
+        sair.className = "botao-sair"
         sair.textContent = "Sair"
         sair.addEventListener("click", Auth.sair)
 

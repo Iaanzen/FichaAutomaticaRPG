@@ -2,3 +2,8 @@
 # O repositório é público; este arquivo nunca pode ir para o GitHub.
 # O formato está em conteudo-extra.exemplo.js.
 conteudo-extra.js
+
+# Cache e registros do Firebase CLI: não vão para o repositório.
+.firebase/
+firebase-debug.log
+firestore-debug.log

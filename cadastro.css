@@ -521,7 +521,10 @@ input:focus, select:focus {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 15px;
+    /* a ficha tem 5 itens aqui (voltar, cadeado, magias, nível, conta):
+       sem quebra de linha eles se espremem no celular */
+    flex-wrap: wrap;
+    gap: 10px 15px;
     width: 100%;
     max-width: 900px;
     margin-bottom: 12px;
@@ -1818,49 +1821,164 @@ body {
     cursor: default;
 }
 
-/* ---------- Fase 2, etapa 1: login e conta ---------- */
+/* ---------- Fase 2: login e conta ---------- */
 
-/* a página fica escondida até o Firebase dizer quem está conectado,
-   senão o conteúdo pisca antes do redirecionamento para o login */
+/* A página fica escondida até o Firebase dizer quem está conectado, senão o
+   conteúdo pisca antes do redirecionamento para o login. */
 html.verificando-login body {
     visibility: hidden;
 }
 
-.ficha-estreita {
-    max-width: 420px;
-    margin: 60px auto;
+/* ----- Tela de entrada ----- */
+
+.ficha-login {
+    max-width: 440px;
+    margin: auto;
+    align-self: center;
+}
+
+.login-marca {
+    text-align: center;
+    margin-bottom: 4px;
+}
+
+.login-titulo {
+    font-family: 'Cinzel', serif;
+    font-size: 1.9rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    margin: 0;
+    color: var(--tinta);
+}
+
+.login-subtitulo {
+    font-family: 'Lora', serif;
+    font-style: italic;
+    font-size: 0.9rem;
+    color: #6a4f3a;
+    margin: 2px 0 18px;
+}
+
+/* traço dourado entre o título e o formulário, como nos blocos da ficha */
+.login-marca::after {
+    content: "";
+    display: block;
+    width: 70px;
+    height: 2px;
+    margin: 10px auto 0;
+    background: var(--ouro);
+}
+
+#form-login .campo { margin-bottom: 14px; }
+
+/* o rótulo aqui fica acima do campo, não centralizado como na ficha */
+#form-login .rotulo {
+    order: -1;
+    text-align: left;
+    margin: 0 0 4px;
+}
+
+/* botão principal: mesmo peso do "Salvar" da ficha */
+.botao-principal {
+    width: 100%;
+    margin-top: 6px;
+    padding: 14px;
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
+    font-size: 1.05rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--pergaminho);
+    background-color: var(--sangue-dragao);
+    border: 2px solid var(--tinta);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.botao-principal:hover:not(:disabled) {
+    background-color: #6a1a15;
+    color: var(--ouro);
+}
+
+.botao-principal:disabled {
+    opacity: 0.6;
+    cursor: default;
 }
 
 .acoes-login {
     display: flex;
     flex-wrap: wrap;
     justify-content: space-between;
-    gap: 8px;
-    margin-top: 14px;
+    gap: 10px;
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid var(--borda-fina);
 }
 
 .botao-texto {
-    padding: 4px 0;
+    padding: 2px 0;
     font-family: 'Lora', serif;
     font-size: 0.85rem;
-    color: var(--tinta);
+    color: #6a4f3a;
     background: none;
     border: none;
-    text-decoration: underline;
+    border-bottom: 1px solid transparent;
     cursor: pointer;
+    transition: color 0.2s ease, border-color 0.2s ease;
 }
 
-.botao-texto:hover { opacity: 0.7; }
+.botao-texto:hover {
+    color: var(--sangue-dragao);
+    border-bottom-color: var(--sangue-dragao);
+}
+
+/* o status de login fica sobre o pergaminho, então herda a tinta */
+#status-login:empty { display: none; }
+
+/* ----- Barra da conta (fica sobre o fundo escuro, fora do pergaminho) ----- */
 
 .conta-topo {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     margin-left: auto;
 }
 
 .conta-email {
+    font-family: 'Lora', serif;
     font-size: 0.8rem;
-    font-style: italic;
-    opacity: 0.8;
+    /* sobre o fundo escuro da página: tinta aqui ficaria ilegível */
+    color: var(--pergaminho-sombra);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 210px;
+}
+
+.botao-sair {
+    flex: 0 0 auto;
+    padding: 6px 14px;
+    font-family: 'Cinzel', serif;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--ouro);
+    background: transparent;
+    border: 1px solid var(--ouro);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.botao-sair:hover {
+    background-color: var(--ouro);
+    color: var(--bg-taverna);
+}
+
+@media (max-width: 700px) {
+    /* no celular o e-mail inteiro rouba a linha do topo */
+    .conta-email { max-width: 120px; }
+    .acoes-login { flex-direction: column; align-items: flex-start; }
 }

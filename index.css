@@ -161,7 +161,10 @@ a[href="cadastro.html"]:active {
     max-width: 600px;
     width: 100%;
 }
-/* Fase 2, etapa 1: esconde a lista até saber quem está conectado */
+
+/* ---------- Fase 2: barra da conta ---------- */
+
+/* esconde a lista até saber quem está conectado */
 html.verificando-login body {
     visibility: hidden;
 }
@@ -170,11 +173,92 @@ html.verificando-login body {
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    gap: 8px;
+    gap: 10px;
+    width: 100%;
+    max-width: 700px;
+    margin-bottom: 10px;
+    min-height: 32px;
 }
 
 .conta-email {
+    font-family: 'Lora', serif;
+    font-size: 0.85rem;
+    /* o fundo aqui é escuro: a tinta marrom ficaria ilegível */
+    color: var(--pergaminho-sombra);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 60%;
+}
+
+.botao-sair {
+    flex: 0 0 auto;
+    padding: 6px 14px;
+    font-family: 'Cinzel', serif;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--ouro);
+    background: transparent;
+    border: 1px solid var(--ouro);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.botao-sair:hover {
+    background-color: var(--ouro);
+    color: var(--bg-taverna);
+}
+
+/* ---------- Etapa 3: trazer as fichas do navegador ---------- */
+
+#bloco-migracao {
+    width: 100%;
+    max-width: 700px;
+    margin-bottom: 25px;
+    padding: 16px 18px;
+    background-color: rgba(241, 229, 209, 0.12);
+    border: 1px solid var(--ouro);
+    border-radius: 6px;
+}
+
+#texto-migracao {
+    margin: 0 0 12px;
+    font-size: 0.9rem;
+    color: var(--pergaminho);
+}
+
+#bloco-migracao button {
+    padding: 8px 16px;
+    margin-right: 8px;
+    font-family: 'Cinzel', serif;
     font-size: 0.8rem;
-    font-style: italic;
-    opacity: 0.8;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+#btn-migrar {
+    color: var(--pergaminho);
+    background-color: var(--sangue-dragao);
+    border: 1px solid var(--tinta);
+}
+
+#btn-migrar:hover:not(:disabled) { background-color: #6a1a15; color: var(--ouro); }
+#btn-migrar:disabled { opacity: 0.6; cursor: default; }
+
+#btn-dispensar-migracao {
+    color: var(--pergaminho-sombra);
+    background: transparent;
+    border: 1px solid var(--pergaminho-sombra);
+}
+
+#btn-dispensar-migracao:hover { color: var(--pergaminho); border-color: var(--pergaminho); }
+
+@media (max-width: 600px) {
+    .conta-email { max-width: 50%; font-size: 0.75rem; }
 }
