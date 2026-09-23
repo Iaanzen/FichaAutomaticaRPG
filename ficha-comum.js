@@ -399,6 +399,12 @@ function renderizarPericias() {
         listaPericiasEL.appendChild(item)
     })
 
+    // IDEIA05: a lista é remontada a cada mudança de classe, então o cadeado
+    // da ficha precisa ser reaplicado. O wizard não define esse gancho.
+    if (typeof aoAtualizarFicha === "function") {
+        aoAtualizarFicha()
+    }
+
     atualizarPericias()
 }
 
@@ -553,6 +559,12 @@ function recalcularDerivados() {
     atualizarPontosDeVida()
     atualizarConjuracao()
     atualizarPassivas()
+
+    // IDEIA05: as regras acima ligam e desligam campos (bônus que somem,
+    // perícias acima do limite); com a ficha travada o cadeado vale mais
+    if (typeof aoAtualizarFicha === "function") {
+        aoAtualizarFicha()
+    }
 }
 
 // atualizarRaca fica de fora: traços e idiomas só dependem de raça e sub-raça,

@@ -150,7 +150,7 @@ Ideias que não travam nenhum sprint específico, mas que precisam entrar em alg
 - **IDEIA02: Completar todas as raças jogáveis.** Mesmo caso do select de raça: incluir todas as raças jogáveis, com as sub-raças correspondentes preenchidas dinamicamente (RF10).
 - **IDEIA03: Cobertura mínima do livro oficial.** Estabelecer como meta que raças, sub-raças, classes e subclasses cubram pelo menos o conteúdo do livro base oficial, antes de qualquer expansão ou homebrew. Serve de critério de "pronto" para IDEIA01 e IDEIA02.
 - **IDEIA04: Criar a própria raça (homebrew).** Permitir que o jogador defina uma raça própria em vez de escolher da lista: nome, deslocamento, traços passivos (texto livre) e perícias/idiomas concedidos. Nas regras 2024 a raça não dá bônus de atributo, então a raça personalizada não afeta a distribuição +2/+1 ou +1/+1/+1 da seção 3.1. Depende de IDEIA03 estar fechada, para que o conteúdo oficial e o homebrew fiquem distinguíveis no select (ver item correspondente na seção 3).
-- **IDEIA05: Cadeado de edição na ficha.** Durante a sessão o jogador fica com a ficha aberta o tempo todo e pode alterar um campo sem querer — um clique no select de classe, uma rolagem do mouse sobre um campo numérico. Um botão de cadeado no topo da ficha alterna entre **travada** e **liberada**: travada, os campos ficam somente leitura; liberada, a ficha volta a ser editável. A ficha deve **abrir travada**, já que em jogo ler é o uso normal e editar é a exceção, e o estado deve ser lembrado por personagem. Atenção: campos que mudam durante o jogo (PV atuais, PV temporários, testes de morte, usos de recursos de classe) precisam continuar editáveis mesmo com o cadeado fechado. O cadeado protege a **construção** do personagem, não o estado dele em jogo.
+- **IDEIA05: Cadeado de edição na ficha.** *(Feito — ver seção 3.17.)* Durante a sessão o jogador fica com a ficha aberta o tempo todo e pode alterar um campo sem querer — um clique no select de classe, uma rolagem do mouse sobre um campo numérico. Um botão de cadeado no topo da ficha alterna entre **travada** e **liberada**: travada, os campos ficam somente leitura; liberada, a ficha volta a ser editável. A ficha deve **abrir travada**, já que em jogo ler é o uso normal e editar é a exceção, e o estado deve ser lembrado por personagem. Atenção: campos que mudam durante o jogo (PV atuais, PV temporários, testes de morte, usos de recursos de classe) precisam continuar editáveis mesmo com o cadeado fechado. O cadeado protege a **construção** do personagem, não o estado dele em jogo.
 - **IDEIA06: Limite de 20 nos atributos e opção +2 que some ao ser usada.** *(Feito no Sprint 5.5 — ver seção 3.9.)*
   - **Limite de 20** no valor total dos atributos (base + bônus) em três lugares: na **ficha**, no **wizard** e no **level up**.
   - **Distribuição de pontos:** quando o jogador escolher **+2** num atributo, a opção +2 **some** dos outros atributos, deixando claro que agora só dá para escolher +1. Vale para o bônus do antecedente (wizard e ficha) e para a Melhoria de Atributo do level up.
@@ -491,6 +491,23 @@ Limitações conhecidas:
 - Coberto por `testar-multiclasse-dados.js`.
 
 **Resumo do que o multiclasse toca:** `regras.js` (camada nova), `levelup.js` (escolha da classe), `magias.js` (uma classe por vez), `ficha.js` (resumo, recursos, habilidades, espaços, CA, ataques, trocas, dados de vida), `ficha-comum.js` (PV e salvaguardas), `cadastro.js`/`cadastro.html` (classe inicial).
+
+---
+
+## 3.17 Cadeado de edição (IDEIA05) e XP (RF14) — CONCLUÍDO
+
+**Cadeado (IDEIA05).** Botão no topo da ficha que alterna entre 🔒 Travada e 🔓 Liberada. A ficha **abre travada** e o estado é lembrado por personagem (`personagem.fichaTravada`).
+
+- O cadeado protege a **construção**: nome, classe, subclasse, raça, sub-raça, alinhamento, antecedente, os seis atributos e seus bônus, as perícias, a escolha de magias da subclasse e os quatro campos de personalidade.
+- Continua **sempre editável** o que muda em jogo: PV atuais e temporários, PV temporário, testes de morte, recursos de classe, espaços de magia, condições e exaustão, concentração, armadura e escudo, armas, inventário, moedas e o XP.
+- Decisão de implementação: a lista enumera o que **trava**, não o que fica livre. Assim, um campo novo nasce editável — o erro cai para o lado seguro (nada de campo de jogo bloqueado no meio da sessão).
+- As regras mexem nos campos o tempo todo (bônus que somem, perícias acima do limite, lista de perícias remontada ao trocar de classe), então `ficha-comum.js` chama o gancho `aoAtualizarFicha()` no fim de `recalcularDerivados()` e de `renderizarPericias()`; com a ficha travada, o cadeado tem a última palavra. Ao destravar, `recalcularDerivados()` devolve os limites das regras.
+
+**XP (RF14).** Campo de Pontos de Experiência no cabeçalho, com o texto de apoio abaixo: "Faltam 1.200 para o nível 5", "Dá para subir para o nível 5" ou "Nível máximo".
+
+- **Nunca bloqueia nem sobe o nível sozinho.** O botão Subir de Nível funciona igual com ou sem XP: quem joga por **marco** simplesmente deixa o campo em branco, e aí o apoio mostra "Por marco".
+- Tabela oficial de XP por nível (igual em 2014 e 2024) em `XP_POR_NIVEL`, com `nivelPorXp`, `xpDoProximoNivel` e `faltaDeXp`. O nível da ficha e o XP podem discordar à vontade.
+- Cobertos por `testar-xp.js` e `testar-cadeado.js` (este último é estático: garante que todo campo da ficha foi classificado como construção ou jogo de propósito — foi ele que pegou o `antecedente` faltando na lista).
 
 ---
 

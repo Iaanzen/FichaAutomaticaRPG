@@ -1834,6 +1834,57 @@ function liberarTrocasMulticlasse(trocasMagia, classes, momento) {
     return mapa
 }
 
+/* ---------- RF14: pontos de experiência ---------- */
+
+// Tabela oficial (igual em 2014 e 2024): o XP necessário para CHEGAR a cada
+// nível. O índice é o nível, então a posição 0 não existe.
+const XP_POR_NIVEL = [
+    null,
+    0, 300, 900, 2700, 6500,
+    14000, 23000, 34000, 48000, 64000,
+    85000, 100000, 120000, 140000, 165000,
+    195000, 225000, 265000, 305000, 355000
+]
+
+function xpDoNivel(nivel) {
+    return XP_POR_NIVEL[nivel] === undefined ? null : XP_POR_NIVEL[nivel]
+}
+
+// O maior nível que esse XP alcança. Serve de informação: quem joga por marco
+// ignora, e o app nunca sobe o nível sozinho.
+function nivelPorXp(xp) {
+    let nivel = 1
+
+    for (let n = 2; n <= NIVEL_MAXIMO; n++) {
+        if ((xp || 0) >= XP_POR_NIVEL[n]) {
+            nivel = n
+        }
+    }
+
+    return nivel
+}
+
+// XP que o próximo nível pede; null no 20, onde não há próximo
+function xpDoProximoNivel(nivelAtual) {
+    return nivelAtual >= NIVEL_MAXIMO ? null : XP_POR_NIVEL[nivelAtual + 1]
+}
+
+// Quanto ainda falta para o próximo nível; 0 quando já dá para subir
+function faltaDeXp(xp, nivelAtual) {
+    const alvo = xpDoProximoNivel(nivelAtual)
+
+    if (alvo === null) {
+        return null
+    }
+
+    return Math.max(0, alvo - (xp || 0))
+}
+
+// número com separador de milhar, como a tabela do livro mostra
+function formatarXp(valor) {
+    return (valor || 0).toLocaleString("pt-BR")
+}
+
 /* ---------- RF05: valores passivos ---------- */
 
 // Perícias que têm valor passivo na ficha de 2024.

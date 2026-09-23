@@ -1685,6 +1685,120 @@ function mostrarTalentos() {
     )
 }
 
+/* ---------- RF14: pontos de experiência ---------- */
+
+// O XP é só informação: o app nunca sobe o nível sozinho nem bloqueia o botão
+// de subir. Campo em branco = a mesa joga por marco (milestone).
+const xpEL = document.getElementById("xp")
+const statusXpEL = document.getElementById("status-xp")
+
+function xpDigitado() {
+    return xpEL.value.trim() === "" ? null : Number(xpEL.value)
+}
+
+function atualizarXp() {
+    const xp = xpDigitado()
+    const nivelAtual = Number(nivelEL.value)
+
+    if (xp === null) {
+        statusXpEL.textContent = "Por marco"
+        statusXpEL.className = "xp-status"
+        return
+    }
+
+    const falta = faltaDeXp(xp, nivelAtual)
+
+    if (falta === null) {
+        statusXpEL.textContent = "Nível máximo"
+        statusXpEL.className = "xp-status"
+        return
+    }
+
+    if (falta === 0) {
+        statusXpEL.textContent = `Dá para subir para o nível ${nivelAtual + 1}`
+        statusXpEL.className = "xp-status xp-pronto"
+        return
+    }
+
+    statusXpEL.textContent =
+        `Faltam ${formatarXp(falta)} para o nível ${nivelAtual + 1}`
+    statusXpEL.className = "xp-status"
+}
+
+xpEL.addEventListener("input", atualizarXp)
+
+/* ---------- IDEIA05: cadeado de edição ---------- */
+
+// O cadeado protege a CONSTRUÇÃO do personagem. Tudo que muda durante o jogo
+// (PV, testes de morte, recursos, espaços, condições, XP, inventário, moedas,
+// concentração, armadura) continua editável de propósito.
+const btnCadeadoEL = document.getElementById("btn-cadeado")
+
+let fichaTravada = true
+
+const IDS_DE_CONSTRUCAO = [
+    "nome", "classe", "subclasse", "raca", "subraca", "alinhamento", "antecedente",
+    "forca", "destreza", "constituicao", "inteligencia", "sabedoria", "carisma",
+    "bonus-forca", "bonus-destreza", "bonus-constituicao",
+    "bonus-inteligencia", "bonus-sabedoria", "bonus-carisma",
+    "opcao-magias-subclasse",
+    "tracos-personalidade", "ideais", "vinculos", "defeitos"
+]
+
+function camposDeConstrucao() {
+    const campos = IDS_DE_CONSTRUCAO
+        .map(function (id) {
+            return document.getElementById(id)
+        })
+        .filter(Boolean)
+
+    // as perícias são remontadas a cada mudança de classe
+    return campos.concat(
+        Array.from(document.querySelectorAll("#lista-pericias input"))
+    )
+}
+
+function aplicarCadeado() {
+    camposDeConstrucao().forEach(function (campo) {
+        if (campo.tagName === "SELECT" || campo.type === "checkbox") {
+            // travar desabilita; destravar devolve a decisão às regras,
+            // que rodam logo depois em recalcularDerivados()
+            campo.disabled = fichaTravada
+        } else {
+            campo.readOnly = fichaTravada
+        }
+    })
+
+    document.body.classList.toggle("ficha-travada", fichaTravada)
+
+    btnCadeadoEL.textContent = fichaTravada ? "🔒 Travada" : "🔓 Liberada"
+    btnCadeadoEL.title = fichaTravada
+        ? "A construção do personagem está protegida. Clique para editar."
+        : "A ficha está editável. Clique para proteger a construção."
+}
+
+// Gancho de ficha-comum.js: as regras acabaram de mexer nos campos (a lista de
+// perícias foi remontada, os bônus mudaram). Com a ficha travada, o cadeado
+// tem a última palavra.
+function aoAtualizarFicha() {
+    if (fichaTravada) {
+        aplicarCadeado()
+    }
+}
+
+function alternarCadeado() {
+    fichaTravada = !fichaTravada
+    aplicarCadeado()
+
+    // destravar precisa devolver os limites das regras (bônus que somem,
+    // perícias acima do limite da classe)
+    if (!fichaTravada) {
+        recalcularDerivados()
+    }
+}
+
+btnCadeadoEL.addEventListener("click", alternarCadeado)
+
 /* ---------- Carregar e salvar ---------- */
 
 if (!personagem) {
@@ -1782,6 +1896,14 @@ if (!personagem) {
 
     montarSelectDeExaustao()
     condicoesAtivas = (personagem.condicoes || []).slice()
+    // RF14: em branco quer dizer que a mesa joga por marco
+    xpEL.value = personagem.xp === undefined || personagem.xp === null ? "" : personagem.xp
+    atualizarXp()
+
+    // IDEIA05: a ficha abre travada, e o estado é lembrado por personagem
+    fichaTravada = personagem.fichaTravada !== false
+    aplicarCadeado()
+
     nivelDeExaustao = personagem.exaustao || 0
     exaustaoEL.value = nivelDeExaustao
     atualizarCondicoes()
@@ -1878,6 +2000,8 @@ if (!personagem) {
         personagem.armas = armasDoPersonagem
         personagem.condicoes = condicoesAtivas
         personagem.exaustao = nivelDeExaustao
+        personagem.xp = xpDigitado()
+        personagem.fichaTravada = fichaTravada
         personagem.moedas = moedasDoPersonagem
         personagem.itens = itensDoPersonagem
         lerPersonalidade()

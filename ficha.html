@@ -9,6 +9,11 @@
   <body>
     <div class="topo-pagina">
       <a href="index.html" class="link-voltar">← Voltar ao menu</a>
+      <!-- IDEIA05: a ficha abre travada; o cadeado protege a construção do
+           personagem, não o que muda durante o jogo -->
+      <button type="button" class="botao-secundario botao-topo" id="btn-cadeado">
+        🔒 Travada
+      </button>
       <a href="#" class="botao-secundario botao-topo" id="link-magias">
         Magias
       </a>
@@ -118,9 +123,19 @@
             <span class="rotulo">Alinhamento</span>
           </div>
 
-          <div class="campo bloco-vazio-mini">
-            <span class="vazio-texto">—</span>
+          <!-- RF14: deixar em branco é jogar por marco; o XP nunca bloqueia
+               nem dispara o level up sozinho -->
+          <div class="campo">
+            <input
+              type="number"
+              id="xp"
+              min="0"
+              step="1"
+              placeholder="—"
+              title="Deixe em branco se a mesa joga por marco (milestone)"
+            />
             <span class="rotulo">Pontos de Experiência</span>
+            <span class="xp-status" id="status-xp"></span>
           </div>
         </div>
       </header>

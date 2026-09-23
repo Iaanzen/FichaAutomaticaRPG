@@ -1780,3 +1780,40 @@ body {
     flex-wrap: wrap;
     gap: 6px;
 }
+
+/* ---------- RF14: pontos de experiência ---------- */
+
+.xp-status {
+    display: block;
+    margin-top: 2px;
+    font-size: 0.75rem;
+    font-style: italic;
+    color: var(--tinta-suave, var(--tinta));
+    opacity: 0.8;
+}
+
+.xp-pronto {
+    font-style: normal;
+    font-weight: 700;
+    color: var(--tinta);
+    opacity: 1;
+}
+
+/* ---------- IDEIA05: cadeado de edição ---------- */
+
+/* campo travado: continua legível, só não parece clicável */
+.ficha-travada input[readonly],
+.ficha-travada select:disabled,
+.ficha-travada textarea[readonly] {
+    background: rgba(0, 0, 0, 0.04);
+    cursor: default;
+}
+
+/* o número do nível já nasce somente leitura: não deve parecer travado */
+.ficha-travada #nivel {
+    background: none;
+}
+
+.ficha-travada .pericia input:disabled {
+    cursor: default;
+}
