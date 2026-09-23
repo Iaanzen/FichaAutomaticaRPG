@@ -1982,3 +1982,60 @@ html.verificando-login body {
     .conta-email { max-width: 120px; }
     .acoes-login { flex-direction: column; align-items: flex-start; }
 }
+
+/* ---------- Fase 2b: tela de administração ---------- */
+
+.lista-pacotes { margin-bottom: 10px; }
+
+.conta-linha {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 14px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--borda-fina);
+}
+
+.conta-linha:last-of-type { border-bottom: none; }
+
+.conta-linha-email {
+    font-weight: 700;
+    min-width: 200px;
+}
+
+.conta-linha-uid {
+    font-size: 0.72rem;
+    font-family: monospace;
+    color: #6a4f3a;
+    opacity: 0.8;
+}
+
+/* os pacotes viram caixas na mesma linha da conta */
+.conta-linha .pericia { flex: 0 0 auto; }
+
+.conta-nova {
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid var(--borda-fina);
+}
+
+.conta-nova summary {
+    font-family: 'Cinzel', serif;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+}
+
+.conta-nova .campo { max-width: 340px; margin-bottom: 8px; }
+
+@media (max-width: 700px) {
+    .conta-linha-email { min-width: 100%; }
+}
+
+/* o atalho do mestre usa o visual do botão, mas é um link */
+a.botao-sair {
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+}

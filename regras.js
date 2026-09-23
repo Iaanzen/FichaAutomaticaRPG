@@ -3945,3 +3945,14 @@ registrarClasse("patrulheiro", {
     },
     proficienciasDeArma: { simples: true, marciais: true }
 })
+
+// Fase 2b: as classes registradas ATÉ AQUI são o conteúdo gratuito (SRD).
+// Tudo o que for registrado depois vem de fora — do conteudo-extra.js local ou
+// de um pacote entregue pelo banco — e é isso que distingue os dois.
+const CLASSES_SRD = Object.keys(CLASSES)
+
+function classesForaDoSrd() {
+    return Object.keys(CLASSES).filter(function(valor) {
+        return !CLASSES_SRD.includes(valor)
+    })
+}

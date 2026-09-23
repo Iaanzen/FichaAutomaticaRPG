@@ -1,7 +1,8 @@
 const formFicha = document.getElementById("form-personagem");
 
-// sem conta, a guarda manda para o login
-Auth.protegerPagina()
+// sem conta, a guarda manda para o login; depois vem o conteudo
+// liberado para a conta (classes fora do SRD)
+Auth.protegerPagina().then(Conteudo.carregar)
 
 
 // As tabelas de regras vivem em regras.js.

@@ -6,26 +6,64 @@ rules_version = '2';
 // pessoa pode abrir o console do navegador e chamar o banco direto. Esconder
 // botão não protege nada.
 //
-// Estas regras precisam ser coladas no console do Firebase:
-// Firestore Database → aba Regras → colar → Publicar.
+// Publicar com: firebase deploy --only firestore
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Uma ficha por documento. O campo "dono" guarda o uid de quem a criou.
-    match /fichas/{ficha} {
+    // O uid da conta administradora (a sua). Não é segredo: saber um uid não
+    // permite entrar como ele. Fica escrito aqui, e não num campo do banco,
+    // para que ninguém possa se promover a administrador editando um documento.
+    function admin() {
+      return request.auth != null && request.auth.uid == 'bBAhU94qMPP1vM6r11U6HTpjbck2';
+    }
 
-      // Ler, alterar e apagar: só o dono da ficha.
-      allow read, update, delete: if request.auth != null
+    function conectado() {
+      return request.auth != null;
+    }
+
+    // ---------- Fichas: uma por documento, com o dono ----------
+    match /fichas/{ficha} {
+      // o dono sempre; o administrador só lê (painel de mestre)
+      allow read: if conectado()
+        && (resource.data.dono == request.auth.uid || admin());
+
+      allow update, delete: if conectado()
         && resource.data.dono == request.auth.uid;
 
-      // Criar: só em nome de si mesmo. Sem esta linha, alguém conectado
-      // poderia criar fichas marcadas como de outra pessoa.
-      allow create: if request.auth != null
+      // criar só em nome de si mesmo: sem isto, alguém conectado poderia
+      // criar fichas marcadas como de outra pessoa
+      allow create: if conectado()
         && request.resource.data.dono == request.auth.uid;
     }
 
-    // Tudo o que não está escrito acima fica bloqueado. Os pacotes de conteúdo
-    // e o painel de mestre (Fase 2b) entram aqui quando chegarem.
+    // ---------- Perfis: e-mail e pacotes de conteúdo liberados ----------
+    match /perfis/{uid} {
+      allow read: if conectado() && (request.auth.uid == uid || admin());
+
+      // A conta cria o próprio perfil no primeiro login, mas SEM pacotes:
+      // liberar conteúdo é decisão do administrador.
+      // O administrador também pode criar o perfil de alguém antes dessa
+      // pessoa entrar, para já deixar o acesso liberado.
+      allow create: if admin()
+        || (conectado()
+            && request.auth.uid == uid
+            && request.resource.data.pacotes.size() == 0);
+
+      // só o administrador libera ou tira pacotes
+      allow update, delete: if admin();
+    }
+
+    // ---------- Pacotes de conteúdo fora do SRD ----------
+    match /pacotes/{pacote} {
+      // a conta só recebe o pacote que estiver listado no perfil dela
+      allow read: if conectado()
+        && (admin()
+            || pacote in get(/databases/$(database)/documents/perfis/$(request.auth.uid)).data.pacotes);
+
+      allow write: if admin();
+    }
+
+    // Tudo o que não está escrito acima fica bloqueado.
   }
 }

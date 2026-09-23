@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Administração - Forja de Criação</title>
+    <link rel="stylesheet" href="cadastro.css" />
+  </head>
+  <body>
+    <div class="topo-pagina">
+      <a href="index.html" class="link-voltar">← Voltar ao menu</a>
+      <span id="barra-conta" class="conta-topo"></span>
+    </div>
+
+    <p id="mensagem-erro" style="display: none">
+      Esta página é só do mestre. <a href="index.html">Voltar ao menu</a>
+    </p>
+
+    <div class="ficha" id="tela-admin">
+      <h1 class="ficha-titulo">Administração</h1>
+
+      <div class="bloco-ficha">
+        <span class="rotulo-bloco">Pacotes de conteúdo</span>
+        <p class="descanso-ajuda">
+          Conteúdo fora do SRD não pode ficar no site nem no repositório, que
+          são públicos. Ele vive no banco, e as regras do Firestore só o
+          entregam a quem estiver liberado aqui embaixo.
+        </p>
+
+        <div id="lista-pacotes" class="lista-pacotes"></div>
+
+        <p class="descanso-ajuda" id="ajuda-envio"></p>
+        <button type="button" id="btn-enviar-pacotes">
+          Enviar os pacotes desta máquina
+        </button>
+        <p class="status-bonus" id="status-pacotes"></p>
+      </div>
+
+      <div class="bloco-ficha">
+        <span class="rotulo-bloco">Contas</span>
+        <p class="descanso-ajuda">
+          Marque o que cada conta pode usar. A pessoa vê a mudança ao recarregar
+          a página.
+        </p>
+
+        <div id="lista-contas"></div>
+
+        <details class="conta-nova">
+          <summary>Liberar para alguém que ainda não entrou</summary>
+          <p class="descanso-ajuda">
+            Pegue o identificador em Authentication → Users, no console do
+            Firebase. Quando a pessoa entrar, o acesso já estará valendo.
+          </p>
+          <div class="campo">
+            <input type="text" id="uid-novo" placeholder="identificador da conta" />
+            <span class="rotulo">Identificador (uid)</span>
+          </div>
+          <div class="campo">
+            <input type="email" id="email-novo" placeholder="email@exemplo.com" />
+            <span class="rotulo">E-mail (só para você reconhecer)</span>
+          </div>
+          <button type="button" id="btn-criar-perfil">Criar perfil</button>
+        </details>
+      </div>
+
+      <div class="bloco-ficha">
+        <span class="rotulo-bloco">Fichas dos jogadores</span>
+        <p class="descanso-ajuda">
+          Somente leitura: o mestre vê a ficha, não altera.
+        </p>
+        <div id="lista-fichas-todas"></div>
+      </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/12.14.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.14.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="auth.js"></script>
+    <script src="regras.js"></script>
+    <!-- conteúdo fora do SRD, só local (fora do git): é daqui que sai o envio -->
+    <script src="conteudo-extra.js"></script>
+    <script src="conteudo.js"></script>
+    <script src="admin.js"></script>
+  </body>
+</html>

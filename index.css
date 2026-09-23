@@ -262,3 +262,10 @@ html.verificando-login body {
 @media (max-width: 600px) {
     .conta-email { max-width: 50%; font-size: 0.75rem; }
 }
+
+/* o atalho do mestre usa o visual do botão, mas é um link */
+a.botao-sair {
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+}

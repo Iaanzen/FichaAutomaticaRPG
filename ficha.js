@@ -2044,6 +2044,8 @@ function iniciar() {
 
 // sem conta, a guarda manda para o login antes de qualquer coisa
 Auth.protegerPagina()
+    // pacotes liberados para a conta, antes da tela montar
+    .then(Conteudo.carregar)
     .then(function () {
         return Armazenamento.carregarFicha(idDaUrl)
     })
