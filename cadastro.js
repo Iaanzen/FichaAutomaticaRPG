@@ -279,13 +279,19 @@ formFicha.addEventListener('submit', function (evento) {
     const carisma = Number(document.getElementById("carisma").value)
 
     const calculo = calcularAtributos()
-    const dadosRaca = dadosDaRaca(raca, subraca)
+
+    // IDEIA04: raça inventada na mesa traz os próprios dados
+    const racaPropria = raca === RACA_PROPRIA ? lerRacaPropria() : null
+    const dadosRaca = racaPropria
+        ? dadosDaRacaPropria(racaPropria)
+        : dadosDaRaca(raca, subraca)
     const pvMaximo = pontosDeVida(classe, nivel, calculo.modificadores.constituicao)
 
     const listaFichas = {
         nome: nome,
         raca: raca,
         subraca: subraca,
+        racaPropria: racaPropria,
         classe: classe,
         subclasse: subclasse,
         nivel: nivel,

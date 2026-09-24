@@ -57,9 +57,26 @@ function carregarPacotes() {
 // É assim que o conteúdo sai do arquivo local e vai para o banco, sem passar
 // pelo repositório público.
 function pacotesDaMaquina() {
-    return classesForaDoSrd().map(function (valor) {
+    // classes inteiras (Pugilista, Artífice)
+    const classes = classesForaDoSrd().map(function (valor) {
         return { id: valor, nome: CLASSES[valor].nome, tipo: "classe", valor: valor, bloco: CLASSES[valor] }
     })
+
+    // subclasses acrescentadas a classes do SRD (Cavaleiro Arcano, Trapaceiro
+    // Arcano). O id leva a classe junto porque duas classes podem ter
+    // subclasses de mesmo nome.
+    const subclasses = subclassesForaDoSrd().map(function (achada) {
+        return {
+            id: `${achada.classe}-${achada.subclasse.valor}`,
+            nome: `${achada.subclasse.nome} (${nomeDaClasse(achada.classe)})`,
+            tipo: "subclasse",
+            classe: achada.classe,
+            valor: achada.subclasse.valor,
+            bloco: achada.subclasse
+        }
+    })
+
+    return classes.concat(subclasses)
 }
 
 function mostrarAjudaDeEnvio() {
@@ -91,6 +108,8 @@ function enviarPacotes() {
         const dados = JSON.parse(JSON.stringify({
             nome: pacote.nome,
             tipo: pacote.tipo,
+            // só a subclasse tem classe de destino
+            classe: pacote.classe || null,
             valor: pacote.valor,
             bloco: pacote.bloco
         }))

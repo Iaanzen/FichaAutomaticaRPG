@@ -2088,3 +2088,19 @@ a.botao-sair {
 @media (max-width: 700px) {
     .grupo-fichas-dono { min-width: 100%; }
 }
+
+/* IDEIA04: os campos da raça inventada ocupam a linha inteira */
+.campo-largo { grid-column: 1 / -1; }
+
+.campo-largo textarea {
+    width: 100%;
+    padding: 8px;
+    font-family: 'Lora', serif;
+    font-size: 0.95rem;
+    color: var(--tinta);
+    background-color: rgba(255,255,255,0.55);
+    border: 1px solid var(--borda-fina);
+    border-bottom: 2px solid var(--tinta);
+    border-radius: 4px 4px 0 0;
+    resize: vertical;
+}

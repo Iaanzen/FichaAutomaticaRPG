@@ -85,7 +85,7 @@ function subclasseAtiva() {
 // espaços podem chegar mais alto (eles somam), mas a magia preparada continua
 // limitada pelo nível na classe; truques (círculo 0) valem sempre.
 function circuloMaximo() {
-    return circuloMaximoDaClasse(classeAtiva, nivelAtivo())
+    return circuloMaximoDaClasse(classeAtiva, nivelAtivo(), subclasseAtiva())
 }
 
 /* ---------- API ---------- */
@@ -142,7 +142,7 @@ async function buscarMagias() {
             .concat((locais.foraDaApi || []).map(magiaForaDaApi))
     } else {
         // uma requisição só traz a lista inteira da classe
-        const classeApi = classeNaApi(classeAtiva)
+        const classeApi = listaDeMagiasNaApi(classeAtiva, subclasseAtiva())
         const dados = await consultar(
             `{ spells(class: "${classeApi}", limit: 400) { ${CAMPOS_DA_LISTA} } }`
         )
@@ -207,6 +207,13 @@ function totalDoAtributo(atributo) {
 
 // RF29: a tabela de cada classe diz quantos truques e magias preparadas cabem
 async function buscarLimites() {
+    // subclasse conjuradora traz a tabela dela: não existe na API da classe
+    const daSubclasse = limitesDaSubclasse(classeAtiva, subclasseAtiva(), nivelAtivo())
+
+    if (daSubclasse) {
+        return daSubclasse
+    }
+
     const locais = magiasLocaisDaClasse(classeAtiva)
 
     // classe fora da API: truques pela tabela local, preparadas pela regra dela
@@ -220,7 +227,7 @@ async function buscarLimites() {
         )
     }
 
-    const classeApi = classeNaApi(classeAtiva)
+    const classeApi = listaDeMagiasNaApi(classeAtiva, subclasseAtiva())
     const resposta = await fetch(
         `${API_BASE}/api/2024/classes/${classeApi}/levels/${nivelAtivo()}`
     )
@@ -744,7 +751,7 @@ async function carregar() {
     fecharDetalhe()
 
     // classe de conteúdo extra ainda sem lista: as outras continuam abrindo
-    if (classeNaApi(classeAtiva) === null && magiasLocaisDaClasse(classeAtiva) === null) {
+    if (listaDeMagiasNaApi(classeAtiva, subclasseAtiva()) === null && magiasLocaisDaClasse(classeAtiva) === null) {
         statusEL.textContent =
             `As magias de ${nomeDaClasse(classeAtiva)} ainda não estão disponíveis: ` +
             `a classe não existe na API e a lista local dela ainda não foi feita.`
@@ -784,7 +791,7 @@ function iniciar() {
         mensagemErroEL.style.display = "block"
     } else if (
         conjuradoras.every(function (entrada) {
-            return classeNaApi(entrada.classe) === null && magiasLocaisDaClasse(entrada.classe) === null
+            return listaDeMagiasNaApi(entrada.classe, entrada.subclasse) === null && magiasLocaisDaClasse(entrada.classe) === null
         })
     ) {
         // classe fora da API (ex: conteúdo extra) ainda sem lista local de magias
@@ -799,7 +806,7 @@ function iniciar() {
 
         // classe sem lista de magias não abre: começa numa que abra
         const utilizavel = conjuradoras.find(function (entrada) {
-            return classeNaApi(entrada.classe) !== null || magiasLocaisDaClasse(entrada.classe) !== null
+            return listaDeMagiasNaApi(entrada.classe, entrada.subclasse) !== null || magiasLocaisDaClasse(entrada.classe) !== null
         })
 
         classeAtiva = utilizavel.classe

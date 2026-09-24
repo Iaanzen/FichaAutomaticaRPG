@@ -385,7 +385,7 @@ function circuloMaximoDaLista(lista) {
 function montarMagiasDoNivel() {
     const blocoEL = document.getElementById("bloco-magias-levelup")
 
-    if (conjuracaoDaClasse(classeEmFoco) === null) {
+    if (conjuracaoEfetiva(classeEmFoco, subclasseEmFoco()) === null) {
         blocoEL.hidden = true
         return
     }

@@ -1365,7 +1365,7 @@ function lerMagiaEscolhida() {
 }
 
 function atualizarConcentracao(mensagem) {
-    blocoConcentracaoEL.hidden = conjuracaoDaClasse(classeEL.value) === null
+    blocoConcentracaoEL.hidden = conjuracaoEfetiva(classeEL.value, subclasseEL.value) === null
 
     const ativa = concentracaoAtual !== ""
 
@@ -1771,6 +1771,9 @@ let fichaTravada = true
 
 const IDS_DE_CONSTRUCAO = [
     "nome", "classe", "subclasse", "raca", "subraca", "alinhamento", "antecedente",
+    // IDEIA04: a raça inventada faz parte da construção do personagem
+    "raca-propria-nome", "raca-propria-deslocamento",
+    "raca-propria-tracos", "raca-propria-idiomas",
     "forca", "destreza", "constituicao", "inteligencia", "sabedoria", "carisma",
     "bonus-forca", "bonus-destreza", "bonus-constituicao",
     "bonus-inteligencia", "bonus-sabedoria", "bonus-carisma",
@@ -1964,7 +1967,7 @@ function iniciar() {
         // só quem conjura tem o que ver na aba de magias
         const linkMagiasEL = document.getElementById("link-magias")
         linkMagiasEL.href = `magias.html?id=${personagem.id}`
-        linkMagiasEL.hidden = conjuracaoDaClasse(personagem.classe) === null
+        linkMagiasEL.hidden = classesConjuradoras(classesParaCalculo).length === 0
 
         // Manda a ficha para o armazenamento e devolve a Promise da gravação.
         // Devolve null se algo impede salvar.
@@ -1987,6 +1990,8 @@ function iniciar() {
             personagem.nome = document.getElementById("nome").value
             personagem.raca = racaEL.value
             personagem.subraca = subracaEL.value
+            // IDEIA04: a raça inventada é guardada junto com o personagem
+            personagem.racaPropria = usandoRacaPropria() ? lerRacaPropria() : null
             personagem.classe = classeEL.value
             personagem.subclasse = subclasseEL.value
             personagem.nivel = Number(nivelEL.value)
@@ -2017,7 +2022,9 @@ function iniciar() {
             // derivado da classe, mas salvo pra ficha poder ser lida sem recalcular
             personagem.salvaguardas = salvaguardasDaClasse(personagem.classe, personagem.nivel)
 
-            const dadosRaca = dadosDaRaca(personagem.raca, personagem.subraca)
+            const dadosRaca = personagem.racaPropria
+                ? dadosDaRacaPropria(personagem.racaPropria)
+                : dadosDaRaca(personagem.raca, personagem.subraca)
             personagem.deslocamento = dadosRaca ? dadosRaca.deslocamento : null
             personagem.tracos = dadosRaca ? dadosRaca.tracos : []
             personagem.idiomas = dadosRaca ? dadosRaca.idiomas : []
@@ -2046,7 +2053,7 @@ function iniciar() {
             lerPersonalidade()
             // classe que não conjura não guarda concentração
             personagem.concentracao =
-                conjuracaoDaClasse(personagem.classe) === null ? "" : concentracaoAtual
+                classesConjuradoras(classesParaCalculo).length === 0 ? "" : concentracaoAtual
             personagem.trocasMagia = trocasMagia
 
             return Armazenamento.gravarFicha(personagem)

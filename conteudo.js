@@ -41,9 +41,17 @@ const Conteudo = {
 
                     const pacote = resposta.data()
 
-                    // o conteudo-extra.js local pode já ter registrado esta classe
+                    // o conteudo-extra.js local pode já ter registrado isto;
+                    // registrar de novo não faz mal, mas evitamos o retrabalho
                     if (pacote.tipo === "classe" && !CLASSES[pacote.valor]) {
                         registrarClasse(pacote.valor, pacote.bloco)
+                        registrados.push(pacote.valor)
+                    }
+
+                    // subclasse acrescentada a uma classe que já existe
+                    // (Cavaleiro Arcano no Guerreiro)
+                    if (pacote.tipo === "subclasse") {
+                        registrarSubclasse(pacote.classe, pacote.bloco)
                         registrados.push(pacote.valor)
                     }
                 })

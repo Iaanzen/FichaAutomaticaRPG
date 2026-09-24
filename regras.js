@@ -252,6 +252,63 @@ const dadosPorSubRaca = {
 }
 
 // junta o que vem da raca com o que a sub-raca acrescenta
+/* ---------- IDEIA04: raça própria (homebrew) ---------- */
+
+// Valor reservado no select de raça. Fica separado das raças oficiais de
+// propósito: quem abre a ficha precisa saber que aquilo foi inventado na mesa.
+const RACA_PROPRIA = "propria"
+
+// Nas regras 2024 a raça não dá bônus de atributo, então a raça inventada não
+// interfere na distribuição do antecedente. Ela só traz deslocamento, traços
+// e idiomas — e os traços são texto livre, porque o app não tem como saber
+// que mecânica a mesa inventou.
+const DESLOCAMENTO_PADRAO = 9
+
+// texto com um item por linha vira lista, sem linhas vazias
+function listaDeLinhas(texto) {
+    return (texto || "")
+        .split("\n")
+        .map(function(linha) {
+            return linha.trim()
+        })
+        .filter(function(linha) {
+            return linha !== ""
+        })
+}
+
+// "Comum, Élfico" vira lista
+function listaDeItens(texto) {
+    return (texto || "")
+        .split(",")
+        .map(function(item) {
+            return item.trim()
+        })
+        .filter(function(item) {
+            return item !== ""
+        })
+}
+
+function dadosDaRacaPropria(definicao) {
+    if (!definicao) {
+        return null
+    }
+
+    return {
+        deslocamento: Number(definicao.deslocamento) || DESLOCAMENTO_PADRAO,
+        tracos: definicao.tracos || [],
+        idiomas: definicao.idiomas || []
+    }
+}
+
+// nome que aparece na ficha: o inventado, ou o da raça oficial
+function nomeDaRaca(raca, definicao) {
+    if (raca === RACA_PROPRIA) {
+        return (definicao && definicao.nome) || "Raça própria"
+    }
+
+    return raca
+}
+
 function dadosDaRaca(raca, subraca) {
     const base = dadosPorRaca[raca]
 
@@ -860,11 +917,18 @@ const PACTO_POR_NIVEL = [
 
 // devolve [{ circulo: 1, total: 4 }, ...] so com os circulos que tem espaco;
 // classe que nao conjura devolve lista vazia
-function espacosDeMagia(classe, nivel) {
-    const conjuracao = conjuracaoDaClasse(classe)
+function espacosDeMagia(classe, nivel, subclasse) {
+    const conjuracao = conjuracaoEfetiva(classe, subclasse)
 
     if (conjuracao === null || nivel < 1 || nivel > NIVEL_MAXIMO) {
         return []
+    }
+
+    // subclasse conjuradora traz a própria tabela, por nível da classe
+    if (conjuracao.espacosPorNivel) {
+        return (conjuracao.espacosPorNivel[nivel - 1] || []).map(function(total, indice) {
+            return { circulo: indice + 1, total: total }
+        })
     }
 
     if (conjuracao.tipo === "pacto") {
@@ -879,6 +943,70 @@ function espacosDeMagia(classe, nivel) {
     return tabela[nivel - 1].map(function(total, indice) {
         return { circulo: indice + 1, total: total }
     })
+}
+
+/* ---------- Subclasse que conjura (Cavaleiro Arcano, Trapaceiro Arcano) ---------- */
+
+// Algumas subclasses dão conjuração a uma classe que não conjura. Quem fornece
+// as TABELAS é o bloco da subclasse, não este arquivo: essas subclasses estão
+// fora do SRD e o repositório é público. Aqui fica só o motor.
+//
+// Formato esperado no bloco da subclasse:
+//   conjuracao: {
+//     atributo: "inteligencia",
+//     nomeNaApi: "wizard",            // de qual lista as magias vêm
+//     espacosPorNivel: [[], [], [2], ...],   // por nível DA CLASSE, 20 linhas
+//     truquesPorNivel: [...],         // opcional
+//     preparadasPorNivel: [...],      // opcional
+//     divisorDeConjurador: 3          // multiclasse: nível / 3, para baixo
+//   }
+function subclassePorValor(classe, subclasse) {
+    return (subclassesPorClasse[classe] || []).find(function(item) {
+        return item.valor === subclasse
+    }) || null
+}
+
+function conjuracaoDaSubclasse(classe, subclasse) {
+    const bloco = subclassePorValor(classe, subclasse)
+    return (bloco && bloco.conjuracao) || null
+}
+
+// A conjuração que vale para o personagem: a da subclasse quando existe
+// (o Guerreiro não conjura, o Cavaleiro Arcano sim), senão a da classe.
+function conjuracaoEfetiva(classe, subclasse) {
+    return conjuracaoDaSubclasse(classe, subclasse) || conjuracaoDaClasse(classe)
+}
+
+function conjuraPorSubclasse(classe, subclasse) {
+    return conjuracaoDaSubclasse(classe, subclasse) !== null
+}
+
+// de qual lista da API as magias vêm; a subclasse pode apontar para outra classe
+function listaDeMagiasNaApi(classe, subclasse) {
+    const daSubclasse = conjuracaoDaSubclasse(classe, subclasse)
+
+    if (daSubclasse && daSubclasse.nomeNaApi) {
+        return daSubclasse.nomeNaApi
+    }
+
+    return classeNaApi(classe)
+}
+
+// quantos truques e magias preparadas a subclasse permite neste nível
+function limitesDaSubclasse(classe, subclasse, nivel) {
+    const conjuracao = conjuracaoDaSubclasse(classe, subclasse)
+
+    if (!conjuracao) {
+        return null
+    }
+
+    const truques = conjuracao.truquesPorNivel || []
+    const preparadas = conjuracao.preparadasPorNivel || []
+
+    return {
+        truques: truques[nivel - 1] || 0,
+        magias: preparadas[nivel - 1] || 0
+    }
 }
 
 /* ---------- Sprint 5b: troca de magias (RF30) ---------- */
@@ -1530,10 +1658,15 @@ function salvaguardasMulticlasse(classes) {
 // e consulta a tabela do conjurador completo. A Magia de Pacto fica de fora.
 function nivelDeConjurador(classes) {
     return (classes || []).reduce(function(total, entrada) {
-        const conjuracao = conjuracaoDaClasse(entrada.classe)
+        const conjuracao = conjuracaoEfetiva(entrada.classe, entrada.subclasse)
 
         if (!conjuracao || conjuracao.tipo === "pacto") {
             return total
+        }
+
+        // a subclasse diz por quanto o nível dela é dividido (1/3 conjurador)
+        if (conjuracao.divisorDeConjurador) {
+            return total + Math.floor(entrada.nivel / conjuracao.divisorDeConjurador)
         }
 
         return total + (conjuracao.tipo === "meio" ? Math.floor(entrada.nivel / 2) : entrada.nivel)
@@ -1544,15 +1677,15 @@ function nivelDeConjurador(classes) {
 // recuperam em descanso curto e não se misturam com os outros
 function espacosDeMagiaMulticlasse(classes) {
     const conjuradoras = (classes || []).filter(function(entrada) {
-        return conjuracaoDaClasse(entrada.classe) !== null
+        return conjuracaoEfetiva(entrada.classe, entrada.subclasse) !== null
     })
 
     // uma classe só: a tabela dela, exatamente como antes
     if (conjuradoras.length === 1) {
         const unica = conjuradoras[0]
-        const doPacto = conjuracaoDaClasse(unica.classe).tipo === "pacto"
+        const doPacto = conjuracaoEfetiva(unica.classe, unica.subclasse).tipo === "pacto"
 
-        return espacosDeMagia(unica.classe, unica.nivel).map(function(espaco) {
+        return espacosDeMagia(unica.classe, unica.nivel, unica.subclasse).map(function(espaco) {
             return { circulo: espaco.circulo, total: espaco.total, pacto: doPacto }
         })
     }
@@ -1756,15 +1889,15 @@ function totalDeDadosDisponiveis(classes, gastos, classePadrao) {
 // As classes que conjuram, na ordem em que o personagem as pegou.
 function classesConjuradoras(classes) {
     return (classes || []).filter(function(entrada) {
-        return conjuracaoDaClasse(entrada.classe) !== null
+        return conjuracaoEfetiva(entrada.classe, entrada.subclasse) !== null
     })
 }
 
 // Círculo mais alto que a classe pode PREPARAR. Não é o mesmo que o espaço de
 // magia disponível: um Clérigo 1 / Mago 4 lança com espaços de 3º círculo, mas
 // só prepara magias de 1º na lista de Clérigo. Cada classe usa a tabela dela.
-function circuloMaximoDaClasse(classe, nivelDaClasse) {
-    const espacos = espacosDeMagia(classe, nivelDaClasse)
+function circuloMaximoDaClasse(classe, nivelDaClasse, subclasse) {
+    const espacos = espacosDeMagia(classe, nivelDaClasse, subclasse)
 
     if (espacos.length === 0) {
         return 0
@@ -3946,6 +4079,31 @@ registrarClasse("patrulheiro", {
     proficienciasDeArma: { simples: true, marciais: true }
 })
 
+// Acrescenta (ou substitui) uma subclasse de uma classe que já existe.
+// É o que permite um pacote trazer o Cavaleiro Arcano sem tocar no bloco do
+// Guerreiro, que é conteúdo gratuito.
+function registrarSubclasse(classe, bloco) {
+    if (!CLASSES[classe]) {
+        throw new Error(`Subclasse "${bloco.valor}" para classe desconhecida "${classe}".`)
+    }
+
+    const lista = subclassesPorClasse[classe] || []
+
+    const posicao = lista.findIndex(function(item) {
+        return item.valor === bloco.valor
+    })
+
+    if (posicao >= 0) {
+        // o SRD já traz o nome da subclasse; o pacote completa o resto
+        lista[posicao] = Object.assign({}, lista[posicao], bloco)
+    } else {
+        lista.push(bloco)
+    }
+
+    subclassesPorClasse[classe] = lista
+    CLASSES[classe].subclasses = lista
+}
+
 // Fase 2b: as classes registradas ATÉ AQUI são o conteúdo gratuito (SRD).
 // Tudo o que for registrado depois vem de fora — do conteudo-extra.js local ou
 // de um pacote entregue pelo banco — e é isso que distingue os dois.
@@ -3955,4 +4113,39 @@ function classesForaDoSrd() {
     return Object.keys(CLASSES).filter(function(valor) {
         return !CLASSES_SRD.includes(valor)
     })
+}
+
+// Retrato exato das subclasses neste ponto do arquivo. Guardar o texto, e não
+// só os nomes, é o que permite notar depois que um pacote ACRESCENTOU mecânica
+// a uma subclasse que aqui só tinha nome (o Cavaleiro Arcano é esse caso).
+const SUBCLASSES_SRD = {}
+
+CLASSES_SRD.forEach(function(classe) {
+    const retrato = {}
+
+    ;(subclassesPorClasse[classe] || []).forEach(function(item) {
+        retrato[item.valor] = JSON.stringify(item)
+    })
+
+    SUBCLASSES_SRD[classe] = retrato
+})
+
+// As subclasses de CLASSES DO SRD que mudaram (ou nasceram) depois deste
+// ponto: é conteúdo que veio do conteudo-extra.js local ou de um pacote.
+// Classe inteira de fora (Pugilista) não entra aqui: ela viaja como pacote
+// próprio, com as subclasses dela dentro.
+function subclassesForaDoSrd() {
+    const achadas = []
+
+    CLASSES_SRD.forEach(function(classe) {
+        const retrato = SUBCLASSES_SRD[classe] || {}
+
+        ;(subclassesPorClasse[classe] || []).forEach(function(item) {
+            if (retrato[item.valor] !== JSON.stringify(item)) {
+                achadas.push({ classe: classe, subclasse: item })
+            }
+        })
+    })
+
+    return achadas
 }

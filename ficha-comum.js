@@ -168,8 +168,74 @@ function preencherLista(listaEL, itens, textoVazio) {
 }
 
 // deslocamento, tracos e idiomas saem da tabela; nada aqui e escolhido
+/* ---------- IDEIA04: raça própria ---------- */
+
+const BLOCOS_RACA_PROPRIA = [
+    "bloco-raca-propria",
+    "bloco-raca-propria-deslocamento",
+    "bloco-raca-propria-tracos",
+    "bloco-raca-propria-idiomas"
+]
+
+function usandoRacaPropria() {
+    return racaEL.value === RACA_PROPRIA
+}
+
+// lê o que o jogador escreveu nos campos da raça inventada
+function lerRacaPropria() {
+    const nomeEL = document.getElementById("raca-propria-nome")
+
+    if (nomeEL === null) {
+        return null
+    }
+
+    return {
+        nome: nomeEL.value.trim(),
+        deslocamento: Number(document.getElementById("raca-propria-deslocamento").value),
+        tracos: listaDeLinhas(document.getElementById("raca-propria-tracos").value),
+        idiomas: listaDeItens(document.getElementById("raca-propria-idiomas").value)
+    }
+}
+
+function escreverRacaPropria(definicao) {
+    const nomeEL = document.getElementById("raca-propria-nome")
+
+    if (nomeEL === null || !definicao) {
+        return
+    }
+
+    nomeEL.value = definicao.nome || ""
+    document.getElementById("raca-propria-deslocamento").value =
+        definicao.deslocamento || DESLOCAMENTO_PADRAO
+    document.getElementById("raca-propria-tracos").value = (definicao.tracos || []).join("\n")
+    document.getElementById("raca-propria-idiomas").value = (definicao.idiomas || []).join(", ")
+}
+
+// os campos da raça inventada e o de sub-raça nunca aparecem juntos
+function atualizarCamposDaRaca() {
+    const propria = usandoRacaPropria()
+
+    BLOCOS_RACA_PROPRIA.forEach(function(id) {
+        const bloco = document.getElementById(id)
+
+        if (bloco !== null) {
+            bloco.hidden = !propria
+        }
+    })
+
+    const blocoSubracaEL = document.getElementById("bloco-subraca")
+
+    if (blocoSubracaEL !== null) {
+        blocoSubracaEL.hidden = propria
+    }
+}
+
 function atualizarRaca() {
-    const dados = dadosDaRaca(racaEL.value, subracaEL.value)
+    atualizarCamposDaRaca()
+
+    const dados = usandoRacaPropria()
+        ? dadosDaRacaPropria(lerRacaPropria())
+        : dadosDaRaca(racaEL.value, subracaEL.value)
 
     const deslocamentoEL = document.getElementById("valor-deslocamento")
     const tracosEL = document.getElementById("lista-tracos")
@@ -480,7 +546,9 @@ function atualizarConjuracao() {
     const ataqueEL = document.getElementById("valor-ataque-magico")
     const tipoEL = document.getElementById("tipo-conjuracao")
 
-    const conjuracao = conjuracaoDaClasse(classeEL.value)
+    // a conjuração pode vir da subclasse (Cavaleiro Arcano, Trapaceiro Arcano)
+    const subclasseAtual = typeof subclasseEL !== "undefined" && subclasseEL ? subclasseEL.value : ""
+    const conjuracao = conjuracaoEfetiva(classeEL.value, subclasseAtual)
     blocoEL.classList.toggle("bloco-vazio", conjuracao === null)
 
     if (conjuracao === null) {
@@ -598,3 +666,13 @@ subracaEL.addEventListener("change", atualizarRaca)
 renderizarPericias()
 recalcularDerivados()
 atualizarRaca()
+
+// a prévia de deslocamento, traços e idiomas acompanha o que está sendo escrito
+;["raca-propria-nome", "raca-propria-deslocamento", "raca-propria-tracos", "raca-propria-idiomas"]
+    .forEach(function(id) {
+        const campo = document.getElementById(id)
+
+        if (campo !== null) {
+            campo.addEventListener("input", atualizarRaca)
+        }
+    })
