@@ -1724,6 +1724,42 @@ function atualizarXp() {
 
 xpEL.addEventListener("input", atualizarXp)
 
+/* ---------- Painel de mestre: ficha de outra pessoa ---------- */
+
+// O mestre pode LER a ficha de qualquer jogador (as regras do Firestore
+// permitem), mas nunca alterar. Aqui a tela inteira fica inerte; mesmo que
+// algo escapasse, o banco recusaria a gravação.
+let modoLeitura = false
+
+function aplicarModoLeitura() {
+    if (!modoLeitura) {
+        return
+    }
+
+    // garante o cadeado fechado: sem isso, uma ficha salva destravada pelo
+    // dono reabriria campos quando as regras remontassem a tela
+    fichaTravada = true
+    aplicarCadeado()
+
+    const avisoEL = document.getElementById("aviso-leitura")
+    avisoEL.textContent =
+        `Você está vendo a ficha de ${personagem.nome} como mestre. Somente leitura.`
+    avisoEL.hidden = false
+
+    // tudo dentro da ficha fica inerte, inclusive o que foi montado por código
+    // durante o carregamento (recursos, ataques, testes de morte)
+    formFicha.querySelectorAll("input, select, textarea, button").forEach(function (campo) {
+        campo.disabled = true
+    })
+
+    // o cadeado não faz sentido aqui: não há o que destravar
+    btnCadeadoEL.hidden = true
+
+    // estas páginas salvam antes de sair, e salvar não é permitido
+    document.getElementById("link-magias").hidden = true
+    document.getElementById("link-levelup").hidden = true
+}
+
 /* ---------- IDEIA05: cadeado de edição ---------- */
 
 // O cadeado protege a CONSTRUÇÃO do personagem. Tudo que muda durante o jogo
@@ -1933,6 +1969,10 @@ function iniciar() {
         // Manda a ficha para o armazenamento e devolve a Promise da gravação.
         // Devolve null se algo impede salvar.
         const salvarFicha = function () {
+            if (modoLeitura) {
+                return null
+            }
+
             if (!bonusValido()) {
                 mostrarStatusBonus()
                 return null
@@ -2051,5 +2091,14 @@ Auth.protegerPagina()
     })
     .then(function (encontrada) {
         personagem = encontrada
+
+        // ficha de outra pessoa: só o mestre chega aqui, e só para ler
+        const usuario = firebase.auth().currentUser
+        modoLeitura = personagem !== null &&
+            personagem.dono !== undefined &&
+            usuario !== null &&
+            personagem.dono !== usuario.uid
+
         iniciar()
+        aplicarModoLeitura()
     })

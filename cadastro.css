@@ -2039,3 +2039,52 @@ a.botao-sair {
     align-items: center;
     text-decoration: none;
 }
+
+/* ---------- Painel de mestre: fichas dos jogadores ---------- */
+
+.grupo-fichas {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--borda-fina);
+}
+
+.grupo-fichas:last-of-type { border-bottom: none; }
+
+.grupo-fichas-dono {
+    font-weight: 700;
+    min-width: 200px;
+}
+
+.ficha-do-jogador {
+    padding: 5px 12px;
+    font-family: 'Lora', serif;
+    font-size: 0.9rem;
+    color: var(--tinta);
+    text-decoration: none;
+    background: rgba(255,255,255,0.45);
+    border: 1px solid var(--borda-fina);
+    border-radius: 4px;
+}
+
+.ficha-do-jogador:hover { background: var(--ouro); }
+
+/* aviso de que a ficha aberta é de outra pessoa */
+.aviso-leitura {
+    width: 100%;
+    max-width: 900px;
+    margin: 0 0 12px;
+    padding: 10px 14px;
+    font-family: 'Cinzel', serif;
+    font-size: 0.85rem;
+    color: var(--bg-taverna);
+    background: var(--ouro);
+    border: 2px solid var(--tinta);
+    border-radius: 4px;
+}
+
+@media (max-width: 700px) {
+    .grupo-fichas-dono { min-width: 100%; }
+}

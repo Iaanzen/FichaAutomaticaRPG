@@ -242,22 +242,27 @@ function montarFichas() {
         })
 
         Object.keys(porDono).forEach(function (dono) {
-            const grupo = document.createElement("p")
-            grupo.className = "magias-grupo"
+            const grupo = document.createElement("div")
+            grupo.className = "grupo-fichas"
 
-            const titulo = document.createElement("strong")
-            titulo.textContent = `${nomeDoDono(dono)}: `
+            const titulo = document.createElement("span")
+            titulo.className = "grupo-fichas-dono"
+            titulo.textContent = nomeDoDono(dono)
+            grupo.appendChild(titulo)
 
-            const resumo = porDono[dono].map(function (ficha) {
+            porDono[dono].forEach(function (ficha) {
                 const classes = ficha.classes && ficha.classes.length
                     ? descreverClasses(ficha.classes)
                     : `${nomeDaClasse(ficha.classe)} ${ficha.nivel}`
 
-                return `${ficha.nome} (${classes})`
+                // abre a ficha normal; ela se trava sozinha por não ser sua
+                const link = document.createElement("a")
+                link.className = "ficha-do-jogador"
+                link.href = `ficha.html?id=${ficha.id}`
+                link.textContent = `${ficha.nome} — ${classes}`
+                grupo.appendChild(link)
             })
 
-            grupo.appendChild(titulo)
-            grupo.appendChild(document.createTextNode(resumo.join(", ")))
             listaFichasEL.appendChild(grupo)
         })
     })
