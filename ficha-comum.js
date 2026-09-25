@@ -254,12 +254,22 @@ function atualizarRaca() {
     }
 
     if (idiomasEL !== null) {
+        // a raça dá alguns; antecedente, classe e o que se aprende em jogo
+        // entram pelo campo ao lado, que só a ficha tem
+        const daRaca = dados ? dados.idiomas : []
+
         preencherLista(
             idiomasEL,
-            dados ? dados.idiomas : [],
+            daRaca.concat(lerIdiomasExtras()),
             "Escolha uma raça para ver os idiomas."
         )
     }
+}
+
+// "Anão, Ferramentas de ladrão" vira lista; vazio quando a página não tem o campo
+function lerIdiomasExtras() {
+    const campo = document.getElementById("idiomas-extras")
+    return campo === null ? [] : listaDeItens(campo.value)
 }
 
 /* ---------- RF21, RF22: pontos de vida ---------- */
@@ -676,3 +686,12 @@ atualizarRaca()
             campo.addEventListener("input", atualizarRaca)
         }
     })
+
+// a lista de idiomas acompanha o que está sendo digitado
+;(function() {
+    const campo = document.getElementById("idiomas-extras")
+
+    if (campo !== null) {
+        campo.addEventListener("input", atualizarRaca)
+    }
+})()

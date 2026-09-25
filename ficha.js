@@ -1777,6 +1777,7 @@ const IDS_DE_CONSTRUCAO = [
     // IDEIA04: a raça inventada faz parte da construção do personagem
     "raca-propria-nome", "raca-propria-deslocamento",
     "raca-propria-tracos", "raca-propria-idiomas",
+    "idiomas-extras",
     "forca", "destreza", "constituicao", "inteligencia", "sabedoria", "carisma",
     "bonus-forca", "bonus-destreza", "bonus-constituicao",
     "bonus-inteligencia", "bonus-sabedoria", "bonus-carisma",
@@ -1859,7 +1860,13 @@ function iniciar() {
         })
 
         // os selects dependentes so podem ser preenchidos depois de classe/raca
-        atualizarSubracas(personagem.subraca)
+        // a raca inventada e os idiomas acrescentados precisam estar nos campos
+    // antes do recalculo, senao a previa sai vazia e o salvar apaga os dados
+    escreverRacaPropria(personagem.racaPropria)
+    document.getElementById("idiomas-extras").value =
+        (personagem.idiomasExtras || []).join(", ")
+
+    atualizarSubracas(personagem.subraca)
         atualizarSubclasse(personagem.subclasse)
 
         // IDEIA06: teto de 20, menos no atributo que ganhou a Dádiva Épica (até 30).
@@ -1995,6 +2002,7 @@ function iniciar() {
             personagem.subraca = subracaEL.value
             // IDEIA04: a raça inventada é guardada junto com o personagem
             personagem.racaPropria = usandoRacaPropria() ? lerRacaPropria() : null
+            personagem.idiomasExtras = lerIdiomasExtras()
             personagem.classe = classeEL.value
             personagem.subclasse = subclasseEL.value
             personagem.nivel = Number(nivelEL.value)
@@ -2030,7 +2038,8 @@ function iniciar() {
                 : dadosDaRaca(personagem.raca, personagem.subraca)
             personagem.deslocamento = dadosRaca ? dadosRaca.deslocamento : null
             personagem.tracos = dadosRaca ? dadosRaca.tracos : []
-            personagem.idiomas = dadosRaca ? dadosRaca.idiomas : []
+            personagem.idiomas = (dadosRaca ? dadosRaca.idiomas : [])
+                .concat(personagem.idiomasExtras)
 
             personagem.pvMaximo = calcularPvMaximo()
             personagem.pvAtual = Number(document.getElementById("pv-atual").value)
