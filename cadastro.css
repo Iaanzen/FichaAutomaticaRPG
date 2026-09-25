@@ -2104,3 +2104,14 @@ a.botao-sair {
     border-radius: 4px 4px 0 0;
     resize: vertical;
 }
+
+/* ---------- Anotações: bloco livre de largura inteira ---------- */
+
+.bloco-anotacoes {
+    margin-top: 15px;
+}
+
+.bloco-anotacoes textarea {
+    min-height: 180px;
+    line-height: 1.5;
+}

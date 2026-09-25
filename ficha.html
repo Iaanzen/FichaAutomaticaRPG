@@ -611,6 +611,23 @@
         </div>
       </div>
 
+      <!-- Bloco livre, largura inteira: dano de magia, combinados da mesa,
+           nomes de NPC, o que a pessoa precisar. Continua editável com a
+           ficha travada, porque é usado durante o jogo. -->
+      <div class="bloco-ficha bloco-anotacoes">
+        <span class="rotulo-bloco">Anotações</span>
+        <p class="descanso-ajuda">
+          Espaço livre para o que não cabe na ficha: dano das suas magias,
+          combinados da campanha, nomes, pistas. Salva junto com o resto.
+        </p>
+        <textarea
+          id="anotacoes"
+          class="texto-livre"
+          rows="10"
+          placeholder="Escreva aqui..."
+        ></textarea>
+      </div>
+
       <button type="submit" id="btn-salvar">Salvar Alterações</button>
     </form>
 

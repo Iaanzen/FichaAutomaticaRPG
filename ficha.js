@@ -601,7 +601,10 @@ const CAMPOS_DE_PERSONALIDADE = [
     ["tracos-personalidade", "tracosPersonalidade"],
     ["ideais", "ideais"],
     ["vinculos", "vinculos"],
-    ["defeitos", "defeitos"]
+    ["defeitos", "defeitos"],
+    // as anotações são texto livre como as de cima, mas de uso em jogo:
+    // por isso ficam fora do cadeado (ver IDS_DE_CONSTRUCAO)
+    ["anotacoes", "anotacoes"]
 ]
 
 function escreverPersonalidade() {
