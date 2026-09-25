@@ -1609,41 +1609,103 @@ function mostrarMagiasEquipadas() {
     })
 
     circulos.forEach(function (circulo) {
-        const grupo = document.createElement("p")
-        grupo.className = "magias-grupo"
+        const titulo = document.createElement("p")
+        titulo.className = "magias-grupo"
+        titulo.textContent = circulo === 0 ? "Truques" : nomeDoCirculo(circulo)
+        listaEL.appendChild(titulo)
 
-        const titulo = document.createElement("strong")
-        titulo.textContent = circulo === 0 ? "Truques: " : `${nomeDoCirculo(circulo)}: `
-
-        const nomes = equipadas
+        equipadas
             .filter(function (magia) {
                 return magia.circulo === circulo
             })
-            .map(function (magia) {
-                // (C) marca concentração, como nas fichas de papel
-                const marcas = []
-
-                if (magia.concentracao) {
-                    marcas.push("C")
-                }
-
-                if (magia.daSubclasse) {
-                    marcas.push("subclasse")
-                }
-
-                // com duas classes conjuradoras, cada magia diz de onde vem
-                if (classesConjuradoras(classesParaCalculo).length > 1 && magia.classe) {
-                    marcas.push(nomeDaClasse(magia.classe))
-                }
-
-                return marcas.length ? `${magia.nome} (${marcas.join(", ")})` : magia.nome
+            .sort(function (a, b) {
+                return a.nome.localeCompare(b.nome)
             })
-            .sort()
-
-        grupo.appendChild(titulo)
-        grupo.appendChild(document.createTextNode(nomes.join(", ")))
-        listaEL.appendChild(grupo)
+            .forEach(function (magia) {
+                listaEL.appendChild(montarMagiaEquipada(magia))
+            })
     })
+}
+
+// Qual atributo esta magia usa. Com multiclasse cada magia guarda de que
+// classe veio, então uma do Clérigo usa Sabedoria e uma do Mago Inteligência
+// na mesma ficha. Magia dada pela subclasse pode ter atributo próprio.
+function modificadorDaMagia(magia) {
+    const modificadores = calcularAtributos().modificadores
+
+    if (magia.daSubclasse && magia.classe) {
+        const entrada = classesParaCalculo.find(function (item) {
+            return item.classe === magia.classe
+        })
+
+        const proprio = atributoDasMagiasDaSubclasse(magia.classe, entrada ? entrada.subclasse : "")
+
+        if (proprio) {
+            return modificadores[proprio]
+        }
+    }
+
+    const dona = classesParaCalculo.find(function (item) {
+        return item.classe === magia.classe
+    }) || classesParaCalculo[0]
+
+    const conjuracao = conjuracaoEfetiva(dona.classe, dona.subclasse || "")
+
+    return conjuracao ? modificadores[conjuracao.atributo] : 0
+}
+
+// uma linha por magia: nome, marcas e os números de combate
+function montarMagiaEquipada(magia) {
+    const linha = document.createElement("p")
+    linha.className = "magia-equipada"
+
+    const nome = document.createElement("strong")
+    nome.textContent = magia.nome
+    linha.appendChild(nome)
+
+    // (C) marca concentração, como nas fichas de papel
+    const marcas = []
+
+    if (magia.concentracao) {
+        marcas.push("C")
+    }
+
+    if (magia.daSubclasse) {
+        marcas.push("subclasse")
+    }
+
+    // com duas classes conjuradoras, cada magia diz de onde vem
+    if (classesConjuradoras(classesParaCalculo).length > 1 && magia.classe) {
+        marcas.push(nomeDaClasse(magia.classe))
+    }
+
+    if (marcas.length) {
+        const etiqueta = document.createElement("span")
+        etiqueta.className = "magia-marcas"
+        etiqueta.textContent = ` (${marcas.join(", ")})`
+        linha.appendChild(etiqueta)
+    }
+
+    const partes = resumoDeCombateDaMagia(
+        magia,
+        magia.combate,
+        bonusDeProficiencia(nivelTotal(classesParaCalculo)),
+        modificadorDaMagia(magia),
+        nivelTotal(classesParaCalculo)
+    )
+
+    if (partes.length === 0) {
+        return linha
+    }
+
+    const numeros = document.createElement("span")
+    numeros.className = "magia-numeros"
+    numeros.textContent = partes.map(function (parte) {
+        return `${parte.rotulo}: ${parte.valor}`
+    }).join(" · ")
+
+    linha.appendChild(numeros)
+    return linha
 }
 
 // classe, subclasse e tipo de terra mudam o que aparece (e a lista de concentração)
