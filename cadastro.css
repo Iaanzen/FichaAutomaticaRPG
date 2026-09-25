@@ -2104,25 +2104,3 @@ a.botao-sair {
     border-radius: 4px 4px 0 0;
     resize: vertical;
 }
-
-/* ---------- Magias equipadas: números de combate ---------- */
-
-.magia-equipada {
-    margin: 0 0 6px;
-    font-size: 0.9rem;
-    line-height: 1.35;
-}
-
-.magia-marcas {
-    font-size: 0.78rem;
-    font-style: italic;
-    color: #6a4f3a;
-}
-
-/* os números vão numa linha própria, recuados sob o nome da magia */
-.magia-numeros {
-    display: block;
-    margin-left: 12px;
-    font-size: 0.82rem;
-    color: #6a4f3a;
-}

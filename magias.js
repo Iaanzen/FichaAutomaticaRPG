@@ -286,89 +286,6 @@ async function buscarDetalhe(valor) {
     return dados.spell
 }
 
-/* ---------- Dados de combate: dano, ataque e CD ---------- */
-
-// A API de 2024 traz só o dano base, sem escalonamento e sem salvaguarda. A de
-// 2014 traz as tabelas completas, então os dados de combate vêm dela.
-const API_COMBATE = `${API_BASE}/api/2014/spells`
-
-// já buscados nesta visita, para não pedir a mesma magia duas vezes
-const combatePorMagia = {}
-
-// o formato compacto que fica guardado na ficha (ver regras.js)
-function converterCombate(dados) {
-    const lista = Array.isArray(dados.damage) ? dados.damage : (dados.damage ? [dados.damage] : [])
-    const primeiro = lista[0]
-
-    const combate = {
-        ataque: dados.attack_type || null,
-        cd: dados.dc
-            ? { atributo: dados.dc.dc_type ? dados.dc.dc_type.name : "", sucesso: dados.dc.dc_success || "" }
-            : null,
-        dano: null,
-        cura: null
-    }
-
-    if (primeiro) {
-        combate.dano = {
-            tipo: primeiro.damage_type ? primeiro.damage_type.name : "",
-            porCirculo: primeiro.damage_at_slot_level || null,
-            porNivel: primeiro.damage_at_character_level || null
-        }
-    }
-
-    if (dados.heal_at_slot_level) {
-        const porCirculo = {}
-
-        Object.keys(dados.heal_at_slot_level).forEach(function (chave) {
-            // a API escreve "1d8 + MOD"; o modificador é somado pela ficha
-            porCirculo[chave] = String(dados.heal_at_slot_level[chave])
-                .replace(/\s*\+\s*MOD\s*$/i, "")
-                .trim()
-        })
-
-        combate.cura = { porCirculo: porCirculo }
-    }
-
-    return combate
-}
-
-// null quando a magia não existe na API de 2014 (é nova de 2024)
-async function buscarCombate(indice) {
-    if (combatePorMagia[indice] !== undefined) {
-        return combatePorMagia[indice]
-    }
-
-    try {
-        const resposta = await fetch(`${API_COMBATE}/${indice}`)
-        combatePorMagia[indice] = resposta.ok ? converterCombate(await resposta.json()) : null
-    } catch (erro) {
-        console.warn(`Sem dados de combate de ${indice}:`, erro.message)
-        combatePorMagia[indice] = null
-    }
-
-    return combatePorMagia[indice]
-}
-
-// Completa as magias já equipadas que ainda não têm os dados. Roda uma vez por
-// visita; depois disso a ficha funciona sem internet.
-async function completarDadosDeCombate() {
-    const faltando = equipadas.filter(function (magia) {
-        return magia.combateBuscado !== true
-    })
-
-    if (faltando.length === 0) {
-        return
-    }
-
-    await Promise.all(faltando.map(async function (magia) {
-        magia.combate = await buscarCombate(magia.valor)
-        magia.combateBuscado = true
-    }))
-
-    salvar()
-}
-
 /* ---------- Equipar (RF26, RF29) ---------- */
 
 function estaEquipada(valor) {
@@ -490,21 +407,12 @@ function alternarMagia(magia) {
 
         equipadasNestaVisita.push(magia.index)
 
-        const nova = {
+        equipadas.push({
             valor: magia.index,
             nome: magia.name,
             circulo: magia.level,
             concentracao: magia.concentration,
             classe: classeAtiva
-        }
-
-        equipadas.push(nova)
-
-        // dano, ataque e CD ficam guardados junto: a ficha não vai à rede
-        buscarCombate(magia.index).then(function (combate) {
-            nova.combate = combate
-            nova.combateBuscado = true
-            salvar()
         })
     }
 
@@ -861,9 +769,6 @@ async function carregar() {
         removerForaDaLista()
         montarFiltroCirculo()
         renderizar()
-
-        // completa as magias equipadas antes desta funcionalidade existir
-        completarDadosDeCombate()
     } catch (erro) {
         // sem internet ou API fora do ar: a ficha continua funcionando
         statusEL.textContent = "Sem conexão com a lista de magias. Tente de novo."
