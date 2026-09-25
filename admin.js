@@ -103,19 +103,31 @@ function enviarPacotes() {
     btnEnviarEL.disabled = true
     avisar("Enviando...", true)
 
-    const envios = locais.map(function (pacote) {
-        // o JSON limpa o que o Firestore não aceita (undefined, funções)
-        const dados = JSON.parse(JSON.stringify({
-            nome: pacote.nome,
-            tipo: pacote.tipo,
-            // só a subclasse tem classe de destino
-            classe: pacote.classe || null,
-            valor: pacote.valor,
-            bloco: pacote.bloco
-        }))
+    let envios
 
-        return bd.collection("pacotes").doc(pacote.id).set(dados)
-    })
+    // O Firestore recusa alguns formatos LANÇANDO ERRO na hora, não pela
+    // promessa — foi assim que "Enviando..." ficava para sempre. Daqui para
+    // frente qualquer falha aparece na tela.
+    try {
+        envios = locais.map(function (pacote) {
+            return bd.collection("pacotes").doc(pacote.id).set({
+                nome: pacote.nome,
+                tipo: pacote.tipo,
+                // só a subclasse tem classe de destino
+                classe: pacote.classe || null,
+                valor: pacote.valor,
+                // O bloco vai como TEXTO. O Firestore não aceita array dentro
+                // de array, e a tabela de espaços por nível é exatamente isso.
+                // Como o app nunca consulta dentro do bloco, guardar o JSON
+                // inteiro evita essa e qualquer outra restrição de formato.
+                blocoJson: JSON.stringify(pacote.bloco)
+            })
+        })
+    } catch (erro) {
+        avisar(`Não deu certo: ${erro.message}`, false)
+        btnEnviarEL.disabled = false
+        return
+    }
 
     Promise.all(envios)
         .then(carregarPacotes)
