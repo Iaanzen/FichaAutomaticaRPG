@@ -19,6 +19,20 @@ const emailNovoEL = document.getElementById("email-novo")
 
 const bd = firebase.firestore()
 
+// Uma chamada ao banco que não responde deixaria a tela parada para sempre,
+// sem dizer nada. Com isto, ela desiste e conta o que aconteceu.
+const ESPERA_MAXIMA_MS = 15000
+
+function comLimiteDeTempo(promessa, oQue) {
+    const desistir = new Promise(function (_, falhar) {
+        setTimeout(function () {
+            falhar(new Error(`${oQue}: o banco não respondeu em ${ESPERA_MAXIMA_MS / 1000}s`))
+        }, ESPERA_MAXIMA_MS)
+    })
+
+    return Promise.race([promessa, desistir])
+}
+
 // pacotes que já estão no banco
 let pacotes = []
 
@@ -129,13 +143,18 @@ function enviarPacotes() {
         return
     }
 
-    Promise.all(envios)
-        .then(carregarPacotes)
+    comLimiteDeTempo(Promise.all(envios), "envio dos pacotes")
+        .then(function () {
+            avisar(`${locais.length} pacote(s) gravado(s). Atualizando a lista...`, true)
+            return comLimiteDeTempo(carregarPacotes(), "leitura dos pacotes")
+        })
         .then(function () {
             avisar(`${locais.length} pacote(s) no banco.`, true)
-            montarContas()
+            return montarContas()
         })
         .catch(function (erro) {
+            // o console guarda o erro inteiro; a tela mostra o resumo
+            console.error("Falha ao enviar pacotes:", erro)
             avisar(`Não deu certo: ${erro.message}`, false)
         })
         .then(function () {
