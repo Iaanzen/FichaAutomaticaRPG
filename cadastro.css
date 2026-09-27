@@ -2127,3 +2127,49 @@ a.botao-sair {
 
 /* a descrição da condição vem num texto só, com quebras de linha */
 #detalhe-condicao .detalhe-descricao { white-space: pre-line; }
+
+/* ---------- A marca ---------- */
+
+/* O caminho do logo fica NUMA VARIÁVEL para a troca ser uma linha só, mesmo
+   que o arquivo da designer venha em outro formato (.png, .webp).
+   Trocar o desenho sem mudar o formato não exige nem isso: basta sobrescrever
+   marca/logo.svg. Ver MARCA.md. */
+:root {
+    --marca-logo: url("marca/logo.svg");
+}
+
+/* O nome fica no HTML como texto e some da tela: leitor de tela continua
+   lendo, e quem não carregar a imagem não fica sem nada. */
+.so-leitor-de-tela {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+/* "contain" aceita qualquer proporção: o logo da designer entra sem ajuste */
+.marca-logo {
+    display: block;
+    margin: 0 auto;
+    background-image: var(--marca-logo);
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.marca-logo-grande {
+    width: 100%;
+    max-width: 320px;
+    height: 84px;
+}
+
+.marca-logo-pequeno {
+    width: 100%;
+    max-width: 230px;
+    height: 58px;
+    margin-bottom: 14px;
+}

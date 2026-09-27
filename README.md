@@ -1,4 +1,4 @@
-# 🐉 Forja de Criação — Ficha de RPG Automatizada (D&D 5e)
+# 🐉 Forja da Criação — Ficha de RPG Automatizada (D&D 5e)
 
 > _"Que nenhum herói se perca por falta de um bom pergaminho."_
 
@@ -15,6 +15,8 @@ Cansado das limitações de apps pagos de ficha, este grimório digital nasceu p
 O projeto é desenvolvido **aos poucos, em sprints**, com espaço para mudanças conforme a mesa pede coisas novas. As decisões de regra e de arquitetura ficam registradas no arquivo de backlog, que serve de memória do projeto.
 
 📘 **[COMO-FUNCIONA.md](COMO-FUNCIONA.md)** — guia do código: como as peças se encaixam, o que cada arquivo faz e por quê.
+
+🎨 **[MARCA.md](MARCA.md)** — como trocar o logo e o ícone (os atuais são provisórios).
 
 ---
 

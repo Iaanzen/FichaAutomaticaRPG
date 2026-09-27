@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Ícone da Forja da Criação: bigorna dourada sobre o fundo da taverna.
+       Formas cheias e poucos detalhes, para continuar legível a 16px. -->
+  <rect width="64" height="64" rx="12" fill="#1a120e"/>
+  <rect x="3" y="3" width="58" height="58" rx="10" fill="none" stroke="#d4af37" stroke-width="2.5"/>
+
+  <!-- bigorna -->
+  <path fill="#d4af37" d="
+    M12 26
+    h30
+    l8 -6
+    v10
+    l-6 4
+    H22
+    l-2 6
+    h12
+    v6
+    H18
+    v-6
+    l2 -6
+    h-8
+    z"/>
+
+  <!-- faísca -->
+  <path fill="#8e231c" d="M46 12 l2.5 6 6 2.5 -6 2.5 -2.5 6 -2.5 -6 -6 -2.5 6 -2.5 z"/>
+</svg>

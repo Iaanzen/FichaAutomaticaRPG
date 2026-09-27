@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 96" role="img" aria-label="Forja da Criação">
+  <!-- PROVISÓRIO: substituir pelo logo da designer. Ver MARCA.md.
+       Fundo transparente de propósito: o logo é usado sobre o pergaminho
+       (claro) e sobre o fundo da taverna (escuro). -->
+
+  <!-- bigorna -->
+  <g fill="#d4af37">
+    <path d="
+      M8 40
+      h34
+      l9 -7
+      v11
+      l-7 5
+      H20
+      l-2 7
+      h14
+      v7
+      H14
+      v-7
+      l2 -7
+      H8
+      z"/>
+    <path fill="#8e231c" d="M50 14 l2.8 6.8 6.8 2.8 -6.8 2.8 -2.8 6.8 -2.8 -6.8 -6.8 -2.8 6.8 -2.8 z"/>
+  </g>
+
+  <!-- nome -->
+  <text x="78" y="45" font-family="Cinzel, Georgia, serif" font-size="30" font-weight="700"
+        letter-spacing="2" fill="currentColor">FORJA DA</text>
+  <text x="78" y="80" font-family="Cinzel, Georgia, serif" font-size="30" font-weight="700"
+        letter-spacing="2" fill="currentColor">CRIAÇÃO</text>
+</svg>

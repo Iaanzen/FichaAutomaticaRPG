@@ -124,7 +124,7 @@ const Armazenamento = {
     // backup, de cópia entre contas e de "duplicar personagem".
     paraBackup: function (fichas) {
         return {
-            app: "Forja de Criação",
+            app: "Forja da Criação",
             versao: Armazenamento.VERSAO_DO_BACKUP,
             exportadoEm: new Date().toISOString(),
             fichas: fichas.map(function (ficha) {
