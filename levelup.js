@@ -637,6 +637,15 @@ function criarBotaoTalento(talento, jaTem) {
     item.appendChild(nome)
     item.appendChild(descricao)
 
+    // Avisa, sem impedir: o app não sabe se a mesa aplica o pré-requisito, e
+    // a característica Estilo de Luta pode vir de uma classe de pacote.
+    if (talento.preRequisito) {
+        const aviso = document.createElement("span")
+        aviso.className = "talento-prerequisito"
+        aviso.textContent = `Exige: ${talento.preRequisito}`
+        item.appendChild(aviso)
+    }
+
     item.addEventListener("click", function () {
         talentoEscolhido = talento.valor
         escolhaAtual = "talento"

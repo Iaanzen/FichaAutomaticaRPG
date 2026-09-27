@@ -2115,3 +2115,12 @@ a.botao-sair {
     min-height: 180px;
     line-height: 1.5;
 }
+
+/* pré-requisito do talento: avisa sem impedir */
+.talento-prerequisito {
+    display: block;
+    margin-top: 2px;
+    font-size: 0.72rem;
+    font-style: italic;
+    color: var(--sangue-dragao);
+}

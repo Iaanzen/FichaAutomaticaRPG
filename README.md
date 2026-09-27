@@ -101,9 +101,13 @@ Abra **http://localhost:8000** e crie uma conta.
 
 ## 📜 Licença e créditos
 
-Este projeto usa conteúdo do **System Reference Document 5.1** ("SRD 5.1") da Wizards of the Coast LLC, disponível sob a [licença Creative Commons Attribution 4.0 International](https://creativecommons.org/licenses/by/4.0/legalcode).
+Este projeto usa conteúdo do System Reference Document, com a atribuição exigida pela licença:
 
-_Dungeons & Dragons_ é propriedade da Wizards of the Coast. Este é um projeto pessoal, de fã, sem fins comerciais, e **não contém conteúdo além do SRD**: classes, subclasses e outros materiais de livros pagos não estão neste repositório.
+> This work includes material from the System Reference Document 5.2.1 ("SRD 5.2.1") by Wizards of the Coast LLC, available at <https://www.dndbeyond.com/srd>. The SRD 5.2.1 is licensed under the Creative Commons Attribution 4.0 International License, available at <https://creativecommons.org/licenses/by/4.0/legalcode>.
+
+Também usa material do SRD 5.1, sob a mesma licença.
+
+Projeto pessoal, de fã, sem fins comerciais, compatível com a quinta edição. As classes completas de livros pagos (Pugilista, Artífice) e as subclasses fora do SRD ficam **fora deste repositório**, entregues por conta a quem tem acesso ao livro.
 
 ---
 

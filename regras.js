@@ -578,7 +578,8 @@ const TALENTOS = [
     {
         valor: "alerta",
         nome: "Alerta",
-        descricao: "Soma o bônus de proficiência à iniciativa e não pode ser surpreendido enquanto estiver consciente."
+        descricao: "Soma o bônus de proficiência à iniciativa e, logo após rolá-la, pode trocar a sua iniciativa com a de um aliado disposto.",
+        noSrd: true
     },
     {
         valor: "atiradorElite",
@@ -613,7 +614,8 @@ const TALENTOS = [
     {
         valor: "iniciadoMagia",
         nome: "Iniciado em Magia",
-        descricao: "Aprende dois truques e uma magia de 1º círculo de uma classe conjuradora."
+        descricao: "Dois truques e uma magia de 1º círculo da lista de Clérigo, Druida ou Mago. A magia fica sempre preparada e pode ser lançada uma vez por descanso longo sem gastar espaço.",
+        noSrd: true
     },
     {
         valor: "duasArmas",
@@ -624,8 +626,66 @@ const TALENTOS = [
         valor: "curandeiro",
         nome: "Curandeiro",
         descricao: "Usa kit de medicina para estabilizar com 1 PV e recuperar vida com um gasto de uso."
+    },
+
+    // Os que seguem vieram do SRD 5.2.1, conferidos no documento oficial.
+    {
+        valor: "atacanteSelvagem",
+        nome: "Atacante Selvagem",
+        descricao: "Uma vez por turno, ao acertar um alvo com uma arma, pode rolar os dados de dano duas vezes e escolher o resultado.",
+        noSrd: true
+    },
+    {
+        valor: "habilidoso",
+        nome: "Habilidoso",
+        descricao: "Proficiência em três perícias ou ferramentas, à escolha. Pode ser pego mais de uma vez.",
+        noSrd: true
+    },
+    {
+        valor: "agarrador",
+        nome: "Agarrador",
+        descricao: "+1 em Força ou Destreza (até 20). Ao acertar um Ataque Desarmado na ação de Ataque, pode causar dano e agarrar no mesmo golpe; tem vantagem contra quem está agarrado por você.",
+        preRequisito: "Força ou Destreza 13+",
+        noSrd: true
+    },
+    {
+        valor: "estiloArquearia",
+        nome: "Estilo: Arquearia",
+        descricao: "+2 nas jogadas de ataque com armas de longo alcance.",
+        preRequisito: "ter a característica Estilo de Luta",
+        noSrd: true
+    },
+    {
+        valor: "estiloDefesa",
+        nome: "Estilo: Defesa",
+        descricao: "+1 de CA enquanto estiver usando armadura leve, média ou pesada.",
+        preRequisito: "ter a característica Estilo de Luta",
+        noSrd: true
+    },
+    {
+        valor: "estiloArmaGrande",
+        nome: "Estilo: Combate com Arma Grande",
+        descricao: "Ao rolar dano com uma arma corpo a corpo empunhada com as duas mãos, trata 1 e 2 nos dados como 3. A arma precisa ser Pesada ou Versátil.",
+        preRequisito: "ter a característica Estilo de Luta",
+        noSrd: true
+    },
+    {
+        valor: "estiloDuasArmas",
+        nome: "Estilo: Combate com Duas Armas",
+        descricao: "No ataque extra com uma arma Leve, soma o modificador de atributo ao dano, se ainda não estiver somando.",
+        preRequisito: "ter a característica Estilo de Luta",
+        noSrd: true
     }
 ]
+
+// "noSrd: true" quer dizer que o talento ESTÁ no SRD 5.2.1, conferido no
+// documento oficial. Os que não têm a marca vêm do livro e foram escritos de
+// memória — se algum estiver errado, é aí que está o erro.
+function talentoPorValor(valor) {
+    return TALENTOS.find(function(talento) {
+        return talento.valor === valor
+    })
+}
 
 /* ---------- Nível 19: Dádiva Épica (regra 2024) ---------- */
 
