@@ -10,7 +10,7 @@ identidade. Trocar não exige mexer em nenhuma página.
 
 | Arquivo | Onde aparece |
 |---|---|
-| `marca/logo.svg` | Tela de entrada (grande) e topo da lista de personagens (menor) |
+| `marca/logo.svg` | Tela de entrada |
 | `marca/favicon.svg` | Ícone da aba do navegador, em todas as páginas |
 
 ---
@@ -29,17 +29,18 @@ mude **uma linha** em cada uma das duas folhas de estilo, `cadastro.css` e
 }
 ```
 
-São duas folhas porque a lista de personagens tem estilo próprio. É o mesmo
-lugar onde as cores do app já são repetidas.
+A variável existe nas duas folhas de estilo porque as cores do app já são
+repetidas assim. Hoje só a tela de entrada usa o logo; se ele voltar para a
+lista de personagens, a de lá já está pronta.
 
 ### O que pedir à designer
 
 - **Proporção livre.** O CSS usa `background-size: contain`, então qualquer
   formato de retângulo entra sem distorcer.
-- **Fundo transparente.** O logo aparece sobre o pergaminho claro na tela de
-  entrada e sobre o fundo escuro na lista. Fundo sólido só funcionaria num dos
-  dois.
-- **Legível em 230 px de largura**, que é o tamanho menor usado.
+- **Fundo transparente.** O logo aparece sobre o pergaminho claro da tela de
+  entrada. Transparente também deixa a porta aberta para usá-lo sobre o fundo
+  escuro das outras telas, sem pedir outra versão.
+- **Legível em 320 px de largura**, que é o tamanho usado.
 - **SVG é o ideal** (fica nítido em qualquer tela e pesa pouco). Se for PNG,
   peça no mínimo 3x o tamanho de exibição: cerca de 960 px de largura.
 
@@ -49,7 +50,7 @@ Se o arquivo não carregar (nome errado, formato errado), **a tela mostra um
 espaço vazio**, não uma mensagem de erro. O nome do app continua no HTML para
 leitores de tela, mas não aparece.
 
-Depois de trocar, abra a tela de entrada e a lista de personagens para conferir.
+Depois de trocar, abra a tela de entrada para conferir.
 
 ---
 

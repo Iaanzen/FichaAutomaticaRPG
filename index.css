@@ -30,15 +30,14 @@ body {
     min-height: 100vh;
 }
 
-/* com o logo acima, o título da lista deixa de ser o destaque da página */
 h1 {
     font-family: 'Cinzel', serif;
-    font-size: 1.5rem;
-    color: var(--pergaminho-sombra);
+    font-size: 2.8rem;
+    color: var(--ouro);
+    text-shadow: 2px 2px 5px rgba(0,0,0,0.9);
     margin: 0 0 20px;
     text-align: center;
     letter-spacing: 2px;
-    text-transform: uppercase;
 }
 
 /* Botão Criar Novo Personagem */
@@ -368,9 +367,3 @@ a.botao-sair {
     height: 84px;
 }
 
-.marca-logo-pequeno {
-    width: 100%;
-    max-width: 230px;
-    height: 58px;
-    margin-bottom: 14px;
-}
