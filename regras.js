@@ -1005,6 +1005,18 @@ function espacosDeMagia(classe, nivel, subclasse) {
     })
 }
 
+// Quantos truques e magias preparadas a classe permite no nível. A tabela vem
+// de dados-limites-magias.js, gerado da API; só as páginas que precisam dela
+// carregam o arquivo.
+function limitesDaClasse(classe, nivel) {
+    if (typeof LIMITES_DE_MAGIAS === "undefined") {
+        return { truques: 0, magias: 0 }
+    }
+
+    const daClasse = LIMITES_DE_MAGIAS[classe] || {}
+    return daClasse[nivel] || { truques: 0, magias: 0 }
+}
+
 /* ---------- Subclasse que conjura (Cavaleiro Arcano, Trapaceiro Arcano) ---------- */
 
 // Algumas subclasses dão conjuração a uma classe que não conjura. Quem fornece

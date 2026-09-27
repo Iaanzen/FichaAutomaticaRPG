@@ -5,10 +5,8 @@
 // tem a lista, os limites, as magias equipadas e as trocas dela; os espaços de
 // magia, que são compartilhados, ficam na ficha.
 // O conteúdo das magias aparece como vem da API, em inglês (decisão do 5b).
-// Magias e limites vêm da API do D&D 5e (dnd5eapi.co, regras de 2024), ao vivo.
-
-const API_BASE = "https://www.dnd5eapi.co"
-const API_MAGIAS = `${API_BASE}/graphql/2024`
+// As magias vêm de dados-magias.js, gerado da API do D&D 5e. A aba funciona
+// sem internet e abre na hora: nada aqui vai à rede.
 
 const telaEL = document.getElementById("tela-magias")
 const mensagemErroEL = document.getElementById("mensagem-erro")
@@ -88,33 +86,9 @@ function circuloMaximo() {
     return circuloMaximoDaClasse(classeAtiva, nivelAtivo(), subclasseAtiva())
 }
 
-/* ---------- API ---------- */
+/* ---------- As magias ---------- */
 
-async function consultar(consulta) {
-    const resposta = await fetch(API_MAGIAS, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: consulta })
-    })
-
-    if (!resposta.ok) {
-        throw new Error(`A API respondeu ${resposta.status}`)
-    }
-
-    const dados = await resposta.json()
-
-    if (dados.errors) {
-        throw new Error(dados.errors[0].message)
-    }
-
-    return dados.data
-}
-
-// campos da lista, sem descrição: assim a aba abre rápido.
-// A descrição vem depois, magia por magia.
-const CAMPOS_DA_LISTA = "index name level concentration ritual school { name }"
-
-// magia da lista local que não existe na API, no mesmo formato das outras
+// magia de pacote que não está no arquivo de dados, no mesmo formato das outras
 function magiaForaDaApi(magia) {
     return {
         index: magia.valor,
@@ -127,27 +101,25 @@ function magiaForaDaApi(magia) {
     }
 }
 
-async function buscarMagias() {
+function buscarMagias() {
     const locais = magiasLocaisDaClasse(classeAtiva)
     let lista
 
     if (locais) {
-        // classe fora da API: pede todas as magias e fica só com as da lista local
-        const dados = await consultar(`{ spells(limit: 400) { ${CAMPOS_DA_LISTA} } }`)
-
-        lista = dados.spells
+        // classe de pacote: a lista dela diz quais magias do SRD entram,
+        // mais as que só existem no livro
+        lista = MAGIAS_SRD
             .filter(function (magia) {
                 return locais.daApi.includes(magia.index)
             })
             .concat((locais.foraDaApi || []).map(magiaForaDaApi))
     } else {
-        // uma requisição só traz a lista inteira da classe
+        // cada magia guarda de quais listas de classe faz parte
         const classeApi = listaDeMagiasNaApi(classeAtiva, subclasseAtiva())
-        const dados = await consultar(
-            `{ spells(class: "${classeApi}", limit: 400) { ${CAMPOS_DA_LISTA} } }`
-        )
 
-        lista = dados.spells
+        lista = MAGIAS_SRD.filter(function (magia) {
+            return magia.classes.includes(classeApi)
+        })
     }
 
     return lista.slice().sort(function (a, b) {
@@ -227,21 +199,7 @@ async function buscarLimites() {
         )
     }
 
-    const classeApi = listaDeMagiasNaApi(classeAtiva, subclasseAtiva())
-    const resposta = await fetch(
-        `${API_BASE}/api/2024/classes/${classeApi}/levels/${nivelAtivo()}`
-    )
-
-    if (!resposta.ok) {
-        throw new Error(`A API respondeu ${resposta.status}`)
-    }
-
-    const conjuracao = (await resposta.json()).spellcasting || {}
-
-    return {
-        truques: conjuracao.cantrips_known || 0,
-        magias: conjuracao.prepared_spells || 0
-    }
+    return limitesDaClasse(classeAtiva, nivelAtivo())
 }
 
 async function buscarDetalhe(valor) {
@@ -265,25 +223,12 @@ async function buscarDetalhe(valor) {
         return detalhes[valor]
     }
 
-    const dados = await consultar(`{
-        spell(index: "${valor}") {
-            index
-            name
-            level
-            concentration
-            ritual
-            casting_time
-            range
-            duration
-            components
-            material
-            school { name }
-            description
-        }
-    }`)
+    // o arquivo de dados já traz a descrição junto
+    detalhes[valor] = MAGIAS_SRD.find(function (magia) {
+        return magia.index === valor
+    }) || null
 
-    detalhes[valor] = dados.spell
-    return dados.spell
+    return detalhes[valor]
 }
 
 /* ---------- Equipar (RF26, RF29) ---------- */

@@ -2124,3 +2124,6 @@ a.botao-sair {
     font-style: italic;
     color: var(--sangue-dragao);
 }
+
+/* a descrição da condição vem num texto só, com quebras de linha */
+#detalhe-condicao .detalhe-descricao { white-space: pre-line; }

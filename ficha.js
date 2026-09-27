@@ -778,7 +778,6 @@ itemNomeEL.addEventListener("keydown", function (evento) {
 
 /* ---------- Sprint 7: condições (RF35) ---------- */
 
-const API_CONDICOES = "https://www.dnd5eapi.co/api/2024/conditions"
 const listaCondicoesEL = document.getElementById("lista-condicoes")
 const exaustaoEL = document.getElementById("exaustao")
 const detalheCondicaoEL = document.getElementById("detalhe-condicao")
@@ -786,8 +785,6 @@ const detalheCondicaoEL = document.getElementById("detalhe-condicao")
 // condições ligadas agora; a exaustão é à parte, porque tem níveis
 let condicoesAtivas = []
 let nivelDeExaustao = 0
-
-const descricoesDeCondicoes = {}
 
 function fecharCondicao() {
     detalheCondicaoEL.hidden = true
@@ -811,33 +808,12 @@ async function mostrarCondicao(condicao) {
 
     const texto = document.createElement("p")
     texto.className = "detalhe-descricao"
-    texto.textContent = "Buscando a descrição..."
+    texto.textContent = DESCRICOES_CONDICOES[condicao.valor] || "Sem descrição."
 
     detalheCondicaoEL.appendChild(fechar)
     detalheCondicaoEL.appendChild(titulo)
     detalheCondicaoEL.appendChild(texto)
 
-    try {
-        if (!descricoesDeCondicoes[condicao.valor]) {
-            const resposta = await fetch(`${API_CONDICOES}/${condicao.valor}`)
-
-            if (!resposta.ok) {
-                throw new Error(`A API respondeu ${resposta.status}`)
-            }
-
-            const dados = await resposta.json()
-            const descricao = dados.description || dados.desc || "Sem descrição."
-
-            descricoesDeCondicoes[condicao.valor] = Array.isArray(descricao)
-                ? descricao.join("\n\n")
-                : descricao
-        }
-
-        texto.textContent = descricoesDeCondicoes[condicao.valor]
-    } catch (erro) {
-        texto.textContent = "Sem conexão para buscar a descrição. Tente de novo."
-        console.error(erro)
-    }
 }
 
 function alternarCondicao(condicao) {
@@ -1160,12 +1136,9 @@ formFicha.addEventListener("input", function (evento) {
 
 /* ---------- Sprint 6.5: habilidades por nível (RF13) ---------- */
 
-const API_HABILIDADES = "https://www.dnd5eapi.co/api/2024/features"
 const listaHabilidadesEL = document.getElementById("lista-habilidades")
 const detalheHabilidadeEL = document.getElementById("detalhe-habilidade")
 
-// descrições já buscadas, para não pedir a mesma habilidade duas vezes
-const descricoesDeHabilidades = {}
 let habilidadeAberta = null
 
 function fecharHabilidade() {
@@ -1175,7 +1148,7 @@ function fecharHabilidade() {
 }
 
 // a lista funciona sem internet; só a descrição vem da API, ao clicar
-async function abrirHabilidade(habilidade, rotulo) {
+function abrirHabilidade(habilidade, rotulo) {
     if (habilidadeAberta === habilidade.api) {
         fecharHabilidade()
         return
@@ -1197,36 +1170,12 @@ async function abrirHabilidade(habilidade, rotulo) {
 
     const texto = document.createElement("p")
     texto.className = "detalhe-descricao"
-    texto.textContent = "Buscando a descrição..."
+    texto.textContent = DESCRICOES_HABILIDADES[habilidade.api] || "Sem descrição."
 
     detalheHabilidadeEL.appendChild(fechar)
     detalheHabilidadeEL.appendChild(titulo)
     detalheHabilidadeEL.appendChild(texto)
 
-    try {
-        if (!descricoesDeHabilidades[habilidade.api]) {
-            const resposta = await fetch(`${API_HABILIDADES}/${habilidade.api}`)
-
-            if (!resposta.ok) {
-                throw new Error(`A API respondeu ${resposta.status}`)
-            }
-
-            const dados = await resposta.json()
-            const descricao = dados.description || dados.desc || "Sem descrição."
-
-            descricoesDeHabilidades[habilidade.api] = Array.isArray(descricao)
-                ? descricao.join("\n\n")
-                : descricao
-        }
-
-        // o jogador pode ter clicado em outra habilidade enquanto isso
-        if (habilidadeAberta === habilidade.api) {
-            texto.textContent = descricoesDeHabilidades[habilidade.api]
-        }
-    } catch (erro) {
-        texto.textContent = "Sem conexão para buscar a descrição. Tente de novo."
-        console.error(erro)
-    }
 }
 
 // uma linha por nível, do 1 até o nível atual, com as da subclasse escolhida
