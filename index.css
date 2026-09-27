@@ -8,6 +8,11 @@
     --sangue-dragao: #8e231c;
     --ouro: #d4af37;
     --borda-fina: rgba(43, 29, 20, 0.35);
+
+    /* Uma largura só para tudo que empilha na página. Sem isto, a barra da
+       conta e os blocos ficavam mais largos que a lista e as bordas não se
+       alinhavam com nada. */
+    --largura-conteudo: 600px;
 }
 
 * { box-sizing: border-box; }
@@ -73,7 +78,7 @@ a[href="cadastro.html"]:active {
     padding: 0;
     margin: 0;
     width: 100%;
-    max-width: 600px;
+    max-width: var(--largura-conteudo);
 }
 
 #lista-personagens li {
@@ -159,7 +164,7 @@ a[href="cadastro.html"]:active {
     padding: 20px 40px;
     border-radius: 4px;
     text-align: center;
-    max-width: 600px;
+    max-width: var(--largura-conteudo);
     width: 100%;
 }
 
@@ -176,7 +181,7 @@ html.verificando-login body {
     justify-content: flex-end;
     gap: 10px;
     width: 100%;
-    max-width: 700px;
+    max-width: var(--largura-conteudo);
     margin-bottom: 10px;
     min-height: 32px;
 }
@@ -217,7 +222,7 @@ html.verificando-login body {
 
 #bloco-migracao {
     width: 100%;
-    max-width: 700px;
+    max-width: var(--largura-conteudo);
     margin-bottom: 25px;
     padding: 16px 18px;
     background-color: rgba(241, 229, 209, 0.12);
@@ -260,6 +265,7 @@ html.verificando-login body {
 
 #btn-dispensar-migracao:hover { color: var(--pergaminho); border-color: var(--pergaminho); }
 
+/* media query não aceita variável de CSS: aqui o valor vai literal */
 @media (max-width: 600px) {
     .conta-email { max-width: 50%; font-size: 0.75rem; }
 }
@@ -273,14 +279,18 @@ a.botao-sair {
 
 /* ---------- RF40: exportar e importar ---------- */
 
+/* fica depois da lista, separado: é manutenção, não a ação principal */
 #bloco-backup {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
+    justify-content: center;
     gap: 10px;
     width: 100%;
-    max-width: 700px;
-    margin-bottom: 20px;
+    max-width: var(--largura-conteudo);
+    margin: 10px 0 30px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(215, 196, 163, 0.25);
 }
 
 #bloco-backup button {
