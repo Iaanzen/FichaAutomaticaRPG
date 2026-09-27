@@ -146,10 +146,10 @@ Decisão de organização de código feita nesta sprint: as tabelas e regras de 
 
 Ideias que não travam nenhum sprint específico, mas que precisam entrar em algum momento. As três primeiras são dívida de conteúdo: o app já tem a mecânica, falta o dado completo.
 
-- **IDEIA01: Completar todas as subclasses.** Hoje a tabela `subclassesPorClasse` no cadastro.js tem só 2 a 3 subclasses por classe, um subconjunto criado pra destravar o fluxo do wizard. Preencher com a lista completa de cada uma das 12 classes.
-- **IDEIA02: Completar todas as raças jogáveis.** Mesmo caso do select de raça: incluir todas as raças jogáveis, com as sub-raças correspondentes preenchidas dinamicamente (RF10).
-- **IDEIA03: Cobertura mínima do livro oficial.** Estabelecer como meta que raças, sub-raças, classes e subclasses cubram pelo menos o conteúdo do livro base oficial, antes de qualquer expansão ou homebrew. Serve de critério de "pronto" para IDEIA01 e IDEIA02.
-- **IDEIA04: Criar a própria raça (homebrew).** Permitir que o jogador defina uma raça própria em vez de escolher da lista: nome, deslocamento, traços passivos (texto livre) e perícias/idiomas concedidos. Nas regras 2024 a raça não dá bônus de atributo, então a raça personalizada não afeta a distribuição +2/+1 ou +1/+1/+1 da seção 3.1. Depende de IDEIA03 estar fechada, para que o conteúdo oficial e o homebrew fiquem distinguíveis no select (ver item correspondente na seção 3).
+- **IDEIA01: Completar todas as subclasses.** *(Praticamente fechada.)* São 48 subclasses nas 12 classes, com as mecânicas das 12 do SRD vindas da API. As demais têm nome; quem quiser a mecânica acrescenta por pacote, como foi feito com Cavaleiro Arcano, Trapaceiro Arcano e Necromante.
+- **IDEIA02: Completar todas as raças jogáveis.** *(Fechada.)* São 12 raças com sub-raças dinâmicas, incluindo as novas de 2024 e as linhagens do Tiefling. Quem quiser mais, usa a raça própria (IDEIA04).
+- **IDEIA03: Cobertura mínima do livro oficial.** *(Atendida.)* As 12 classes, 48 subclasses e 12 raças cobrem o livro base. O que fica fora do SRD está mapeado na seção 3.22.
+- **IDEIA04: Criar a própria raça (homebrew).** *(Feito — ver seção 3.19.)* Permitir que o jogador defina uma raça própria em vez de escolher da lista: nome, deslocamento, traços passivos (texto livre) e perícias/idiomas concedidos. Nas regras 2024 a raça não dá bônus de atributo, então a raça personalizada não afeta a distribuição +2/+1 ou +1/+1/+1 da seção 3.1. Depende de IDEIA03 estar fechada, para que o conteúdo oficial e o homebrew fiquem distinguíveis no select (ver item correspondente na seção 3).
 - **IDEIA05: Cadeado de edição na ficha.** *(Feito — ver seção 3.17.)* Durante a sessão o jogador fica com a ficha aberta o tempo todo e pode alterar um campo sem querer — um clique no select de classe, uma rolagem do mouse sobre um campo numérico. Um botão de cadeado no topo da ficha alterna entre **travada** e **liberada**: travada, os campos ficam somente leitura; liberada, a ficha volta a ser editável. A ficha deve **abrir travada**, já que em jogo ler é o uso normal e editar é a exceção, e o estado deve ser lembrado por personagem. Atenção: campos que mudam durante o jogo (PV atuais, PV temporários, testes de morte, usos de recursos de classe) precisam continuar editáveis mesmo com o cadeado fechado. O cadeado protege a **construção** do personagem, não o estado dele em jogo.
 - **IDEIA06: Limite de 20 nos atributos e opção +2 que some ao ser usada.** *(Feito no Sprint 5.5 — ver seção 3.9.)*
   - **Limite de 20** no valor total dos atributos (base + bônus) em três lugares: na **ficha**, no **wizard** e no **level up**.
@@ -548,6 +548,123 @@ O problema nao era a quantidade de chamadas (eram 10, em 5 arquivos), era a form
 
 ---
 
+## 3.18 Fase 2b — conteúdo por conta e painel de mestre (CONCLUÍDO)
+
+O site e o repositório são públicos, então conteúdo fora do SRD não pode estar em nenhum dos dois. Esta fase resolveu isso de vez.
+
+**O caminho do conteúdo:** `conteudo-extra.js` (só na máquina do dono, no `.gitignore`) → tela de mestre, botão "Enviar os pacotes desta máquina" → coleção `pacotes` no banco → `conteudo.js` entrega a quem o perfil autoriza.
+
+**Perfis.** `perfis/{uid}` com e-mail e a lista de pacotes, criado no primeiro acesso por `Auth.garantirPerfil()`. Contas antigas ganham o perfil na próxima visita.
+
+**Decisões de segurança, todas nas regras do Firestore:**
+- **A conta cria o próprio perfil, mas com `pacotes` vazio** (`request.resource.data.pacotes.size() == 0`). Sem isso, qualquer pessoa se cadastraria já liberando conteúdo pago para si mesma. É o buraco óbvio do desenho, fechado no banco e não no JavaScript.
+- **O administrador é um uid escrito no arquivo de regras**, não um campo do banco. Se fosse um campo, alguém poderia se promover editando um documento. O uid não é segredo: sabê-lo não permite entrar como ele.
+- **Um pacote só é entregue a quem o tem no perfil**, conferido com `get()` dentro da própria regra.
+- **O administrador lê as fichas, mas não escreve.** O painel de mestre mostra, não altera.
+
+**O bloco vai para o banco como TEXTO** (`blocoJson`), não como objeto. O Firestore não aceita array dentro de array, e a tabela de espaços de magia por nível é exatamente isso. Como o app nunca consulta dentro do bloco, guardar o JSON inteiro contorna essa e qualquer outra restrição de formato. Esse foi o defeito que deixava o envio travado em "Enviando..." — e o Firestore recusa esse formato **lançando erro na hora**, não pela promessa, então o `.catch()` nunca era alcançado.
+
+**Painel de mestre.** Lista as fichas agrupadas por dono, e cada uma abre a ficha normal em **modo leitura**: campos inertes, cadeado fechado e escondido, salvar desligado, e os links de Magias e Subir de Nível ocultos (os dois salvam antes de sair). Três camadas impedem alteração, mas só a última é segurança de verdade: as regras do Firestore.
+
+---
+
+## 3.19 Raça própria (IDEIA04) e idiomas (CONCLUÍDO)
+
+Opção "Criar a minha raça..." no select, no wizard e na ficha: nome, deslocamento, traços (um por linha) e idiomas. A sub-raça some quando ela é escolhida.
+
+Como em 2024 a raça não dá bônus de atributo, a raça inventada **não interfere** na distribuição do antecedente.
+
+É **por personagem**, não uma raça reutilizável no select. Três personagens da mesma raça inventada exigem digitar três vezes. Vira pacote no dia em que isso incomodar.
+
+**Idiomas.** O bloco "Outras Proficiências e Idiomas" mostrava só o que vinha da raça, e nada preenchia as proficiências. Ganhou um campo para acrescentar o que vem do antecedente, da classe ou é aprendido em jogo. Fica travado pelo cadeado, como as perícias: é construção.
+
+**Defeito corrigido junto:** a ficha salvava a raça própria mas nunca a carregava de volta nos campos — abrir e salvar apagava nome, deslocamento, traços e idiomas inventados.
+
+**Falta:** o campo de idiomas existe na ficha, não no wizard.
+
+---
+
+## 3.20 Bloco de anotações (CONCLUÍDO)
+
+Campo de texto livre de largura inteira no fim da ficha, para o que não cabe nos blocos fixos: dano das magias, combinados da campanha, nomes, pistas.
+
+**Fica fora do cadeado**, ao contrário dos campos de personalidade. Personalidade é construção; anotação é escrita durante a sessão, e obrigar a destravar a ficha para anotar seria exatamente o atrapalho que o cadeado deveria evitar.
+
+Substituiu uma tentativa anterior de mostrar dano e CD calculados por magia, que foi revertida: dependia de dados que a API de 2024 não tem completos, e o campo livre resolve o mesmo problema sem peça móvel.
+
+---
+
+## 3.21 Subclasses de pacote (CONCLUÍDO)
+
+**Cavaleiro Arcano e Trapaceiro Arcano** não estão no SRD — ele traz uma subclasse por classe. Isso dividiu o trabalho em dois:
+
+- **O motor, em `regras.js`**, genérico e sem nenhum número de livro: uma subclasse pode declarar `conjuracao` e **traz as próprias tabelas**. `espacosDeMagia` ganhou terceiro argumento opcional (chamadas de dois continuam valendo) e o multiclasse usa `divisorDeConjurador` para contar um terço de nível.
+- **O conteúdo, no `conteudo-extra.js`.**
+
+`registrarSubclasse()` acrescenta mecânica a uma subclasse que o SRD só nomeia. `SUBCLASSES_SRD` guarda o **texto inteiro** de cada uma no ponto do arquivo, não só o nome — necessário porque o Cavaleiro Arcano já existe como nome, e comparar nomes não notaria a diferença.
+
+**Necromante** (Mago) e **Domínio da Morte** (Clérigo) entraram depois, pelo mesmo caminho.
+
+**Regra de nível que se repete nesses casos:** conteúdo de 2014 dá habilidades em níveis que não batem com 2024. O Mago escolhia a escola no nível 2 e o Clérigo o domínio no nível 1; aqui a subclasse é escolhida no 3. As habilidades e magias dos níveis 1 e 2 são movidas para o 3 — senão nunca apareceriam. O Domínio da Vida, que veio pronto da API, já fazia isso.
+
+---
+
+## 3.22 Talentos conferidos no SRD 5.2.1 (CONCLUÍDO)
+
+O SRD 5.2.1 foi lido direto do PDF oficial. O que ele cobre, exatamente:
+
+- **Talentos:** Alerta, Iniciado em Magia, Atacante Selvagem, Habilidoso (Origem); Melhoria de Atributo, Agarrador (Geral); Arquearia, Defesa, Combate com Arma Grande, Combate com Duas Armas (Estilo de Luta); 7 Dádivas Épicas.
+- **Espécies (9):** Draconato, Anão, Elfo, Gnomo, Golias, Halfling, Humano, Orc, Tiefling. Meio-Elfo e Meio-Orc vêm do SRD 5.1, também CC. **Só o Aasimar fica fora dos dois.**
+
+**Dois erros corrigidos:** o **Alerta** estava com a versão de 2014 (bônus de iniciativa e não pode ser surpreendido); na de 2024 ele troca a iniciativa com um aliado. O **Iniciado em Magia** não dizia a lista (Clérigo, Druida ou Mago) nem que a magia pode ser lançada uma vez por descanso longo sem gastar espaço.
+
+**Sete acrescentados**, todos conteúdo livre. O campo `noSrd: true` marca os 9 conferidos no documento; **os demais foram escritos de memória, e é neles que um erro pode estar**.
+
+Campo `preRequisito`, mostrado no level up. **Avisa sem impedir**, como o pré-requisito de multiclasse: o app não sabe se a mesa aplica a regra, e a característica Estilo de Luta pode vir de uma classe de pacote.
+
+**Em aberto:** 36 dos 48 nomes de subclasse e o Aasimar estão fora do SRD. Identificados, decisão adiada.
+
+---
+
+## 3.23 Conteúdo dentro do app: fim da dependência da API (CONCLUÍDO)
+
+A aba de magias dependia de um projeto da comunidade estar no ar. Com o site público, uma queda derrubaria as magias para todos ao mesmo tempo, no meio da sessão.
+
+Quatro arquivos gerados por `ferramentas-gerar-dados.js`, carregados só por quem usa:
+
+| Arquivo | Baixado | Quem carrega |
+|---|---|---|
+| `dados-magias.js` | 77 KB | aba de Magias |
+| `dados-habilidades.js` | 24 KB | ficha |
+| `dados-condicoes.js` | 1,6 KB | ficha |
+| `dados-limites-magias.js` | 0,7 KB | aba de Magias |
+
+**Nenhuma página faz chamada de rede para conteúdo de D&D.** A lista de magias é filtrada em memória: cada magia guarda de quais classes é.
+
+**A descrição é guardada em parágrafos.** A API devolve num texto só, e as quebras de linha sumiriam dentro de um parágrafo único.
+
+**Custo aceito:** os dados **congelam** na data da geração (27/09/2026). Atualizar exige rodar o gerador. Na prática é melhor que antes, quando uma mudança na API entrava no app sem ninguém saber.
+
+`testar-sem-internet.js` sabota o `fetch` de propósito e roda a aba inteira: se alguém reintroduzir uma chamada à API, o teste quebra.
+
+---
+
+## 3.24 Exportar e importar (RF40, e RF41 de brinde) — CONCLUÍDO
+
+Até aqui o projeto não tinha plano de recuperação: se a conta ou o banco falhassem, não havia cópia de nada.
+
+**O arquivo guarda as fichas SEM `id` e SEM `dono`.** Essa única decisão faz o mesmo arquivo servir para três coisas: backup, levar personagem para outra conta, e **duplicar** (RF41) — importar o próprio backup cria cópias novas.
+
+- **Exportar** por personagem (no cartão) ou tudo de uma vez.
+- **Importar** aceita três formatos: o arquivo do app, uma lista solta ou uma ficha sozinha. Quem recebe backup por mensagem manda qualquer um dos três.
+- **Importar nunca sobrescreve.** Sempre cria fichas novas.
+- Recusa arquivo sem ficha reconhecível: o mínimo é ter nome e alguma classe.
+- O arquivo leva `versao: 1`; se o formato da ficha mudar, é por aí que a importação vai saber converter.
+
+**Ainda sem backup:** o `conteudo-extra.js`, que existe só na máquina do dono. Os pacotes no banco são a única cópia e não há como trazê-los de volta para arquivo.
+
+---
+
 ## 4. Backlog do Produto (ordenado por prioridade e dependência)
 
 Escrito como histórias de usuário, do jeito Scrum — cada uma vira uma entrega testável.
@@ -591,7 +708,7 @@ Escrito como histórias de usuário, do jeito Scrum — cada uma vira uma entreg
 | Sprint 8 | Inventário | 13 | concluída (ver seção 3.15) |
 | ~~Sprint 9~~ | ~~Gestão avançada de fichas~~ — juntado à Fase 2 (seção 3.10) | 14, 15 | |
 | Fase 2a | Login e fichas no banco: cadastro aberto, CRUD e duplicar ficha no banco, migração do navegador | 14, 15 | concluída (ver seção 3.10) |
-| Fase 2b | Permissões e administração: pacotes liberados por conta, painel de mestre, exportar ficha como backup | — | |
+| Fase 2b | Permissões e administração: pacotes liberados por conta, painel de mestre | — | concluída (ver seção 3.18) |
 | Lançamento | Hospedar, alerta de uso do Firebase, termos de uso se for público | — | |
 
 Cada sprint deve terminar com algo **funcionando de ponta a ponta**, mesmo que simples — é melhor ter "PV calcula certo, mas sem animação bonita" do que travar tentando fazer tudo perfeito de uma vez. Isso também deixa espaço pra mudança: se no meio do Sprint 3 você perceber que quer inverter a ordem com Magias, tudo bem, é revisão de backlog, não quebra de processo.

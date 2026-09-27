@@ -113,6 +113,67 @@ const Armazenamento = {
         return Armazenamento.colecao().doc(String(id)).delete()
     },
 
+    /* ---------- RF40: exportar e importar (backup) ---------- */
+
+    // Versão do formato do arquivo. Se um dia a ficha mudar de jeito, é por
+    // aqui que a importação vai saber converter.
+    VERSAO_DO_BACKUP: 1,
+
+    // O arquivo guarda as fichas SEM id e SEM dono: na importação elas viram
+    // fichas novas de quem está importando. Assim o mesmo arquivo serve de
+    // backup, de cópia entre contas e de "duplicar personagem".
+    paraBackup: function (fichas) {
+        return {
+            app: "Forja de Criação",
+            versao: Armazenamento.VERSAO_DO_BACKUP,
+            exportadoEm: new Date().toISOString(),
+            fichas: fichas.map(function (ficha) {
+                const copia = JSON.parse(JSON.stringify(ficha))
+                delete copia.id
+                delete copia.dono
+                return copia
+            })
+        }
+    },
+
+    // Aceita o arquivo inteiro, uma lista solta ou uma ficha sozinha: quem
+    // recebe um backup por mensagem costuma mandar qualquer um dos três.
+    fichasDoBackup: function (conteudo) {
+        const dados = typeof conteudo === "string" ? JSON.parse(conteudo) : conteudo
+
+        const lista = Array.isArray(dados)
+            ? dados
+            : (Array.isArray(dados.fichas) ? dados.fichas : [dados])
+
+        const validas = lista.filter(function (ficha) {
+            // o mínimo para ser uma ficha: nome e alguma classe
+            return ficha && typeof ficha === "object" && ficha.nome &&
+                (ficha.classe || (Array.isArray(ficha.classes) && ficha.classes.length))
+        })
+
+        if (validas.length === 0) {
+            throw new Error("O arquivo não tem nenhuma ficha reconhecível.")
+        }
+
+        return validas
+    },
+
+    // Grava as fichas do backup como novas. Nunca sobrescreve o que existe.
+    importarFichas: function (conteudo) {
+        const fichas = Armazenamento.fichasDoBackup(conteudo)
+
+        const gravacoes = fichas.map(function (ficha) {
+            const copia = Object.assign({}, ficha)
+            delete copia.id
+            delete copia.dono
+            return Armazenamento.gravarFicha(copia)
+        })
+
+        return Promise.all(gravacoes).then(function (gravadas) {
+            return gravadas.length
+        })
+    },
+
     /* ---------- Etapa 3: trazer as fichas que ficaram no navegador ---------- */
 
     CHAVE_ANTIGA: "fichas",

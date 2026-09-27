@@ -20,6 +20,15 @@
     <button type="button" id="btn-dispensar-migracao">Agora não</button>
   </div>
 
+  <!-- RF40: backup. O arquivo serve para guardar, para levar a outra conta
+       e para duplicar um personagem. -->
+  <div id="bloco-backup">
+    <button type="button" id="btn-exportar-tudo">Exportar tudo</button>
+    <button type="button" id="btn-importar">Importar de arquivo</button>
+    <input type="file" id="arquivo-importar" accept="application/json,.json" hidden />
+    <p id="status-backup"></p>
+  </div>
+
   <ul id="lista-personagens"></ul>
   <p id="mensagem-vazio">Nenhum personagem cadastrado.</p>
 

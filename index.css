@@ -269,3 +269,51 @@ a.botao-sair {
     align-items: center;
     text-decoration: none;
 }
+
+/* ---------- RF40: exportar e importar ---------- */
+
+#bloco-backup {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    max-width: 700px;
+    margin-bottom: 20px;
+}
+
+#bloco-backup button {
+    padding: 7px 14px;
+    font-family: 'Cinzel', serif;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--pergaminho-sombra);
+    background: transparent;
+    border: 1px solid var(--pergaminho-sombra);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+#bloco-backup button:hover {
+    color: var(--ouro);
+    border-color: var(--ouro);
+}
+
+#status-backup {
+    width: 100%;
+    margin: 0;
+    font-size: 0.85rem;
+}
+
+#status-backup:empty { display: none; }
+
+.backup-ok { color: var(--pergaminho-sombra); }
+.backup-erro { color: #e08b84; }
+
+/* o botão de exportar fica discreto ao lado do de excluir */
+.botao-exportar {
+    margin-right: 6px;
+}
