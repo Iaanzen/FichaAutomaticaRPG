@@ -580,7 +580,7 @@ Como em 2024 a raça não dá bônus de atributo, a raça inventada **não inter
 
 **Defeito corrigido junto:** a ficha salvava a raça própria mas nunca a carregava de volta nos campos — abrir e salvar apagava nome, deslocamento, traços e idiomas inventados.
 
-**Falta:** o campo de idiomas existe na ficha, não no wizard.
+O campo de idiomas existe agora nas **duas** telas. Ele nasceu só na ficha e a falta passou despercebida; `testar-cadeado.js` ganhou uma checagem de campos que precisam existir no wizard e na ficha, e ser salvos pelos dois.
 
 ---
 

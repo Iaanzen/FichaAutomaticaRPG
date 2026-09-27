@@ -316,7 +316,8 @@ formFicha.addEventListener('submit', function (evento) {
         salvaguardas: salvaguardasDaClasse(classe, nivel),
         deslocamento: dadosRaca ? dadosRaca.deslocamento : null,
         tracos: dadosRaca ? dadosRaca.tracos : [],
-        idiomas: dadosRaca ? dadosRaca.idiomas : [],
+        idiomasExtras: lerIdiomasExtras(),
+        idiomas: (dadosRaca ? dadosRaca.idiomas : []).concat(lerIdiomasExtras()),
         pvMaximo: pvMaximo,
         // personagem novo comeca com a vida cheia
         pvAtual: pvMaximo,
