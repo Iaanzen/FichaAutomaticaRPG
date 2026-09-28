@@ -282,14 +282,20 @@ function montarGanhos() {
             return magia.nome
         })
         ganhos.push(`Magias da subclasse (sempre preparadas): ${nomes.join(", ")}.`)
-    } else if (
-        escolhaDeMagias &&
+    }
+
+    // Uma subclasse pode ter magias fixas E uma escolha: o Domínio da Morte
+    // dá as magias de domínio e ainda deixa escolher um truque (Reaper). Por
+    // isso os dois avisos são independentes — antes, as fixas escondiam a
+    // escolha e o jogador não sabia que faltava decidir.
+    const faltaEscolher = escolhaDeMagias &&
         !personagem.opcaoMagiasSubclasse &&
         escolhaDeMagias.opcoes.some(function (opcao) {
             return opcao.porNivel[nivelNovo()]
         })
-    ) {
-        ganhos.push(`Magias da subclasse: escolha na ficha (${escolhaDeMagias.rotulo.toLowerCase()}).`)
+
+    if (faltaEscolher) {
+        ganhos.push(`Falta escolher na ficha: ${escolhaDeMagias.rotulo.toLowerCase()}.`)
     }
 
     // Sprint 6.5: proficiência nova em salvaguarda (só a classe inicial dá)
