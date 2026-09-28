@@ -2222,13 +2222,28 @@ function magiasDaSubclasse(classe, subclasse, nivel, opcao) {
         return []
     }
 
-    let porNivel = configuracao.porNivel || {}
+    // As magias fixas da subclasse e as que vêm de uma escolha SOMAM. O
+    // Domínio da Morte tem as duas coisas: as magias de domínio, que são
+    // sempre as mesmas, e um truque de Necromancia que o jogador escolhe
+    // (Reaper). O Círculo da Terra só tem a escolha, e continua igual.
+    const porNivel = {}
+
+    function juntar(mapa) {
+        Object.keys(mapa || {}).forEach(function(nivelDaMagia) {
+            porNivel[nivelDaMagia] = (porNivel[nivelDaMagia] || []).concat(mapa[nivelDaMagia])
+        })
+    }
+
+    juntar(configuracao.porNivel)
 
     if (configuracao.escolha) {
         const escolhida = configuracao.escolha.opcoes.find(function(item) {
             return item.valor === opcao
         })
-        porNivel = escolhida ? escolhida.porNivel : {}
+
+        if (escolhida) {
+            juntar(escolhida.porNivel)
+        }
     }
 
     const lista = []
