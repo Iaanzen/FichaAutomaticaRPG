@@ -113,28 +113,6 @@
             <span class="rotulo">Sub-raça</span>
           </div>
 
-          <!-- IDEIA04: raça inventada na mesa; aparece só quando escolhida -->
-          <div class="campo campo-largo" id="bloco-raca-propria" hidden>
-            <input type="text" id="raca-propria-nome" placeholder="Nome da raça" />
-            <span class="rotulo">Nome da raça</span>
-          </div>
-
-          <div class="campo" id="bloco-raca-propria-deslocamento" hidden>
-            <input type="number" id="raca-propria-deslocamento" min="0" step="0.5" value="9" />
-            <span class="rotulo">Deslocamento (m)</span>
-          </div>
-
-          <div class="campo campo-largo" id="bloco-raca-propria-tracos" hidden>
-            <textarea id="raca-propria-tracos" rows="4"
-              placeholder="Um traço por linha"></textarea>
-            <span class="rotulo">Traços (um por linha)</span>
-          </div>
-
-          <div class="campo campo-largo" id="bloco-raca-propria-idiomas" hidden>
-            <input type="text" id="raca-propria-idiomas" placeholder="Comum, Élfico" />
-            <span class="rotulo">Idiomas (separados por vírgula)</span>
-          </div>
-
 
           <div class="campo">
             <select id="alinhamento" name="alinhamento" required>
@@ -617,6 +595,33 @@
           <div class="bloco-ficha">
             <span class="rotulo-bloco">Características e Traços</span>
             <ul class="lista-texto" id="lista-tracos"></ul>
+
+            <!-- IDEIA04: só quem inventou a própria raça edita os traços.
+                 Numa raça do livro não há o que editar, e o botão nem aparece. -->
+            <button type="button" id="btn-editar-raca" hidden>Editar raça</button>
+
+            <div id="edicao-raca-propria" hidden>
+              <div class="campo" id="bloco-raca-propria">
+                <input type="text" id="raca-propria-nome" placeholder="Nome da raça" />
+                <span class="rotulo">Nome da raça</span>
+              </div>
+
+              <div class="campo" id="bloco-raca-propria-deslocamento">
+                <input type="number" id="raca-propria-deslocamento" min="0" step="0.5" value="9" />
+                <span class="rotulo">Deslocamento (m)</span>
+              </div>
+
+              <div class="campo" id="bloco-raca-propria-tracos">
+                <textarea id="raca-propria-tracos" rows="4"
+                  placeholder="Um traço por linha"></textarea>
+                <span class="rotulo">Traços (um por linha)</span>
+              </div>
+
+              <div class="campo" id="bloco-raca-propria-idiomas">
+                <input type="text" id="raca-propria-idiomas" placeholder="Comum, Élfico" />
+                <span class="rotulo">Idiomas (separados por vírgula)</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>

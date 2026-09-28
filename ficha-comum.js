@@ -228,6 +228,12 @@ function atualizarCamposDaRaca() {
     if (blocoSubracaEL !== null) {
         blocoSubracaEL.hidden = propria
     }
+
+    // a ficha usa isto para mostrar o botão de editar só em raça inventada;
+    // o wizard não define o gancho, porque lá os campos ficam sempre à vista
+    if (typeof aoAtualizarCamposDaRaca === "function") {
+        aoAtualizarCamposDaRaca(propria)
+    }
 }
 
 function atualizarRaca() {

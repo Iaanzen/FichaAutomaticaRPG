@@ -2173,3 +2173,44 @@ a.botao-sair {
     height: 58px;
     margin-bottom: 14px;
 }
+
+/* ---------- IDEIA04: editar a raça inventada, dentro dos traços ---------- */
+
+#btn-editar-raca {
+    margin-top: 10px;
+    padding: 6px 14px;
+    font-family: 'Cinzel', serif;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--tinta);
+    background: rgba(255,255,255,0.45);
+    border: 1px solid var(--borda-fina);
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+#btn-editar-raca:hover:not(:disabled) { background: var(--ouro); }
+
+#btn-editar-raca:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+/* o painel de edição fica recuado, para ler como algo aberto a partir do botão */
+#edicao-raca-propria {
+    margin-top: 12px;
+    padding: 12px;
+    background: rgba(255,255,255,0.3);
+    border: 1px dashed var(--borda-fina);
+    border-radius: 6px;
+}
+
+#edicao-raca-propria .campo { margin-bottom: 10px; }
+#edicao-raca-propria .campo:last-child { margin-bottom: 0; }
+
+#edicao-raca-propria .rotulo {
+    text-align: left;
+    margin-top: 2px;
+}

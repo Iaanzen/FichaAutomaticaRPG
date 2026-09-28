@@ -1676,6 +1676,40 @@ function atualizarXp() {
 
 xpEL.addEventListener("input", atualizarXp)
 
+/* ---------- IDEIA04: editar a raça inventada ---------- */
+
+// Os campos da raça própria ficavam no cabeçalho e tomavam meia tela, mesmo
+// em quem nunca vai usá-los. Agora moram dentro do bloco de traços, fechados,
+// e só quem inventou a própria raça tem como abrir: numa raça do livro não há
+// o que editar.
+const btnEditarRacaEL = document.getElementById("btn-editar-raca")
+const edicaoRacaEL = document.getElementById("edicao-raca-propria")
+
+function fecharEdicaoDaRaca() {
+    edicaoRacaEL.hidden = true
+    btnEditarRacaEL.textContent = "Editar raça"
+}
+
+// gancho de ficha-comum.js: a raça mudou de tipo
+function aoAtualizarCamposDaRaca(ehPropria) {
+    btnEditarRacaEL.hidden = !ehPropria
+
+    if (!ehPropria) {
+        fecharEdicaoDaRaca()
+    }
+}
+
+btnEditarRacaEL.addEventListener("click", function () {
+    if (edicaoRacaEL.hidden) {
+        edicaoRacaEL.hidden = false
+        btnEditarRacaEL.textContent = "Concluir edição"
+        document.getElementById("raca-propria-nome").focus()
+        return
+    }
+
+    fecharEdicaoDaRaca()
+})
+
 /* ---------- Painel de mestre: ficha de outra pessoa ---------- */
 
 // O mestre pode LER a ficha de qualquer jogador (as regras do Firestore
@@ -1757,6 +1791,16 @@ function aplicarCadeado() {
             campo.readOnly = fichaTravada
         }
     })
+
+    // travada, não há o que editar na raça: o painel fecha e o botão desliga
+    if (fichaTravada) {
+        fecharEdicaoDaRaca()
+    }
+
+    btnEditarRacaEL.disabled = fichaTravada
+    btnEditarRacaEL.title = fichaTravada
+        ? "Destrave a ficha para editar a raça."
+        : ""
 
     document.body.classList.toggle("ficha-travada", fichaTravada)
 

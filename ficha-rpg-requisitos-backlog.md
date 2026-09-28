@@ -574,6 +574,8 @@ Opção "Criar a minha raça..." no select, no wizard e na ficha: nome, deslocam
 
 Como em 2024 a raça não dá bônus de atributo, a raça inventada **não interfere** na distribuição do antecedente.
 
+**Na ficha, os campos ficam fechados.** Eles moravam no cabeçalho de identidade e tomavam meia tela de todo mundo, inclusive de quem usa raça do livro. Agora ficam dentro do bloco "Características e Traços", atrás de um botão **Editar raça** que só aparece em quem inventou a própria raça — numa raça do livro não há o que editar. Com a ficha travada o botão desliga, e o painel fecha. No wizard os campos continuam à vista, porque é lá que a raça é definida.
+
 É **por personagem**, não uma raça reutilizável no select. Três personagens da mesma raça inventada exigem digitar três vezes. Vira pacote no dia em que isso incomodar.
 
 **Idiomas.** O bloco "Outras Proficiências e Idiomas" mostrava só o que vinha da raça, e nada preenchia as proficiências. Ganhou um campo para acrescentar o que vem do antecedente, da classe ou é aprendido em jogo. Fica travado pelo cadeado, como as perícias: é construção.
